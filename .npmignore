@@ -1,0 +1,34 @@
+# 测试文件
+tests/
+*.spec.ts
+playwright.config.ts
+playwright-report/
+test-results/
+
+# 输出目录
+output/
+progress.json
+
+# 开发文件
+.vscode/
+.idea/
+*.log
+*.tsbuildinfo
+
+# 配置文件
+.cursorignore
+.gitignore
+tsconfig.json
+tsup.config.ts
+
+# 文档（保留 README 和 LICENSE）
+FRAMEWORK.md
+
+# Git
+.git/
+.github/
+
+# Node
+node_modules/
+pnpm-lock.yaml
+

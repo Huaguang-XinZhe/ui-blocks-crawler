@@ -1,0 +1,76 @@
+import type { Page, Locator } from "@playwright/test";
+
+/**
+ * 爬虫配置接口
+ */
+export interface CrawlerConfig {
+  /** 起始 URL */
+  startUrl: string;
+  /** TabList 的 aria-label，用于定位分类标签，如果不传则获取第一个 tablist */
+  tabListAriaLabel?: string;
+  /** 最大并发页面数量 */
+  maxConcurrency?: number;
+  /** 输出目录 */
+  outputDir?: string;
+  /** 进度文件路径 */
+  progressFile?: string;
+  /** 超时时间（毫秒） */
+  timeout?: number;
+  /** Block 定位符（XPath 或 CSS 选择器），不传则表示处理单页面 */
+  blockLocator?: string;
+  /** 是否启用进度恢复功能 */
+  enableProgressResume?: boolean;
+}
+
+/**
+ * 页面处理上下文
+ */
+export interface PageContext {
+  /** 当前页面 */
+  page: Page;
+  /** 当前路径（相对路径） */
+  currentPath: string;
+  /** 输出目录 */
+  outputDir: string;
+}
+
+/**
+ * Block 处理上下文
+ */
+export interface BlockContext {
+  /** 当前页面 */
+  page: Page;
+  /** Block 元素 */
+  block: Locator;
+  /** 当前路径（相对路径） */
+  currentPath: string;
+  /** Block 名称 */
+  blockName: string;
+  /** Block 完整路径 */
+  blockPath: string;
+  /** 输出目录 */
+  outputDir: string;
+}
+
+/**
+ * 页面处理器函数类型
+ */
+export type PageHandler = (context: PageContext) => Promise<void>;
+
+/**
+ * Block 处理器函数类型
+ */
+export type BlockHandler = (context: BlockContext) => Promise<void>;
+
+/**
+ * 链接收集结果
+ */
+export interface CollectionLink {
+  /** 链接地址 */
+  link: string;
+  /** 链接名称 */
+  name?: string;
+  /** Block 数量 */
+  count?: number;
+}
+
