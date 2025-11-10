@@ -22,6 +22,7 @@ import type {
 interface InternalConfig {
   startUrl: string;
   tabListAriaLabel?: string;
+  tabSectionLocator?: string;
   maxConcurrency: number;
   outputDir: string;
   configDir: string;
@@ -65,6 +66,7 @@ export class BlockCrawler {
     this.config = {
       startUrl: config.startUrl,
       tabListAriaLabel: config.tabListAriaLabel,
+      tabSectionLocator: config.tabSectionLocator,
       maxConcurrency: config.maxConcurrency ?? 5,
       outputDir,
       configDir,
@@ -175,6 +177,7 @@ export class BlockCrawler {
     const configToSave: CrawlerConfig = {
       startUrl: this.config.startUrl,
       tabListAriaLabel: this.config.tabListAriaLabel,
+      tabSectionLocator: this.config.tabSectionLocator,
       maxConcurrency: this.config.maxConcurrency,
       outputDir: this.config.outputDir,
       configDir: this.config.configDir,
@@ -314,7 +317,16 @@ export class BlockCrawler {
     console.log(`   🔍 正在处理分类: ${text}`);
     
     // 获取 tab 对应的 section 内容区域
-    const section = this.getTabSection(page, text);
+    let section: Locator;
+    
+    if (this.config.tabSectionLocator) {
+      // 优先使用配置的定位符
+      const locator = this.config.tabSectionLocator.replace("{tabText}", text);
+      section = page.locator(locator);
+    } else {
+      // 否则调用子类重写的方法
+      section = this.getTabSection(page, text);
+    }
 
     // 收集所有的链接
     await this.collectAllLinks(section, text);
@@ -323,7 +335,10 @@ export class BlockCrawler {
 
   /**
    * 获取 tab 对应的 section 内容区域
-   * ⚠️ 此方法必须由子类实现，框架不提供默认实现
+   * 
+   * 当没有配置 tabSectionLocator 时，此方法会被调用。
+   * 子类可以重写此方法以实现自定义逻辑。
+   * 如果既没有配置也没有重写，则会抛出错误。
    * 
    * @param page - 页面对象
    * @param tabText - tab 的文本内容
@@ -347,9 +362,14 @@ export class BlockCrawler {
    */
   protected getTabSection(page: Page, tabText: string): Locator {
     throw new Error(
-      "getTabSection() 方法必须由子类实现！\n" +
-      "请创建一个继承自 BlockCrawler 的类，并重写 getTabSection 方法。\n\n" +
-      "示例：\n" +
+      "未配置 tabSectionLocator 且未重写 getTabSection 方法！\n\n" +
+      "请选择以下任一方式：\n\n" +
+      "方式 1：配置 tabSectionLocator（推荐，简单场景）\n" +
+      "const crawler = new BlockCrawler({\n" +
+      "  tabSectionLocator: '[role=\"tabpanel\"][aria-label=\"{tabText}\"]',\n" +
+      "  // ... 其他配置\n" +
+      "});\n\n" +
+      "方式 2：继承并重写 getTabSection 方法（复杂场景）\n" +
       "class MyCrawler extends BlockCrawler {\n" +
       "  protected getTabSection(page: Page, tabText: string): Locator {\n" +
       "    return page.locator('section').filter({ has: page.getByRole('heading', { name: tabText }) });\n" +

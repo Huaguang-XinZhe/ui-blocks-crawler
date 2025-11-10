@@ -8,6 +8,17 @@ export interface CrawlerConfig {
   startUrl: string;
   /** TabList 的 aria-label，用于定位分类标签，如果不传则获取第一个 tablist */
   tabListAriaLabel?: string;
+  /**
+   * Tab 对应的 section 内容区域定位符
+   * 如果配置了此项，将使用配置的定位符；否则需要子类重写 getTabSection 方法
+   * 
+   * 支持占位符：
+   * - {tabText}: tab 的文本内容
+   * 
+   * @example 'section:has(h2:text("{tabText}"))' (使用 tabText 占位符)
+   * @example '[role="tabpanel"][aria-label="{tabText}"]' (shadcndesign)
+   */
+  tabSectionLocator?: string;
   /** 最大并发页面数量 */
   maxConcurrency?: number;
   /** 输出目录 */
