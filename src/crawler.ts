@@ -136,7 +136,7 @@ export class BlockCrawler {
       if (this.taskProgress) {
         await this.taskProgress.saveProgress();
         console.log(
-          `\n💾 进度已保存 (已完成: ${this.taskProgress.getCompletedCount()} 个 blocks)`
+          `\n💾 进度已保存 (页面: ${this.taskProgress.getCompletedPageCount()}, blocks: ${this.taskProgress.getCompletedBlockCount()})`
         );
       }
     }
@@ -247,6 +247,7 @@ export class BlockCrawler {
   private async concurrentHandleLinksByLimit(page: Page): Promise<void> {
     const total = this.allCollectionLinks.length;
     let completed = 0;
+    let skipped = 0;
     let failed = 0;
 
     console.log(`\n📦 开始处理 ${total} 个集合链接...`);
@@ -254,20 +255,29 @@ export class BlockCrawler {
     await Promise.allSettled(
       this.allCollectionLinks.map((collectionLink, index) =>
         this.limit(async () => {
+          const linkName =
+            collectionLink.link.split("/").pop() || collectionLink.link;
+          
+          // 检查页面是否已完成
+          const pagePath = this.normalizePagePath(collectionLink.link);
+          if (this.taskProgress?.isPageComplete(pagePath)) {
+            skipped++;
+            console.log(
+              `⏭️  [${completed + skipped + failed}/${total}] 跳过已完成页面: ${linkName}\n`
+            );
+            return;
+          }
+
           try {
             await this.handleSingleLink(page, collectionLink.link, index === 0);
             completed++;
-            const linkName =
-              collectionLink.link.split("/").pop() || collectionLink.link;
             console.log(
-              `✅ [${completed + failed}/${total}] 完成: ${linkName}\n`
+              `✅ [${completed + skipped + failed}/${total}] 完成: ${linkName}\n`
             );
           } catch (error) {
             failed++;
-            const linkName =
-              collectionLink.link.split("/").pop() || collectionLink.link;
             console.error(
-              `❌ [${completed + failed}/${total}] 失败: ${linkName}\n`,
+              `❌ [${completed + skipped + failed}/${total}] 失败: ${linkName}\n`,
               error
             );
             // 不重新抛出，继续处理其他任务
@@ -277,8 +287,16 @@ export class BlockCrawler {
     );
 
     console.log(`\n📊 处理完成统计:`);
-    console.log(`   ✅ 成功: ${completed}/${total}`);
+    console.log(`   ✅ 新完成: ${completed}/${total}`);
+    console.log(`   ⏭️  已跳过: ${skipped}/${total}`);
     console.log(`   ❌ 失败: ${failed}/${total}`);
+  }
+
+  /**
+   * 标准化页面路径（移除前导斜杠）
+   */
+  private normalizePagePath(link: string): string {
+    return link.startsWith("/") ? link.slice(1) : link;
   }
 
   /**
@@ -338,7 +356,7 @@ export class BlockCrawler {
    */
   private async handleBlocksInPage(
     page: Page,
-    currentPath: string
+    pagePath: string
   ): Promise<void> {
     if (!this.blockHandler) {
       console.warn("⚠️ 未设置 Block 处理器，跳过处理");
@@ -349,9 +367,20 @@ export class BlockCrawler {
     const blocks = await this.getAllBlocks(page);
 
     // 遍历 blocks
+    let completedCount = 0;
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
-      await this.handleSingleBlock(page, block, currentPath);
+      const wasCompleted = await this.handleSingleBlock(page, block, pagePath);
+      if (wasCompleted) {
+        completedCount++;
+      }
+    }
+
+    // 如果所有 block 都完成了，标记页面为已完成
+    if (completedCount === blocks.length && blocks.length > 0) {
+      const normalizedPath = this.normalizePagePath(pagePath);
+      this.taskProgress?.markPageComplete(normalizedPath);
+      console.log(`✨ 页面所有 block 已完成: ${normalizedPath}`);
     }
   }
 
@@ -365,14 +394,15 @@ export class BlockCrawler {
 
   /**
    * 处理单个 Block
+   * @returns 是否成功完成（包括已完成的）
    */
   private async handleSingleBlock(
     page: Page,
     block: Locator,
     urlPath: string
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (!this.blockHandler) {
-      return;
+      return false;
     }
 
     // 拿到 block 的名称
@@ -380,35 +410,38 @@ export class BlockCrawler {
 
     if (!blockName) {
       console.warn("⚠️ block 名称为空，跳过");
-      return;
+      return false;
     }
 
     console.log(`\n🔍 正在处理 block: ${blockName}`);
 
-    // 构建当前路径（URL 路径 + Block 名称）
-    const normalizedUrlPath = urlPath.startsWith("/")
-      ? urlPath.slice(1)
-      : urlPath;
-    const currentPath = `${normalizedUrlPath}/${blockName}`;
+    // 构建 blockPath
+    const normalizedUrlPath = this.normalizePagePath(urlPath);
+    const blockPath = `${normalizedUrlPath}/${blockName}`;
 
     // 检查是否已完成
-    if (this.taskProgress?.isComplete(currentPath)) {
+    if (this.taskProgress?.isBlockComplete(blockPath)) {
       console.log(`⏭️  跳过已完成的 block: ${blockName}`);
-      return;
+      return true; // 已完成也算成功
     }
 
     const context: BlockContext = {
       page,
       block,
-      currentPath,
+      blockPath,
       blockName,
       outputDir: this.config.outputDir,
     };
 
-    await this.blockHandler(context);
-
-    // 标记为已完成
-    this.taskProgress?.markComplete(currentPath);
+    try {
+      await this.blockHandler(context);
+      // 标记为已完成
+      this.taskProgress?.markBlockComplete(blockPath);
+      return true;
+    } catch (error) {
+      console.error(`❌ 处理 block 失败: ${blockName}`, error);
+      return false;
+    }
   }
 
   /**

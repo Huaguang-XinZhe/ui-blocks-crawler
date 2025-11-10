@@ -25,26 +25,28 @@ test("使用 BlockCrawler 框架爬取组件", async ({ page }) => {
   });
 
   // 设置 Block 处理器
-  crawler.onBlock(async (context: BlockContext) => {
-    // 点击切换到 Code
-    await clickCodeTab(context.block);
+  crawler.onBlock(
+    async ({ block, page, blockPath, outputDir }: BlockContext) => {
+      // 点击切换到 Code
+      await clickCodeTab(block);
 
-    // 获取 ts 部分代码
-    await saveAllLanguageFiles(context, "ts");
+      // 获取 ts 部分代码
+      await saveAllLanguageFiles(block, blockPath, outputDir, "ts");
 
-    // 切换 js
-    await context.block
-      .getByRole("button", { name: "TypeScript Change theme" })
-      .click();
-    // 这里不能用 block 去找，必须用 page，因为它被传送到了 body 下❗
-    await context.page.getByRole("option", { name: "JavaScript" }).click();
+      // 切换 js
+      await block
+        .getByRole("button", { name: "TypeScript Change theme" })
+        .click();
+      // 这里不能用 block 去找，必须用 page，因为它被传送到了 body 下❗
+      await page.getByRole("option", { name: "JavaScript" }).click();
 
-    // 切换后，得延迟一会儿，不然 fileTabs 还是之前的
-    await context.page.waitForTimeout(500);
+      // 切换后，得延迟一会儿，不然 fileTabs 还是之前的
+      await page.waitForTimeout(500);
 
-    // 获取 js 部分代码
-    await saveAllLanguageFiles(context, "js");
-  });
+      // 获取 js 部分代码
+      await saveAllLanguageFiles(block, blockPath, outputDir, "js");
+    }
+  );
 
   // 运行爬虫
   await crawler.run(page);
@@ -74,11 +76,11 @@ async function clickCodeTab(block: Locator) {
 
 // 保存当前语言版本的所有文件代码到指定目录
 async function saveAllLanguageFiles(
-  context: BlockContext,
+  block: Locator,
+  blockPath: string,
+  outputDir: string,
   language: "ts" | "js"
 ) {
-  const { block, currentPath, blockName, outputDir } = context;
-
   // 复制当前文件的内容
   const fileTabs = await block
     .getByRole("tablist", {
@@ -103,7 +105,7 @@ async function saveAllLanguageFiles(
     // 输出到文件
     if (fileName) {
       await fse.outputFile(
-        `${outputDir}/${currentPath}/${language}/${fileName}`,
+        `${outputDir}/${blockPath}/${language}/${fileName}`,
         code
       );
     } else {
@@ -111,4 +113,3 @@ async function saveAllLanguageFiles(
     }
   }
 }
-

@@ -155,7 +155,7 @@ class CustomCrawler extends BlockCrawler {
 interface BlockContext {
   page: Page;           // 当前页面
   block: Locator;       // Block 元素
-  currentPath: string;  // URL路径 + Block名称
+  blockPath: string;    // Block 路径（URL路径 + Block名称）
   blockName: string;    // Block 名称
   outputDir: string;    // 输出目录
 }

@@ -45,8 +45,8 @@ export interface BlockContext {
   page: Page;
   /** Block 元素 */
   block: Locator;
-  /** 当前路径（URL 路径 + Block 名称） */
-  currentPath: string;
+  /** block 路径（URL 路径 + Block 名称） */
+  blockPath: string;
   /** Block 名称 */
   blockName: string;
   /** 输出目录 */

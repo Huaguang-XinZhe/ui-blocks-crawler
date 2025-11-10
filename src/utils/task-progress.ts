@@ -4,17 +4,20 @@ import path from "path";
 /**
  * 任务进度管理器
  * 用于记录爬取进度，支持中断恢复
+ * 同时跟踪 block 级别和 page 级别的完成状态
  */
 export class TaskProgress {
   private progressFile: string;
   private outputDir: string;
   private completedBlocks: Set<string>;
+  private completedPages: Set<string>;
   private isDirty: boolean = false;
 
   constructor(progressFile: string = "progress.json", outputDir: string = "output") {
     this.progressFile = progressFile;
     this.outputDir = outputDir;
     this.completedBlocks = new Set();
+    this.completedPages = new Set();
   }
 
   /**
@@ -24,11 +27,15 @@ export class TaskProgress {
     if (await fse.pathExists(this.progressFile)) {
       console.log("📁 发现进度文件，加载中...");
       await this.loadProgress();
-      console.log(`✅ 已加载 ${this.completedBlocks.size} 个已完成的 block`);
+      console.log(
+        `✅ 已加载进度 - ${this.completedPages.size} 个页面已完成，${this.completedBlocks.size} 个 block 已完成`
+      );
     } else {
       console.log("📁 进度文件不存在，扫描输出目录重建进度...");
       await this.rebuildProgress();
-      console.log(`✅ 重建完成，找到 ${this.completedBlocks.size} 个已完成的 block`);
+      console.log(
+        `✅ 重建完成 - ${this.completedPages.size} 个页面已完成，${this.completedBlocks.size} 个 block 已完成`
+      );
     }
   }
 
@@ -39,6 +46,7 @@ export class TaskProgress {
     try {
       const data = await fse.readJson(this.progressFile);
       this.completedBlocks = new Set(data.completedBlocks || []);
+      this.completedPages = new Set(data.completedPages || []);
     } catch (error) {
       console.warn("⚠️ 加载进度文件失败，将重建进度", error);
       await this.rebuildProgress();
@@ -49,7 +57,8 @@ export class TaskProgress {
    * 重建进度：扫描 OUTPUT_DIR
    * 逻辑：
    * 1. 扫描所有 4 段的 block 目录（例如：components/application/authentication/Left Sign Up）
-   * 2. 对比 js 和 ts 目录的文件数，一致则认为已完成
+   * 2. 对比 js 和 ts 目录的文件数，一致则认为 block 已完成
+   * 3. 如果某个页面（3段路径）下的所有 block 都完成，标记页面为已完成
    */
   private async rebuildProgress(): Promise<void> {
     if (!(await fse.pathExists(this.outputDir))) {
@@ -58,6 +67,7 @@ export class TaskProgress {
     }
 
     const completedBlocks: string[] = [];
+    const pageBlocksMap = new Map<string, { total: number; completed: number }>();
 
     // 递归扫描，找到所有 4 段的路径
     const scanDir = async (currentPath: string, depth: number = 0): Promise<void> => {
@@ -77,9 +87,21 @@ export class TaskProgress {
 
         // 如果是第 4 段（block 目录），检查完成状态
         if (newDepth === 4) {
+          // 提取页面路径（前3段）
+          const pathParts = newPath.split("/");
+          const pagePath = pathParts.slice(0, 3).join("/");
+          
+          // 初始化页面统计
+          if (!pageBlocksMap.has(pagePath)) {
+            pageBlocksMap.set(pagePath, { total: 0, completed: 0 });
+          }
+          const pageStats = pageBlocksMap.get(pagePath)!;
+          pageStats.total++;
+
           const isComplete = await this.checkBlockComplete(newPath);
           if (isComplete) {
             completedBlocks.push(newPath);
+            pageStats.completed++;
           }
         } else if (newDepth < 4) {
           // 继续递归
@@ -92,8 +114,17 @@ export class TaskProgress {
     
     this.completedBlocks = new Set(completedBlocks);
     
+    // 检查哪些页面已完全完成
+    const completedPages: string[] = [];
+    for (const [pagePath, stats] of pageBlocksMap.entries()) {
+      if (stats.total > 0 && stats.completed === stats.total) {
+        completedPages.push(pagePath);
+      }
+    }
+    this.completedPages = new Set(completedPages);
+    
     // 保存重建的进度
-    if (completedBlocks.length > 0) {
+    if (completedBlocks.length > 0 || completedPages.length > 0) {
       await this.saveProgress();
     }
   }
@@ -126,16 +157,31 @@ export class TaskProgress {
   /**
    * 标记一个 block 为已完成
    */
-  markComplete(blockPath: string): void {
+  markBlockComplete(blockPath: string): void {
     this.completedBlocks.add(blockPath);
+    this.isDirty = true;
+  }
+
+  /**
+   * 标记一个页面为已完成
+   */
+  markPageComplete(pagePath: string): void {
+    this.completedPages.add(pagePath);
     this.isDirty = true;
   }
 
   /**
    * 检查一个 block 是否已完成
    */
-  isComplete(blockPath: string): boolean {
+  isBlockComplete(blockPath: string): boolean {
     return this.completedBlocks.has(blockPath);
+  }
+
+  /**
+   * 检查一个页面是否已完成
+   */
+  isPageComplete(pagePath: string): boolean {
+    return this.completedPages.has(pagePath);
   }
 
   /**
@@ -148,8 +194,10 @@ export class TaskProgress {
 
     const data = {
       completedBlocks: Array.from(this.completedBlocks),
+      completedPages: Array.from(this.completedPages),
       lastUpdate: new Date().toLocaleString(),
-      total: this.completedBlocks.size,
+      totalBlocks: this.completedBlocks.size,
+      totalPages: this.completedPages.size,
     };
 
     await fse.writeJson(this.progressFile, data, { spaces: 2 });
@@ -157,10 +205,17 @@ export class TaskProgress {
   }
 
   /**
-   * 获取已完成的数量
+   * 获取已完成的 block 数量
    */
-  getCompletedCount(): number {
+  getCompletedBlockCount(): number {
     return this.completedBlocks.size;
+  }
+
+  /**
+   * 获取已完成的页面数量
+   */
+  getCompletedPageCount(): number {
+    return this.completedPages.size;
   }
 
   /**
@@ -168,6 +223,7 @@ export class TaskProgress {
    */
   async clear(): Promise<void> {
     this.completedBlocks.clear();
+    this.completedPages.clear();
     this.isDirty = true;
     await this.saveProgress();
   }
