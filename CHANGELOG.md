@@ -1,5 +1,11 @@
 # block-crawler-framework
 
+## 1.0.1
+
+### Patch Changes
+
+- 补充作者：mufeng
+
 ## 1.0.0
 
 ### Major Changes
