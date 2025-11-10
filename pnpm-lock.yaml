@@ -36,6 +36,9 @@ importers:
       '@types/node':
         specifier: ^24.9.2
         version: 24.9.2
+      block-crawler-framework:
+        specifier: 'file:'
+        version: file:(@playwright/test@1.56.1)
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(typescript@5.9.3)
@@ -482,6 +485,11 @@ packages:
   better-path-resolve@1.0.0:
     resolution: {integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==}
     engines: {node: '>=4'}
+
+  'block-crawler-framework@file:':
+    resolution: {directory: '', type: directory}
+    peerDependencies:
+      '@playwright/test': ^1.0.0
 
   brace-expansion@2.0.2:
     resolution: {integrity: sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ==}
@@ -1514,6 +1522,15 @@ snapshots:
   better-path-resolve@1.0.0:
     dependencies:
       is-windows: 1.0.2
+
+  block-crawler-framework@file:(@playwright/test@1.56.1):
+    dependencies:
+      '@playwright/test': 1.56.1
+      '@types/cli-progress': 3.11.6
+      cli-progress: 3.12.0
+      fs-extra: 11.3.2
+      ora: 9.0.0
+      p-limit: 7.2.0
 
   brace-expansion@2.0.2:
     dependencies:
