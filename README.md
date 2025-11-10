@@ -27,9 +27,12 @@ playwright-demo/
 ├── .crawler/                     # 配置和进度目录
 │   ├── config.example.json       # 配置示例
 │   ├── config.json               # 配置文件（可选）
-│   └── progress-*.json           # 进度文件（自动生成）
+│   └── progress-*.json           # 进度文件（自动生成，按网站区分）
 ├── dist/                         # 构建输出目录
 └── output/                       # 爬取结果输出目录
+    ├── site-a-com-abc123/        # 网站 A 的输出（自动生成）
+    ├── site-b-com-def456/        # 网站 B 的输出（自动生成）
+    └── ...                       # 其他网站
 ```
 
 ## 快速开始
@@ -146,7 +149,7 @@ test("爬取页面", async ({ page }) => {
 
 ### 多站点爬取
 
-框架自动根据 `startUrl` 生成独立的进度文件，支持在同一项目中爬取多个网站：
+框架自动根据 `startUrl` 生成独立的进度文件和输出目录，支持在同一项目中爬取多个网站：
 
 ```typescript
 // 爬取网站 A
@@ -155,21 +158,30 @@ const crawlerA = new BlockCrawler({
   blockLocator: "xpath=//main/div",
 });
 // 进度文件：.crawler/progress-site-a-com-abc12345.json
+// 输出目录：output/site-a-com-a1b2c3
 
 // 爬取网站 B
 const crawlerB = new BlockCrawler({
   startUrl: "https://site-b.com/library",
   blockLocator: ".component",
-  outputDir: "output-site-b",
 });
 // 进度文件：.crawler/progress-site-b-com-def67890.json
+// 输出目录：output/site-b-com-d4e5f6
 
-// 同一域名不同路径也会生成不同的进度文件
+// 同一域名不同路径也会生成不同的进度文件和输出目录
 const crawlerC = new BlockCrawler({
   startUrl: "https://site-a.com/gallery",
   blockLocator: ".gallery-item",
 });
 // 进度文件：.crawler/progress-site-a-com-xyz98765.json
+// 输出目录：output/site-a-com-x7y8z9
+
+// 如果需要自定义输出目录，可以显式指定
+const crawlerD = new BlockCrawler({
+  startUrl: "https://site-b.com/library",
+  blockLocator: ".component",
+  outputDir: "custom-output",  // 自定义输出目录
+});
 ```
 
 ### 扩展框架
@@ -195,20 +207,23 @@ class CustomCrawler extends BlockCrawler {
 
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `startUrl` | string | - | 起始 URL（必填，进度文件将根据此 URL 自动生成） |
+| `startUrl` | string | - | 起始 URL（必填，进度文件和输出目录将根据此 URL 自动生成） |
 | `blockLocator` | string? | undefined | Block 定位符（传入则启用 Block 模式） |
 | `blockNameLocator` | string? | `role=heading[level=1] >> role=link` | Block 名称定位符 |
 | `tabListAriaLabel` | string? | undefined | 分类标签的 aria-label |
 | `maxConcurrency` | number | 5 | 最大并发页面数 |
-| `outputDir` | string | "output" | 输出目录 |
+| `outputDir` | string | 自动生成 | 输出目录（不指定时根据 `startUrl` 自动生成，如 `output/example-com-a1b2c3`） |
 | `configDir` | string | ".crawler" | 配置目录（存放进度文件等） |
 | `enableProgressResume` | boolean | true | 是否启用进度恢复 |
 
-**进度文件自动生成规则：**
-- 根据 `startUrl` 自动生成唯一的进度文件名
-- 格式：`progress-{hostname}-{hash}.json`
-- 示例：`https://example.com/components` → `.crawler/progress-example-com-a1b2c3d4.json`
-- 支持同一项目中爬取多个网站，每个网站有独立的进度文件
+**自动生成规则：**
+- **进度文件**：根据 `startUrl` 自动生成唯一的进度文件名
+  - 格式：`progress-{hostname}-{hash}.json`
+  - 示例：`https://example.com/components` → `.crawler/progress-example-com-a1b2c3d4.json`
+- **输出目录**：根据 `startUrl` 自动生成输出目录（如果未指定 `outputDir`）
+  - 格式：`output/{hostname}-{pathhash}`（有路径时）或 `output/{hostname}`（根路径时）
+  - 示例：`https://example.com/components` → `output/example-com-a1b2c3`
+- 支持同一项目中爬取多个网站，每个网站有独立的进度文件和输出目录
 
 ## Context 对象
 

@@ -47,11 +47,14 @@ export class BlockCrawler {
     // 根据 startUrl 生成唯一的进度文件名
     const progressFileName = this.generateProgressFileName(config.startUrl);
     
+    // 如果没有指定 outputDir，则根据 startUrl 自动生成
+    const outputDir = config.outputDir ?? this.generateOutputDir(config.startUrl);
+    
     this.config = {
       startUrl: config.startUrl,
       tabListAriaLabel: config.tabListAriaLabel,
       maxConcurrency: config.maxConcurrency ?? 5,
-      outputDir: config.outputDir ?? "output",
+      outputDir,
       configDir,
       progressFile: path.join(configDir, progressFileName),
       blockLocator: config.blockLocator,
@@ -92,6 +95,33 @@ export class BlockCrawler {
       // 如果 URL 解析失败，使用完整 URL 的 hash
       const hash = crypto.createHash("md5").update(url).digest("hex").substring(0, 8);
       return `progress-${hash}.json`;
+    }
+  }
+
+  /**
+   * 根据 URL 生成输出目录名
+   */
+  private generateOutputDir(url: string): string {
+    try {
+      const urlObj = new URL(url);
+      // 使用 hostname 作为目录名，更简洁直观
+      const sanitizedHost = urlObj.hostname.replace(/[^a-z0-9]/gi, "-");
+      
+      // 如果路径不是根路径，添加路径的 hash 后缀以区分
+      if (urlObj.pathname && urlObj.pathname !== "/") {
+        const pathHash = crypto
+          .createHash("md5")
+          .update(urlObj.pathname)
+          .digest("hex")
+          .substring(0, 6);
+        return path.join("output", `${sanitizedHost}-${pathHash}`);
+      }
+      
+      return path.join("output", sanitizedHost);
+    } catch (error) {
+      // 如果 URL 解析失败，使用 hash
+      const hash = crypto.createHash("md5").update(url).digest("hex").substring(0, 8);
+      return path.join("output", `site-${hash}`);
     }
   }
 

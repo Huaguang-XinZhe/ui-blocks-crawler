@@ -1,5 +1,5 @@
 import { test } from "@playwright/test";
-import { BlockCrawler } from "../src";
+import { BlockCrawler } from "../../src";
 
 /**
  * 多站点爬取示例
