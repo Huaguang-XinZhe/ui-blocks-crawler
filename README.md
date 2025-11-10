@@ -92,11 +92,10 @@ test("爬取组件", async ({ page }) => {
   // 从 .crawler/config.json 加载配置
   const crawler = await BlockCrawler.fromConfigFile();
   
-  crawler.onBlock(async (context) => {
+  // 设置处理器并自动运行
+  await crawler.onBlock(page, async (context) => {
     // 处理逻辑...
   });
-
-  await crawler.run(page);
 });
 ```
 
@@ -114,12 +113,11 @@ test("爬取组件", async ({ page }) => {
     maxConcurrency: 5,
   });
 
-  crawler.onBlock(async (context: BlockContext) => {
+  // 设置处理器并自动运行
+  await crawler.onBlock(page, async (context: BlockContext) => {
     const { block, blockName, blockPath, outputDir } = context;
-    // 自定义处理逻辑...
+    // 自定义处理逻辑，可以直接使用闭包中的 page...
   });
-
-  await crawler.run(page);
 });
 ```
 
@@ -138,12 +136,11 @@ test("爬取页面", async ({ page }) => {
     // 不传 blockLocator = 页面模式
   });
 
-  crawler.onPage(async (context: PageContext) => {
-    const { page, currentPath, outputDir } = context;
-    // 自定义处理逻辑...
+  // 设置处理器并自动运行
+  await crawler.onPage(page, async (context: PageContext) => {
+    const { currentPath, outputDir } = context;
+    // 自定义处理逻辑，可以直接使用闭包中的 page...
   });
-
-  await crawler.run(page);
 });
 ```
 
@@ -231,7 +228,6 @@ class CustomCrawler extends BlockCrawler {
 
 ```typescript
 interface BlockContext {
-  page: Page;           // 当前页面
   block: Locator;       // Block 元素
   blockPath: string;    // Block 路径（URL路径 + Block名称）
   blockName: string;    // Block 名称
@@ -239,15 +235,18 @@ interface BlockContext {
 }
 ```
 
+**注意**：`page` 对象可以直接从闭包中使用，不需要从 context 中获取。
+
 ### PageContext
 
 ```typescript
 interface PageContext {
-  page: Page;           // 当前页面
   currentPath: string;  // 当前 URL 路径
   outputDir: string;    // 输出目录
 }
 ```
+
+**注意**：`page` 对象可以直接从闭包中使用，不需要从 context 中获取。
 
 ## 开发命令
 

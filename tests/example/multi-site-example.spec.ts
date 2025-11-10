@@ -17,13 +17,12 @@ test("爬取网站 A", async ({ page }) => {
   });
 
   // 进度文件将自动保存到：.crawler/progress-site-a-com-xxxxxxxx.json
+  // 输出目录将自动设置为：output/site-a-com-xxxxxx
 
-  crawlerA.onBlock(async (context) => {
+  await crawlerA.onBlock(page, async (context) => {
     console.log(`[Site A] 处理: ${context.blockName}`);
     // 处理逻辑...
   });
-
-  await crawlerA.run(page);
 });
 
 test("爬取网站 B", async ({ page }) => {
@@ -33,17 +32,16 @@ test("爬取网站 B", async ({ page }) => {
     startUrl: "https://site-b.com/library",
     blockLocator: ".component-block",
     maxConcurrency: 3,
-    outputDir: "output-site-b",
+    outputDir: "output-site-b", // 自定义输出目录
   });
 
   // 进度文件将自动保存到：.crawler/progress-site-b-com-yyyyyyyy.json
+  // 输出目录使用自定义：output-site-b
 
-  crawlerB.onBlock(async (context) => {
+  await crawlerB.onBlock(page, async (context) => {
     console.log(`[Site B] 处理: ${context.blockName}`);
     // 处理逻辑...
   });
-
-  await crawlerB.run(page);
 });
 
 test("爬取网站 C - 不同路径", async ({ page }) => {
@@ -55,13 +53,12 @@ test("爬取网站 C - 不同路径", async ({ page }) => {
   });
 
   // 进度文件将自动保存到：.crawler/progress-site-a-com-zzzzzzzz.json
-  // 注意：与网站 A 的进度文件不同，因为路径不同
+  // 输出目录将自动设置为：output/site-a-com-zzzzzz
+  // 注意：与网站 A 的进度文件和输出目录都不同，因为路径不同
 
-  crawlerC.onBlock(async (context) => {
+  await crawlerC.onBlock(page, async (context) => {
     console.log(`[Site C] 处理: ${context.blockName}`);
     // 处理逻辑...
   });
-
-  await crawlerC.run(page);
 });
 

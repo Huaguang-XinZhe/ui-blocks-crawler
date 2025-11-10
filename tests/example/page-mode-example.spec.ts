@@ -22,13 +22,13 @@ test("使用页面处理模式爬取", async ({ page }) => {
     enableProgressResume: true,
   });
 
-  // 设置页面处理器
-  crawler.onPage(async (context: PageContext) => {
-    const { page, currentPath, outputDir } = context;
+  // 设置页面处理器并自动运行
+  await crawler.onPage(page, async (context: PageContext) => {
+    const { currentPath, outputDir } = context;
 
     console.log(`\n🔍 正在处理页面: ${currentPath}`);
 
-    // 自定义页面处理逻辑
+    // 自定义页面处理逻辑（page 对象可以直接从闭包中使用）
     // 例如：提取页面标题
     const title = await page.title();
     
@@ -55,8 +55,5 @@ test("使用页面处理模式爬取", async ({ page }) => {
 
     console.log(`✅ 页面处理完成: ${currentPath}`);
   });
-
-  // 运行爬虫
-  await crawler.run(page);
 });
 

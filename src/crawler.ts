@@ -43,13 +43,14 @@ export class BlockCrawler {
   constructor(config: CrawlerConfig) {
     // 设置默认配置
     const configDir = config.configDir ?? ".crawler";
-    
+
     // 根据 startUrl 生成唯一的进度文件名
     const progressFileName = this.generateProgressFileName(config.startUrl);
-    
+
     // 如果没有指定 outputDir，则根据 startUrl 自动生成
-    const outputDir = config.outputDir ?? this.generateOutputDir(config.startUrl);
-    
+    const outputDir =
+      config.outputDir ?? this.generateOutputDir(config.startUrl);
+
     this.config = {
       startUrl: config.startUrl,
       tabListAriaLabel: config.tabListAriaLabel,
@@ -87,13 +88,17 @@ export class BlockCrawler {
         .update(identifier)
         .digest("hex")
         .substring(0, 8);
-      
+
       // 使用 hostname 和 hash 组合，既直观又唯一
       const sanitizedHost = urlObj.hostname.replace(/[^a-z0-9]/gi, "-");
       return `progress-${sanitizedHost}-${hash}.json`;
     } catch (error) {
       // 如果 URL 解析失败，使用完整 URL 的 hash
-      const hash = crypto.createHash("md5").update(url).digest("hex").substring(0, 8);
+      const hash = crypto
+        .createHash("md5")
+        .update(url)
+        .digest("hex")
+        .substring(0, 8);
       return `progress-${hash}.json`;
     }
   }
@@ -106,7 +111,7 @@ export class BlockCrawler {
       const urlObj = new URL(url);
       // 使用 hostname 作为目录名，更简洁直观
       const sanitizedHost = urlObj.hostname.replace(/[^a-z0-9]/gi, "-");
-      
+
       // 如果路径不是根路径，添加路径的 hash 后缀以区分
       if (urlObj.pathname && urlObj.pathname !== "/") {
         const pathHash = crypto
@@ -116,11 +121,15 @@ export class BlockCrawler {
           .substring(0, 6);
         return path.join("output", `${sanitizedHost}-${pathHash}`);
       }
-      
+
       return path.join("output", sanitizedHost);
     } catch (error) {
       // 如果 URL 解析失败，使用 hash
-      const hash = crypto.createHash("md5").update(url).digest("hex").substring(0, 8);
+      const hash = crypto
+        .createHash("md5")
+        .update(url)
+        .digest("hex")
+        .substring(0, 8);
       return path.join("output", `site-${hash}`);
     }
   }
@@ -129,7 +138,9 @@ export class BlockCrawler {
    * 从配置文件创建爬虫实例
    * @param configPath 配置文件路径，默认为 '.crawler/config.json'
    */
-  static async fromConfigFile(configPath: string = ".crawler/config.json"): Promise<BlockCrawler> {
+  static async fromConfigFile(
+    configPath: string = ".crawler/config.json"
+  ): Promise<BlockCrawler> {
     if (!(await fse.pathExists(configPath))) {
       throw new Error(`配置文件不存在: ${configPath}`);
     }
@@ -142,7 +153,9 @@ export class BlockCrawler {
    * 保存配置到文件
    * @param configPath 配置文件路径，默认为 '.crawler/config.json'
    */
-  async saveConfigFile(configPath: string = ".crawler/config.json"): Promise<void> {
+  async saveConfigFile(
+    configPath: string = ".crawler/config.json"
+  ): Promise<void> {
     const configToSave: CrawlerConfig = {
       startUrl: this.config.startUrl,
       tabListAriaLabel: this.config.tabListAriaLabel,
@@ -160,25 +173,25 @@ export class BlockCrawler {
   }
 
   /**
-   * 设置页面处理器（单页面模式）
+   * 设置页面处理器并运行爬虫（单页面模式）
    */
-  onPage(handler: PageHandler): this {
+  async onPage(page: Page, handler: PageHandler): Promise<void> {
     this.pageHandler = handler;
-    return this;
+    await this.run(page);
   }
 
   /**
-   * 设置 Block 处理器（单 Block 模式）
+   * 设置 Block 处理器并运行爬虫（单 Block 模式）
    */
-  onBlock(handler: BlockHandler): this {
+  async onBlock(page: Page, handler: BlockHandler): Promise<void> {
     this.blockHandler = handler;
-    return this;
+    await this.run(page);
   }
 
   /**
-   * 运行爬虫
+   * 运行爬虫（内部方法，通常通过 onPage 或 onBlock 调用）
    */
-  async run(page: Page): Promise<void> {
+  private async run(page: Page): Promise<void> {
     console.log("\n🚀 ===== 开始执行爬虫任务 =====");
     console.log(`📍 目标URL: ${this.config.startUrl}`);
     console.log(`⚙️  最大并发数: ${this.config.maxConcurrency}`);
@@ -355,13 +368,15 @@ export class BlockCrawler {
         this.limit(async () => {
           const linkName =
             collectionLink.link.split("/").pop() || collectionLink.link;
-          
+
           // 检查页面是否已完成
           const pagePath = this.normalizePagePath(collectionLink.link);
           if (this.taskProgress?.isPageComplete(pagePath)) {
             skipped++;
             console.log(
-              `⏭️  [${completed + skipped + failed}/${total}] 跳过已完成页面: ${linkName}\n`
+              `⏭️  [${
+                completed + skipped + failed
+              }/${total}] 跳过已完成页面: ${linkName}\n`
             );
             return;
           }
@@ -370,12 +385,16 @@ export class BlockCrawler {
             await this.handleSingleLink(page, collectionLink.link, index === 0);
             completed++;
             console.log(
-              `✅ [${completed + skipped + failed}/${total}] 完成: ${linkName}\n`
+              `✅ [${
+                completed + skipped + failed
+              }/${total}] 完成: ${linkName}\n`
             );
           } catch (error) {
             failed++;
             console.error(
-              `❌ [${completed + skipped + failed}/${total}] 失败: ${linkName}\n`,
+              `❌ [${
+                completed + skipped + failed
+              }/${total}] 失败: ${linkName}\n`,
               error
             );
             // 不重新抛出，继续处理其他任务
@@ -441,7 +460,6 @@ export class BlockCrawler {
     }
 
     const context: PageContext = {
-      page,
       currentPath,
       outputDir: this.config.outputDir,
     };
@@ -524,7 +542,6 @@ export class BlockCrawler {
     }
 
     const context: BlockContext = {
-      page,
       block,
       blockPath,
       blockName,

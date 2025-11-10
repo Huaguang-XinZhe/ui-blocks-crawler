@@ -1,7 +1,7 @@
 import { test, type Locator } from "@playwright/test";
 import fse from "fs-extra";
 import { BlockCrawler, type BlockContext } from "../../src";
-import { extractCodeFromBlock } from "../../src/utils/extract-code";
+import { extractCodeFromBlock } from "../utils/extract-code";
 
 /**
  * 使用新框架重构后的爬虫示例
@@ -23,32 +23,27 @@ test("使用 BlockCrawler 框架爬取组件", async ({ page }) => {
     enableProgressResume: true,
   });
 
-  // 设置 Block 处理器
-  crawler.onBlock(
-    async ({ block, page, blockPath, outputDir }: BlockContext) => {
-      // 点击切换到 Code
-      await clickCodeTab(block);
+  // 设置 Block 处理器并自动运行（page 参数可以直接在闭包中使用）
+  await crawler.onBlock(page, async ({ block, blockPath, outputDir }: BlockContext) => {
+    // 点击切换到 Code
+    await clickCodeTab(block);
 
-      // 获取 ts 部分代码
-      await saveAllLanguageFiles(block, blockPath, outputDir, "ts");
+    // 获取 ts 部分代码
+    await saveAllLanguageFiles(block, blockPath, outputDir, "ts");
 
-      // 切换 js
-      await block
-        .getByRole("button", { name: "TypeScript Change theme" })
-        .click();
-      // 这里不能用 block 去找，必须用 page，因为它被传送到了 body 下❗
-      await page.getByRole("option", { name: "JavaScript" }).click();
+    // 切换 js
+    await block
+      .getByRole("button", { name: "TypeScript Change theme" })
+      .click();
+    // 这里不能用 block 去找，必须用 page，因为它被传送到了 body 下❗
+    await page.getByRole("option", { name: "JavaScript" }).click();
 
-      // 切换后，得延迟一会儿，不然 fileTabs 还是之前的
-      await page.waitForTimeout(500);
+    // 切换后，得延迟一会儿，不然 fileTabs 还是之前的
+    await page.waitForTimeout(500);
 
-      // 获取 js 部分代码
-      await saveAllLanguageFiles(block, blockPath, outputDir, "js");
-    }
-  );
-
-  // 运行爬虫
-  await crawler.run(page);
+    // 获取 js 部分代码
+    await saveAllLanguageFiles(block, blockPath, outputDir, "js");
+  });
 });
 
 // ========== 辅助函数 ==========

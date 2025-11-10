@@ -32,8 +32,6 @@ export interface CrawlerConfig {
  * 页面处理上下文
  */
 export interface PageContext {
-  /** 当前页面 */
-  page: Page;
   /** 当前路径（相对路径） */
   currentPath: string;
   /** 输出目录 */
@@ -44,8 +42,6 @@ export interface PageContext {
  * Block 处理上下文
  */
 export interface BlockContext {
-  /** 当前页面 */
-  page: Page;
   /** Block 元素 */
   block: Locator;
   /** block 路径（URL 路径 + Block 名称） */
