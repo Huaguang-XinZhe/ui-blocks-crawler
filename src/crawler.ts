@@ -529,6 +529,7 @@ export class BlockCrawler {
     }
 
     const context: PageContext = {
+      currentPage: page, // 当前正在处理的页面（可能是 newPage）
       currentPath,
       outputDir: this.config.outputDir,
     };
@@ -611,6 +612,7 @@ export class BlockCrawler {
     }
 
     const context: BlockContext = {
+      currentPage: page, // 当前正在处理的页面（可能是 newPage）
       block,
       blockPath,
       blockName,

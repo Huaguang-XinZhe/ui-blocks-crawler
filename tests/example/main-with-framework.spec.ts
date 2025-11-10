@@ -38,8 +38,8 @@ test("使用 BlockCrawler 框架爬取组件", async ({ page }) => {
     collectionCountLocator: "xpath=/div[2]/div[1]/div[2]",
   });
 
-  // 设置 Block 处理器并自动运行（page 参数可以直接在闭包中使用）
-  await crawler.onBlock(page, async ({ block, blockPath, outputDir }: BlockContext) => {
+  // 设置 Block 处理器并自动运行
+  await crawler.onBlock(page, async ({ currentPage, block, blockPath, outputDir }: BlockContext) => {
     // 点击切换到 Code
     await clickCodeTab(block);
 
@@ -50,11 +50,11 @@ test("使用 BlockCrawler 框架爬取组件", async ({ page }) => {
     await block
       .getByRole("button", { name: "TypeScript Change theme" })
       .click();
-    // 这里不能用 block 去找，必须用 page，因为它被传送到了 body 下❗
-    await page.getByRole("option", { name: "JavaScript" }).click();
+    // 这里不能用 block 去找，必须用 currentPage，因为它被传送到了 body 下❗
+    await currentPage.getByRole("option", { name: "JavaScript" }).click();
 
     // 切换后，得延迟一会儿，不然 fileTabs 还是之前的
-    await page.waitForTimeout(500);
+    await currentPage.waitForTimeout(500);
 
     // 获取 js 部分代码
     await saveAllLanguageFiles(block, blockPath, outputDir, "js");

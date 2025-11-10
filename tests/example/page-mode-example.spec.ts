@@ -24,19 +24,19 @@ test("使用页面处理模式爬取", async ({ page }) => {
 
   // 设置页面处理器并自动运行
   await crawler.onPage(page, async (context: PageContext) => {
-    const { currentPath, outputDir } = context;
+    const { currentPage, currentPath, outputDir } = context;
 
     console.log(`\n🔍 正在处理页面: ${currentPath}`);
 
-    // 自定义页面处理逻辑（page 对象可以直接从闭包中使用）
+    // 自定义页面处理逻辑（使用 currentPage，它可能是 newPage）
     // 例如：提取页面标题
-    const title = await page.title();
+    const title = await currentPage.title();
     
     // 提取页面内容
-    const content = await page.locator("main").textContent();
+    const content = await currentPage.locator("main").textContent();
     
     // 提取所有图片链接
-    const images = await page.locator("img").evaluateAll((imgs) =>
+    const images = await currentPage.locator("img").evaluateAll((imgs) =>
       imgs.map((img) => (img as HTMLImageElement).src)
     );
 

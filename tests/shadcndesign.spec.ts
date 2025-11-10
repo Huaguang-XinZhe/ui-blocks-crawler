@@ -20,6 +20,13 @@ test("shadcndesign", async ({ page }) => {
   const crawler = new ShadcnCrawler({
     startUrl: "https://www.shadcndesign.com/pro-blocks",
     maxConcurrency: 5,
+    enableProgressResume: false,
+    startUrlWaitOptions: {
+      waitUntil: "domcontentloaded",
+    },
+    collectionLinkWaitOptions: {
+      waitUntil: "networkidle",
+    },
     // shadcndesign 的定位符配置
     collectionLinkLocator: "role=link", // 在 tabpanel 中查找链接
     collectionNameLocator: '[data-slot="card-title"]', // 通过 data-slot 找到标题
@@ -27,8 +34,8 @@ test("shadcndesign", async ({ page }) => {
   } as CrawlerConfig);
 
   // 设置页面处理器并自动运行
-  await crawler.onPage(page, async ({ outputDir }: PageContext) => {
-    const names = await getPageBlockNames(page);
+  await crawler.onPage(page, async ({ currentPage, outputDir }: PageContext) => {
+    const names = await getPageBlockNames(currentPage);
     // 输出到文件
     await fse.outputFile(
       `${outputDir}/shadcndesign-blocks-names.json`,
@@ -43,14 +50,21 @@ async function getPageBlockNames(page: Page) {
     .getByRole("link", { name: "Open preview in fullscreen" })
     .all();
 
-  const names = await Promise.all(
-    links.map(async (link) => {
-      const href = await link.getAttribute("href");
-      // 取最后一段
-      const name = href ? href.split("/").pop() : "";
+  // const names = await Promise.all(
+  //   links.map(async (link) => {
+
+  //   })
+  // );
+
+  // 用循环
+  const names: string[] = [];
+  for (const link of links) {
+    const href = await link.getAttribute("href");
+    const name = href ? href.split("/").pop() : "";
+    if (name) {
+      names.push(name);
       console.log(`🔍 name: ${name}`);
-      return name;
-    })
-  );
+    }
+  }
   return names;
 }
