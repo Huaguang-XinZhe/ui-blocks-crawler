@@ -37,8 +37,8 @@ importers:
         specifier: ^24.9.2
         version: 24.9.2
       block-crawler-framework:
-        specifier: 'file:'
-        version: file:(@playwright/test@1.56.1)
+        specifier: ^0.2.0
+        version: 0.2.0(@playwright/test@1.56.1)
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(typescript@5.9.3)
@@ -486,8 +486,8 @@ packages:
     resolution: {integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==}
     engines: {node: '>=4'}
 
-  'block-crawler-framework@file:':
-    resolution: {directory: '', type: directory}
+  block-crawler-framework@0.2.0:
+    resolution: {integrity: sha512-RFP8LSgJqpqEFO6YeF/37AF26OUAjqvU17QsTjqwPPjBNC3zJ4kpGg9DE/grqjIvpiyNIu0TJRIOW1clkn9b9w==}
     peerDependencies:
       '@playwright/test': ^1.0.0
 
@@ -1523,7 +1523,7 @@ snapshots:
     dependencies:
       is-windows: 1.0.2
 
-  block-crawler-framework@file:(@playwright/test@1.56.1):
+  block-crawler-framework@0.2.0(@playwright/test@1.56.1):
     dependencies:
       '@playwright/test': 1.56.1
       '@types/cli-progress': 3.11.6

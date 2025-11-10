@@ -43,7 +43,7 @@
     "@playwright/test": "^1.56.1",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^24.9.2",
-    "block-crawler-framework": "file:",
+    "block-crawler-framework": "^0.2.0",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3"
   },
