@@ -1,5 +1,34 @@
 # block-crawler-framework
 
+## 1.0.0
+
+### Major Changes
+
+- 重大更改：包名从 `block-crawler-framework` 更改为 `ui-blocks-crawler`
+
+  - 📦 包名更改：`block-crawler-framework` → `ui-blocks-crawler`
+  - 🧹 清理依赖：将 `cli-progress`、`@types/cli-progress`、`ora` 从 dependencies 移到 devDependencies（这些仅在测试中使用）
+  - ⚡ 核心依赖现在仅包含：`fs-extra` 和 `p-limit`
+
+  **迁移指南：**
+
+  如果你之前使用 `block-crawler-framework`，请更新导入：
+
+  ```typescript
+  // 旧的
+  import { BlockCrawler } from "block-crawler-framework";
+
+  // 新的
+  import { BlockCrawler } from "ui-blocks-crawler";
+  ```
+
+  然后重新安装：
+
+  ```bash
+  pnpm remove block-crawler-framework
+  pnpm add -D ui-blocks-crawler
+  ```
+
 ## 0.2.0
 
 ### Minor Changes

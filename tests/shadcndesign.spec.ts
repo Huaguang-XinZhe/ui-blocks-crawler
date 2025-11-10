@@ -1,6 +1,6 @@
 import { test, type Page, type Locator } from "@playwright/test";
 import * as fse from "fs-extra";
-import { BlockCrawler, type PageContext, type CrawlerConfig } from "block-crawler-framework";
+import { BlockCrawler, type PageContext, type CrawlerConfig } from "ui-blocks-crawler";
 
 class ShadcnCrawler extends BlockCrawler {
   protected getTabSection(page: Page, tabText: string): Locator {

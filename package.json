@@ -1,7 +1,7 @@
 {
-  "name": "block-crawler-framework",
-  "version": "0.2.0",
-  "description": "基于 Playwright 的通用 Block 爬虫框架，支持受限并发、进度恢复、单页面或单 Block 处理模式",
+  "name": "ui-blocks-crawler",
+  "version": "1.0.0",
+  "description": "基于 Playwright 的通用 UI Blocks 爬虫框架，支持受限并发、进度恢复、单页面或单 Block 处理模式",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
@@ -41,17 +41,16 @@
   "devDependencies": {
     "@changesets/cli": "^2.29.7",
     "@playwright/test": "^1.56.1",
+    "@types/cli-progress": "^3.11.6",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^24.9.2",
-    "block-crawler-framework": "^0.2.0",
+    "cli-progress": "^3.12.0",
+    "ora": "^9.0.0",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@types/cli-progress": "^3.11.6",
-    "cli-progress": "^3.12.0",
     "fs-extra": "^11.3.2",
-    "ora": "^9.0.0",
     "p-limit": "^7.2.0"
   },
   "peerDependencies": {
