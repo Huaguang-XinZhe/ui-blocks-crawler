@@ -14,8 +14,6 @@ export interface CrawlerConfig {
   outputDir?: string;
   /** 进度文件路径 */
   progressFile?: string;
-  /** 超时时间（毫秒） */
-  timeout?: number;
   /** Block 定位符（XPath 或 CSS 选择器），不传则表示处理单页面 */
   blockLocator?: string;
   /** 

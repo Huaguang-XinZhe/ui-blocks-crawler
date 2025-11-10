@@ -22,7 +22,6 @@ interface InternalConfig {
   maxConcurrency: number;
   outputDir: string;
   progressFile: string;
-  timeout: number;
   blockLocator?: string;
   blockNameLocator: string;
   enableProgressResume: boolean;
@@ -45,7 +44,6 @@ export class BlockCrawler {
       maxConcurrency: config.maxConcurrency ?? 5,
       outputDir: config.outputDir ?? "output",
       progressFile: config.progressFile ?? "progress.json",
-      timeout: config.timeout ?? 2 * 60 * 1000,
       blockLocator: config.blockLocator,
       blockNameLocator:
         config.blockNameLocator ?? "role=heading[level=1] >> role=link",

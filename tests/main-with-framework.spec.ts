@@ -9,6 +9,9 @@ import { extractCodeFromBlock } from "../src/utils/extract-code";
  */
 
 test("使用 BlockCrawler 框架爬取组件", async ({ page }) => {
+  // 设置超时
+  test.setTimeout(2 * 60 * 1000);
+
   // 创建爬虫实例，配置化参数
   const crawler = new BlockCrawler({
     startUrl: "https://pro.mufengapp.cn/components",
@@ -16,14 +19,10 @@ test("使用 BlockCrawler 框架爬取组件", async ({ page }) => {
     maxConcurrency: 5,
     outputDir: "output",
     progressFile: "progress.json",
-    timeout: 2 * 60 * 1000,
     // 传入 blockLocator 启用 Block 处理模式
     blockLocator: "xpath=//main/div/div/div",
     enableProgressResume: true,
   });
-
-  // 设置超时
-  test.setTimeout(crawler.getConfig().timeout);
 
   // 设置 Block 处理器
   crawler.onBlock(async (context: BlockContext) => {

@@ -8,6 +8,9 @@ import { BlockCrawler, type PageContext } from "../src";
  */
 
 test("使用页面处理模式爬取", async ({ page }) => {
+  // 设置超时
+  test.setTimeout(2 * 60 * 1000);
+
   // 创建爬虫实例，不传 blockLocator 启用页面处理模式
   const crawler = new BlockCrawler({
     startUrl: "https://example.com/components",
@@ -15,13 +18,9 @@ test("使用页面处理模式爬取", async ({ page }) => {
     maxConcurrency: 3,
     outputDir: "output-pages",
     progressFile: "progress-pages.json",
-    timeout: 2 * 60 * 1000,
     // 不传 blockLocator，使用页面处理模式
     enableProgressResume: true,
   });
-
-  // 设置超时
-  test.setTimeout(crawler.getConfig().timeout);
 
   // 设置页面处理器
   crawler.onPage(async (context: PageContext) => {

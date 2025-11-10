@@ -145,7 +145,6 @@ class CustomCrawler extends BlockCrawler {
 | `maxConcurrency` | number | 5 | 最大并发页面数 |
 | `outputDir` | string | "output" | 输出目录 |
 | `progressFile` | string | "progress.json" | 进度文件路径 |
-| `timeout` | number | 120000 | 超时时间（毫秒） |
 | `enableProgressResume` | boolean | true | 是否启用进度恢复 |
 
 ## Context 对象
