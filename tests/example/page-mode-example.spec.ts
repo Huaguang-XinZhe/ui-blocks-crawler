@@ -1,6 +1,6 @@
 import { test } from "@playwright/test";
 import fse from "fs-extra";
-import { BlockCrawler, type PageContext } from "../src";
+import { BlockCrawler, type PageContext } from "../../src";
 
 /**
  * 页面处理模式示例

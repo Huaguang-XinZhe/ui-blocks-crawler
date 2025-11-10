@@ -1,7 +1,7 @@
 import { test, type Locator } from "@playwright/test";
 import fse from "fs-extra";
-import { BlockCrawler, type BlockContext } from "../src";
-import { extractCodeFromBlock } from "../src/utils/extract-code";
+import { BlockCrawler, type BlockContext } from "../../src";
+import { extractCodeFromBlock } from "../../src/utils/extract-code";
 
 /**
  * 使用新框架重构后的爬虫示例

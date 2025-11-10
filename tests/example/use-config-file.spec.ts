@@ -1,7 +1,7 @@
 import { test, type Locator } from "@playwright/test";
 import fse from "fs-extra";
-import { BlockCrawler, type BlockContext } from "../src";
-import { extractCodeFromBlock } from "../src/utils/extract-code";
+import { BlockCrawler, type BlockContext } from "../../src";
+import { extractCodeFromBlock } from "../../src/utils/extract-code";
 
 /**
  * 使用配置文件的示例

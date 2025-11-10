@@ -1,4 +1,4 @@
-import { ProgressManager } from "./utils/progress-manager";
+import { ProgressManager } from "../utils/progress-manager";
 
 /**
  * 测试 Ora 进度管理器
