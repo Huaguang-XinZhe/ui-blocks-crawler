@@ -336,10 +336,10 @@ export class BlockCrawler {
   private async handleSingleTab(page: Page, tab: Locator): Promise<void> {
     const text = (await tab.textContent()) ?? "";
     console.log(`   🔍 正在处理分类: ${text}`);
-    
+
     // 获取 tab 对应的 section 内容区域
     let section: Locator;
-    
+
     if (this.config.tabSectionLocator) {
       // 优先使用配置的定位符
       const locator = this.config.tabSectionLocator.replace("{tabText}", text);
@@ -350,21 +350,21 @@ export class BlockCrawler {
     }
 
     // 收集所有的链接
-    await this.collectAllLinks(section, text);
+    await this.collectAllLinks(section);
     console.log(`   ✅ 分类 [${text}] 处理完成`);
   }
 
   /**
    * 获取 tab 对应的 section 内容区域
-   * 
+   *
    * 当没有配置 tabSectionLocator 时，此方法会被调用。
    * 子类可以重写此方法以实现自定义逻辑。
    * 如果既没有配置也没有重写，则会抛出错误。
-   * 
+   *
    * @param page - 页面对象
    * @param tabText - tab 的文本内容
    * @returns tab 对应的 section 元素
-   * 
+   *
    * @example
    * // heroui-pro 实现
    * class HeroUICrawler extends BlockCrawler {
@@ -372,7 +372,7 @@ export class BlockCrawler {
    *     return page.locator("section").filter({ has: page.getByRole("heading", { name: tabText }) });
    *   }
    * }
-   * 
+   *
    * @example
    * // shadcndesign 实现
    * class ShadcnCrawler extends BlockCrawler {
@@ -384,18 +384,18 @@ export class BlockCrawler {
   protected getTabSection(page: Page, tabText: string): Locator {
     throw new Error(
       "未配置 tabSectionLocator 且未重写 getTabSection 方法！\n\n" +
-      "请选择以下任一方式：\n\n" +
-      "方式 1：配置 tabSectionLocator（推荐，简单场景）\n" +
-      "const crawler = new BlockCrawler({\n" +
-      "  tabSectionLocator: '[role=\"tabpanel\"][aria-label=\"{tabText}\"]',\n" +
-      "  // ... 其他配置\n" +
-      "});\n\n" +
-      "方式 2：继承并重写 getTabSection 方法（复杂场景）\n" +
-      "class MyCrawler extends BlockCrawler {\n" +
-      "  protected getTabSection(page: Page, tabText: string): Locator {\n" +
-      "    return page.locator('section').filter({ has: page.getByRole('heading', { name: tabText }) });\n" +
-      "  }\n" +
-      "}"
+        "请选择以下任一方式：\n\n" +
+        "方式 1：配置 tabSectionLocator（推荐，简单场景）\n" +
+        "const crawler = new BlockCrawler({\n" +
+        '  tabSectionLocator: \'[role="tabpanel"][aria-label="{tabText}"]\',\n' +
+        "  // ... 其他配置\n" +
+        "});\n\n" +
+        "方式 2：继承并重写 getTabSection 方法（复杂场景）\n" +
+        "class MyCrawler extends BlockCrawler {\n" +
+        "  protected getTabSection(page: Page, tabText: string): Locator {\n" +
+        "    return page.locator('section').filter({ has: page.getByRole('heading', { name: tabText }) });\n" +
+        "  }\n" +
+        "}"
     );
   }
 
@@ -403,10 +403,12 @@ export class BlockCrawler {
    * 收集所有的链接
    * 使用配置的定位符来适配不同网站的 DOM 结构
    */
-  private async collectAllLinks(section: Locator, tabText: string): Promise<void> {
-    if (!this.config.collectionLinkLocator || 
-        !this.config.collectionNameLocator || 
-        !this.config.collectionCountLocator) {
+  private async collectAllLinks(section: Locator): Promise<void> {
+    if (
+      !this.config.collectionLinkLocator ||
+      !this.config.collectionNameLocator ||
+      !this.config.collectionCountLocator
+    ) {
       throw new Error(
         "链接收集定位符未配置！请设置 collectionLinkLocator、collectionNameLocator 和 collectionCountLocator"
       );
@@ -416,6 +418,7 @@ export class BlockCrawler {
     const linkElements = await section
       .locator(this.config.collectionLinkLocator)
       .all();
+
     console.log(`      🔗 找到 ${linkElements.length} 个集合链接`);
 
     // 遍历，获取链接内部的 block 集合名称、内部 block 个数、集合链接
