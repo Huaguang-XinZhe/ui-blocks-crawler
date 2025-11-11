@@ -67,8 +67,15 @@ export class LinkCollector {
    * 从文本中提取 Block 数量
    */
   private extractBlockCount(blockCountText: string | null): number {
+    // 如果配置了自定义提取函数，优先使用
+    if (this.config.extractBlockCount) {
+      console.log(`      🔧 使用自定义 extractBlockCount 函数`);
+      return this.config.extractBlockCount(blockCountText);
+    }
+    
+    // 默认实现：匹配文本中的第一个数字
     // 文本可能像这样：7 blocks、10 components
-    // 匹配获取其中的数字
+    console.log(`      📝 使用默认数字匹配逻辑提取 Block 数量`);
     const match = blockCountText?.match(/\d+/);
     return match ? parseInt(match[0] ?? "0") : 0;
   }

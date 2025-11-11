@@ -50,6 +50,15 @@ export interface CrawlerConfig {
    * @example async (block) => block.getByRole("heading", { level: 1 }).textContent()
    */
   getBlockName?: (block: Locator) => Promise<string | null>;
+  /**
+   * 自定义从文本中提取 Block 数量的函数
+   * 如果提供了此函数，将优先使用；否则使用默认的数字匹配逻辑
+   * 
+   * @param blockCountText Block 数量文本（如 "7 blocks"、"1 component + 6 variants"）
+   * @returns Block 数量
+   * @example (text) => { const match = text?.match(/(\d+)\s*component.*?(\d+)\s*variant/); return match ? parseInt(match[1]) + parseInt(match[2]) : 0; }
+   */
+  extractBlockCount?: (blockCountText: string | null) => number;
   /** 
    * 最大并发页面数量
    * @default 5

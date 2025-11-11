@@ -8,7 +8,7 @@ import type { CrawlerConfig } from "../types";
  */
 export interface InternalConfig extends Required<Omit<CrawlerConfig, 
   'tabListAriaLabel' | 'tabSectionLocator' | 'getTabSection' | 'getAllTabTexts' | 
-  'getAllBlocks' | 'getBlockName' | 'outputDir' | 'configDir' | 'blockNameLocator' | 
+  'getAllBlocks' | 'getBlockName' | 'extractBlockCount' | 'outputDir' | 'configDir' | 'blockNameLocator' | 
   'startUrlWaitOptions' | 'collectionLinkWaitOptions'>> {
   tabListAriaLabel?: string;
   tabSectionLocator?: string;
@@ -16,6 +16,7 @@ export interface InternalConfig extends Required<Omit<CrawlerConfig,
   getAllTabTexts?: CrawlerConfig['getAllTabTexts'];
   getAllBlocks?: CrawlerConfig['getAllBlocks'];
   getBlockName?: CrawlerConfig['getBlockName'];
+  extractBlockCount?: CrawlerConfig['extractBlockCount'];
   outputDir: string;
   configDir: string;
   progressFile: string;
@@ -83,6 +84,7 @@ export class ConfigManager {
       getAllTabTexts: config.getAllTabTexts,
       getAllBlocks: config.getAllBlocks,
       getBlockName: config.getBlockName,
+      extractBlockCount: config.extractBlockCount,
       maxConcurrency: config.maxConcurrency ?? 5,
       outputDir,
       configDir,
