@@ -1,6 +1,6 @@
 {
   "name": "ui-blocks-crawler",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "基于 Playwright 的通用 UI Blocks 爬虫框架，支持受限并发、进度恢复、单页面或单 Block 处理模式",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -37,18 +37,18 @@
   ],
   "author": "mufeng",
   "license": "ISC",
-  "packageManager": "pnpm@10.20.0",
+  "packageManager": "pnpm@10.21.0",
   "devDependencies": {
     "@changesets/cli": "^2.29.7",
     "@playwright/test": "^1.56.1",
     "@types/cli-progress": "^3.11.6",
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^24.9.2",
+    "@types/node": "^24.10.0",
     "cli-progress": "^3.12.0",
     "ora": "^9.0.0",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
-    "ui-blocks-crawler": "^2.1.1"
+    "ui-blocks-crawler": "^2.2.0"
   },
   "dependencies": {
     "fs-extra": "^11.3.2",
