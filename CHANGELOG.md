@@ -1,5 +1,54 @@
 # block-crawler-framework
 
+## 2.1.0
+
+### Minor Changes
+
+- 新增功能：所有 protected 函数都支持直接配置
+
+  **新增配置项：**
+
+  1. **`getAllTabTexts`** - 直接获取所有 Tab 文本，跳过点击逻辑
+
+     ```typescript
+     const crawler = new BlockCrawler({
+       getAllTabTexts: async (page) => {
+         const tabs = await page.getByRole("tab").all();
+         return Promise.all(tabs.map((tab) => tab.textContent() || ""));
+       },
+     });
+     ```
+
+     适用于不需要点击 tab 切换就能获取所有内容的场景。
+
+  2. **`getAllBlocks`** - 自定义获取所有 Block 元素
+
+     ```typescript
+     const crawler = new BlockCrawler({
+       getAllBlocks: async (page) => page.locator(".block-item").all(),
+     });
+     ```
+
+  3. **`getBlockName`** - 自定义获取 Block 名称
+     ```typescript
+     const crawler = new BlockCrawler({
+       getBlockName: async (block) => block.locator("h1").textContent(),
+     });
+     ```
+
+  **改进：**
+
+  - ✅ 所有 protected 方法现在都支持通过配置函数覆盖
+  - 🎯 优先级明确：配置函数 > 配置定位符 > 子类重写
+  - 📝 更好的日志：显示使用了配置函数还是默认逻辑
+  - 🚀 更灵活：无需继承子类即可完全自定义行为
+
+  **优先级顺序：**
+
+  - `getTabSection`: 配置函数 > `tabSectionLocator` > 子类重写
+  - `getAllBlocks`: 配置函数 > `blockSectionLocator` > 子类重写
+  - `getBlockName`: 配置函数 > `blockNameLocator` > 子类重写
+
 ## 2.0.0
 
 ### Major Changes

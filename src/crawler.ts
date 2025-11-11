@@ -24,6 +24,9 @@ interface InternalConfig {
   tabListAriaLabel?: string;
   tabSectionLocator?: string;
   getTabSection?: (page: Page, tabText: string) => Locator;
+  getAllTabTexts?: (page: Page) => Promise<string[]>;
+  getAllBlocks?: (page: Page) => Promise<Locator[]>;
+  getBlockName?: (block: Locator) => Promise<string | null>;
   maxConcurrency: number;
   outputDir: string;
   configDir: string;
@@ -69,6 +72,9 @@ export class BlockCrawler {
       tabListAriaLabel: config.tabListAriaLabel,
       tabSectionLocator: config.tabSectionLocator,
       getTabSection: config.getTabSection,
+      getAllTabTexts: config.getAllTabTexts,
+      getAllBlocks: config.getAllBlocks,
+      getBlockName: config.getBlockName,
       maxConcurrency: config.maxConcurrency ?? 5,
       outputDir,
       configDir,
@@ -267,18 +273,34 @@ export class BlockCrawler {
       await page.goto(this.config.startUrl, this.config.startUrlWaitOptions);
       console.log("✅ 页面加载完成");
 
-      // 获取所有分类标签
-      console.log("\n📑 正在获取所有分类标签...");
-      const tabs = await this.getAllTabs(page);
-      console.log(`✅ 找到 ${tabs.length} 个分类标签`);
+      // 如果配置了 getAllTabTexts，直接使用文本数组，跳过点击逻辑
+      if (this.config.getAllTabTexts) {
+        console.log("\n📑 正在获取所有分类标签文本（使用配置的 getAllTabTexts）...");
+        const tabTexts = await this.config.getAllTabTexts(page);
+        console.log(`✅ 找到 ${tabTexts.length} 个分类标签`);
 
-      // 循环处理每个 tab
-      console.log("\n🔄 开始遍历所有分类标签...");
-      for (let i = 0; i < tabs.length; i++) {
-        const tab = tabs[i];
-        console.log(`\n📌 [${i + 1}/${tabs.length}] 处理分类标签...`);
-        await this.clickTab(tab, i);
-        await this.handleSingleTab(page, tab);
+        // 循环处理每个 tab（直接用文本，不点击）
+        console.log("\n🔄 开始遍历所有分类标签...");
+        for (let i = 0; i < tabTexts.length; i++) {
+          const tabText = tabTexts[i];
+          console.log(`\n📌 [${i + 1}/${tabTexts.length}] 处理分类标签: ${tabText}`);
+          await this.handleSingleTab(page, tabText);
+        }
+      } else {
+        // 原有逻辑：获取 tab 元素并点击
+        console.log("\n📑 正在获取所有分类标签...");
+        const tabs = await this.getAllTabs(page);
+        console.log(`✅ 找到 ${tabs.length} 个分类标签`);
+
+        // 循环处理每个 tab
+        console.log("\n🔄 开始遍历所有分类标签...");
+        for (let i = 0; i < tabs.length; i++) {
+          const tab = tabs[i];
+          console.log(`\n📌 [${i + 1}/${tabs.length}] 处理分类标签...`);
+          await this.clickTab(tab, i);
+          const tabText = (await tab.textContent()) ?? "";
+          await this.handleSingleTab(page, tabText);
+        }
       }
 
       console.log(`\n✨ 收集完成！总共 ${this.totalBlockCount} 个 blocks`);
@@ -341,25 +363,24 @@ export class BlockCrawler {
   /**
    * 处理单个 tab
    */
-  private async handleSingleTab(page: Page, tab: Locator): Promise<void> {
-    const text = (await tab.textContent()) ?? "";
-    console.log(`   🔍 正在处理分类: ${text}`);
+  private async handleSingleTab(page: Page, tabText: string): Promise<void> {
+    console.log(`   🔍 正在处理分类: ${tabText}`);
 
     // 获取 tab 对应的 section 内容区域
     let section: Locator;
 
     if (this.config.tabSectionLocator) {
       // 优先使用配置的定位符
-      const locator = this.config.tabSectionLocator.replace("{tabText}", text);
+      const locator = this.config.tabSectionLocator.replace("{tabText}", tabText);
       section = page.locator(locator);
     } else {
       // 否则调用子类重写的方法
-      section = this.getTabSection(page, text);
+      section = this.getTabSection(page, tabText);
     }
 
     // 收集所有的链接
     await this.collectAllLinks(section);
-    console.log(`   ✅ 分类 [${text}] 处理完成`);
+    console.log(`   ✅ 分类 [${tabText}] 处理完成`);
   }
 
   /**
@@ -653,9 +674,20 @@ export class BlockCrawler {
 
   /**
    * 获取页面中的所有 Block 元素
-   * 可以被子类覆盖以自定义获取逻辑
+   * 
+   * 优先级：
+   * 1. 配置的 getAllBlocks 函数
+   * 2. 使用 blockSectionLocator
+   * 3. 子类重写此方法
    */
   protected async getAllBlocks(page: Page): Promise<Locator[]> {
+    // 优先使用配置的函数
+    if (this.config.getAllBlocks) {
+      console.log("  ✅ 使用配置的 getAllBlocks 函数");
+      return await this.config.getAllBlocks(page);
+    }
+    
+    // 默认使用 blockSectionLocator
     return await page.locator(this.blockSectionLocator!).all();
   }
 
@@ -713,9 +745,19 @@ export class BlockCrawler {
 
   /**
    * 获取 Block 名称
-   * 可以被子类覆盖以自定义获取逻辑
+   * 
+   * 优先级：
+   * 1. 配置的 getBlockName 函数
+   * 2. 使用 blockNameLocator
+   * 3. 子类重写此方法
    */
   protected async getBlockName(block: Locator): Promise<string | null> {
+    // 优先使用配置的函数
+    if (this.config.getBlockName) {
+      return await this.config.getBlockName(block);
+    }
+    
+    // 默认使用 blockNameLocator
     try {
       return await block.locator(this.config.blockNameLocator).textContent();
     } catch {

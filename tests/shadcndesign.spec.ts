@@ -14,12 +14,15 @@ test("shadcndesign", async ({ page }) => {
     startUrlWaitOptions: {
       waitUntil: "domcontentloaded",
     },
-    // 方式 1：使用 getTabSection 函数配置（推荐）
+    // getTabSection 配置（如果不需要点击 tab 切换，可以使用 getAllTabTexts 代替）
     getTabSection: (page, tabText) => page.getByRole("tabpanel", { name: tabText }),
-    // 方式 2：使用 tabSectionLocator 字符串（简单场景）
-    // 注意：这一步极有可能出错，第一个 tab 的 name（text）和第二个 tab 的 name（aria-labelledby）来自不同的地方
-    // 最好还是通过 getByRole 配置对象中的 name 指定
-    // tabSectionLocator: '[role="tabpanel"]:has-text("{tabText}")',
+    
+    // 可选：如果网站的所有 tab 内容都在页面上，无需点击切换，可以配置 getAllTabTexts
+    // getAllTabTexts: async (page) => {
+    //   const tabs = await page.getByRole("tab").all();
+    //   return Promise.all(tabs.map(tab => tab.textContent() || ""));
+    // },
+    
     collectionLinkLocator: "role=link", // 在 tabpanel 中查找链接
     collectionNameLocator: '[data-slot="card-title"]', // 通过 data-slot 找到标题
     collectionCountLocator: "p", // 通过 p 标签找到数量文本

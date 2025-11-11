@@ -26,6 +26,30 @@ export interface CrawlerConfig {
    * @example (page, tabText) => page.getByRole("tabpanel", { name: tabText })
    */
   getTabSection?: (page: Page, tabText: string) => Locator;
+  /**
+   * 自定义获取所有 Tab 文本的函数
+   * 如果配置了此函数，将跳过点击 tab 的逻辑，直接使用返回的文本数组进行处理
+   * 适用于不需要切换 tab 就能获取所有内容的场景
+   * 
+   * @example async (page) => ["Components", "Blocks", "Templates"]
+   * @example async (page) => {
+   *   const tabs = await page.getByRole("tab").all();
+   *   return Promise.all(tabs.map(tab => tab.textContent() || ""));
+   * }
+   */
+  getAllTabTexts?: (page: Page) => Promise<string[]>;
+  /**
+   * 自定义获取所有 Block 元素的函数
+   * 
+   * @example async (page) => page.locator("xpath=//main/div/div/div").all()
+   */
+  getAllBlocks?: (page: Page) => Promise<Locator[]>;
+  /**
+   * 自定义获取 Block 名称的函数
+   * 
+   * @example async (block) => block.getByRole("heading", { level: 1 }).textContent()
+   */
+  getBlockName?: (block: Locator) => Promise<string | null>;
   /** 
    * 最大并发页面数量
    * @default 5
