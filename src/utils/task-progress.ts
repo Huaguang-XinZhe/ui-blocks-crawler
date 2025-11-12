@@ -202,9 +202,8 @@ export class TaskProgress {
       totalPages: this.completedPages.size,
     };
 
-    // 确保目录存在
-    await fse.ensureDir(path.dirname(this.progressFile));
-    await fse.writeJson(this.progressFile, data, { spaces: 2 });
+    // 使用 outputJson 自动确保目录存在并写入
+    await fse.outputJson(this.progressFile, data, { spaces: 2 });
     this.isDirty = false;
   }
 

@@ -256,27 +256,27 @@ interface PageContext {
 ```
 project/
 ├── .crawler/              # 状态目录 (stateDir)
-│   ├── example-com/       # 域名子目录
+│   ├── example.com/       # 域名子目录
 │   │   └── progress.json  # 进度文件
-│   └── site-a-com/
+│   └── site-a.com/
 │       └── progress.json
 └── output/               # 输出目录 (outputDir)
-    ├── example-com/      # 域名子目录
+    ├── example.com/      # 域名子目录
     │   ├── component-1/
     │   └── component-2/
-    └── site-a-com/
+    └── site-a.com/
         └── ...
 ```
 
 **示例：**
 ```
 https://example.com/components
-  → 进度: .crawler/example-com/progress.json
-  → 输出: output/example-com/
+  → 进度: .crawler/example.com/progress.json
+  → 输出: output/example.com/
 
 https://site-a.com/library
-  → 进度: .crawler/site-a-com/progress.json
-  → 输出: output/site-a-com/
+  → 进度: .crawler/site-a.com/progress.json
+  → 输出: output/site-a.com/
 ```
 
 **特点：**

@@ -45,7 +45,7 @@ export class ConfigManager {
   static extractHostname(url: string, locale?: Locale): string {
     try {
       const urlObj = new URL(url);
-      return urlObj.hostname.replace(/\./g, "-");
+      return urlObj.hostname;
     } catch (error) {
       const i18n = createI18n(locale);
       console.warn(i18n.t('config.parseUrlFailed'));

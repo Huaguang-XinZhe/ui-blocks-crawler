@@ -152,7 +152,8 @@ export class TaskProgress {
       total: this.completedBlocks.size,
     };
 
-    await fse.writeJson(this.progressFile, data, { spaces: 2 });
+    // 使用 outputJson 自动确保目录存在并写入
+    await fse.outputJson(this.progressFile, data, { spaces: 2 });
     this.isDirty = false;
   }
 

@@ -12,4 +12,9 @@ test("untitledui", async ({ page }) => {
       return page.locator("xpath=//section[3]/div/div").all();
     },
   });
+
+  crawler.onPage(page, async ({ currentPage }) => {
+    const url = currentPage.url();
+    console.log(`url: ${url}`);
+  });
 });

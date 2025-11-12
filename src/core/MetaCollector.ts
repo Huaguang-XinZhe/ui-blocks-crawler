@@ -83,9 +83,8 @@ export class MetaCollector {
     // 更新链接总数
     this.meta.totalLinks = this.meta.collectionLinks.length;
 
-    // 确保目录存在
-    await fse.ensureDir(path.dirname(this.metaFile));
-    await fse.writeJson(this.metaFile, this.meta, { spaces: 2 });
+    // 使用 outputJson 自动确保目录存在并写入
+    await fse.outputJson(this.metaFile, this.meta, { spaces: 2 });
     
     console.log(`\n${this.i18n.t('meta.saved', { path: this.metaFile })}`);
     console.log(this.i18n.t('meta.stats'));
