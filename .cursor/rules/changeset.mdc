@@ -41,6 +41,7 @@ alwaysApply: false
 
 写好 changeset 的 md 文件后：
 
+- 更新 README.md
 - 马上执行 `pnpm changeset version` 更新版本号
 - 然后执行 `pnpm release` 发布到 npm
 - 再执行 `pnpm update block-crawler` 更新依赖

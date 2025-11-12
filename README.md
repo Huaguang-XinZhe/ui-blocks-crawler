@@ -71,7 +71,6 @@ test("爬取组件", async ({ page }) => {
     maxConcurrency: 5,
     
     // 配置链接收集定位符
-    collectionLinkLocator: "section > a",
     collectionNameLocator: "xpath=/div[2]/div[1]/div[1]",
     collectionCountLocator: "xpath=/div[2]/div[1]/div[2]",
     
@@ -107,7 +106,6 @@ test("爬取页面", async ({ page }) => {
   const crawler = new BlockCrawler({
     startUrl: "https://example.com/pages",
     maxConcurrency: 3,
-    collectionLinkLocator: "a.page-link",
     collectionNameLocator: ".page-title",
     collectionCountLocator: ".page-count",
   });
@@ -137,9 +135,10 @@ test("爬取页面", async ({ page }) => {
 
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `collectionLinkLocator` | `string` | - | 集合链接定位符（必填） |
-| `collectionNameLocator` | `string` | - | 集合名称定位符（必填） |
-| `collectionCountLocator` | `string` | - | 集合数量定位符（必填） |
+| `collectionNameLocator` | `string?` | - | 集合名称定位符（可选，不提供则只记录 link） |
+| `collectionCountLocator` | `string?` | - | 集合数量定位符（可选，不提供则只记录 link） |
+
+**注意：** 框架自动使用 `getByRole('link')` 查找链接，无需配置链接定位符。
 
 ### 等待选项配置
 
@@ -173,7 +172,6 @@ test("爬取页面", async ({ page }) => {
 const crawler = new BlockCrawler({
   startUrl: "https://www.shadcndesign.com/pro-blocks",
   maxConcurrency: 5,
-  collectionLinkLocator: "role=link",
   collectionNameLocator: '[data-slot="card-title"]',
   collectionCountLocator: "p",
   
