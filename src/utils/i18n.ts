@@ -101,7 +101,8 @@ const messages = {
     'meta.actualTotal': '   - 真实总组件数: {count}',
     'meta.freePages': '   - Free 页面数: {count}',
     'meta.freeBlocks': '   - Free Block 数: {count}',
-    'meta.duration': '   - 总耗时: {duration}s',
+    'meta.isComplete': '   - 是否完整运行: {status}',
+    'meta.loaded': '📥 已加载已有元信息 (Free 页面: {freePages}, Free Block: {freeBlocks})',
     'meta.loadFailed': '⚠️ 加载元信息失败: {error}',
     
     // 信号处理
@@ -201,7 +202,8 @@ const messages = {
     'meta.actualTotal': '   - Actual total blocks: {count}',
     'meta.freePages': '   - Free pages: {count}',
     'meta.freeBlocks': '   - Free blocks: {count}',
-    'meta.duration': '   - Duration: {duration}s',
+    'meta.isComplete': '   - Complete run: {status}',
+    'meta.loaded': '📥 Loaded existing meta data (Free pages: {freePages}, Free blocks: {freeBlocks})',
     'meta.loadFailed': '⚠️ Failed to load meta information: {error}',
     
     // Signal handling

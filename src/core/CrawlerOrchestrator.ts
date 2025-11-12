@@ -55,6 +55,10 @@ export class CrawlerOrchestrator {
       await this.taskProgress.initialize();
     }
 
+    // 初始化元信息收集器（加载已有数据）
+    await this.metaCollector.initialize();
+
+    let isComplete = false;
     try {
       // 访问目标链接
       console.log(`\n${this.i18n.t('crawler.visiting')}`);
@@ -68,11 +72,13 @@ export class CrawlerOrchestrator {
       await this.processAllLinks(page, blockSectionLocator, blockHandler, pageHandler);
 
       console.log(`\n${this.i18n.t('crawler.allComplete')}\n`);
+      isComplete = true; // 正常完成，标记为完整
     } catch (error) {
       console.error(`\n${this.i18n.t('common.error')}`);
+      isComplete = false; // 发生错误，标记为未完整
       throw error;
     } finally {
-      await this.cleanup();
+      await this.cleanup(isComplete);
     }
   }
 
@@ -80,7 +86,7 @@ export class CrawlerOrchestrator {
    * 清理资源（保存进度和元信息）
    * 在正常结束或中断时调用
    */
-  async cleanup(): Promise<void> {
+  async cleanup(isComplete: boolean = false): Promise<void> {
     // 保存进度
     if (this.taskProgress) {
       await this.taskProgress.saveProgress();
@@ -90,7 +96,7 @@ export class CrawlerOrchestrator {
     }
     
     // 保存元信息
-    await this.metaCollector.save();
+    await this.metaCollector.save(isComplete);
   }
 
   /**
@@ -250,7 +256,7 @@ export class CrawlerOrchestrator {
           this.metaCollector.addFreeBlock(blockName);
         });
       } else if (pageHandler) {
-        const pageProcessor = new PageProcessor(this.config, pageHandler, this.taskProgress);
+        const pageProcessor = new PageProcessor(this.config, pageHandler);
         const result = await pageProcessor.processPage(newPage, relativeLink);
         
         // 记录 free pages 并标记为完成

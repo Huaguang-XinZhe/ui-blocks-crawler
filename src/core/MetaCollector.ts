@@ -28,8 +28,31 @@ export class MetaCollector {
         total: 0,
         blockNames: [],
       },
-      startTime: new Date().toISOString(),
+      lastUpdate: new Date().toISOString(),
+      isComplete: false,
     };
+  }
+
+  /**
+   * 初始化：加载已有的元信息（如果存在）
+   */
+  async initialize(): Promise<void> {
+    const existingMeta = await MetaCollector.load(this.metaFile);
+    if (existingMeta) {
+      // 合并已有的 freePages 和 freeBlocks（去重）
+      const existingFreePages = new Set(existingMeta.freePages?.links || []);
+      const existingFreeBlocks = new Set(existingMeta.freeBlocks?.blockNames || []);
+      
+      this.meta.freePages.links = Array.from(existingFreePages);
+      this.meta.freePages.total = this.meta.freePages.links.length;
+      this.meta.freeBlocks.blockNames = Array.from(existingFreeBlocks);
+      this.meta.freeBlocks.total = this.meta.freeBlocks.blockNames.length;
+      
+      console.log(this.i18n.t('meta.loaded', { 
+        freePages: this.meta.freePages.total, 
+        freeBlocks: this.meta.freeBlocks.total 
+      }));
+    }
   }
 
   /**
@@ -49,19 +72,23 @@ export class MetaCollector {
   }
 
   /**
-   * 记录 Free 页面
+   * 记录 Free 页面（去重追加）
    */
   addFreePage(link: string): void {
-    this.meta.freePages.links.push(link);
-    this.meta.freePages.total++;
+    if (!this.meta.freePages.links.includes(link)) {
+      this.meta.freePages.links.push(link);
+      this.meta.freePages.total = this.meta.freePages.links.length;
+    }
   }
 
   /**
-   * 记录 Free Block
+   * 记录 Free Block（去重追加）
    */
   addFreeBlock(blockName: string): void {
-    this.meta.freeBlocks.blockNames.push(blockName);
-    this.meta.freeBlocks.total++;
+    if (!this.meta.freeBlocks.blockNames.includes(blockName)) {
+      this.meta.freeBlocks.blockNames.push(blockName);
+      this.meta.freeBlocks.total = this.meta.freeBlocks.blockNames.length;
+    }
   }
 
   /**
@@ -74,11 +101,10 @@ export class MetaCollector {
   /**
    * 保存元信息到文件
    */
-  async save(): Promise<void> {
-    // 记录结束时间和总耗时
-    const endTime = new Date();
-    this.meta.endTime = endTime.toISOString();
-    this.meta.duration = Math.floor((endTime.getTime() - new Date(this.meta.startTime).getTime()) / 1000);
+  async save(isComplete: boolean = false): Promise<void> {
+    // 更新时间和完成状态
+    this.meta.lastUpdate = new Date().toISOString();
+    this.meta.isComplete = isComplete;
     
     // 更新链接总数
     this.meta.totalLinks = this.meta.collectionLinks.length;
@@ -93,7 +119,10 @@ export class MetaCollector {
     console.log(this.i18n.t('meta.actualTotal', { count: this.meta.actualTotalCount }));
     console.log(this.i18n.t('meta.freePages', { count: this.meta.freePages.total }));
     console.log(this.i18n.t('meta.freeBlocks', { count: this.meta.freeBlocks.total }));
-    console.log(this.i18n.t('meta.duration', { duration: this.meta.duration }));
+    const statusText = this.i18n.getLocale() === 'zh' 
+      ? (isComplete ? '是' : '否')
+      : (isComplete ? 'Yes' : 'No');
+    console.log(this.i18n.t('meta.isComplete', { status: statusText }));
   }
 
   /**

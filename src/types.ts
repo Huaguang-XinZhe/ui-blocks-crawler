@@ -239,11 +239,9 @@ export interface SiteMeta {
     /** 具体的 Free Block */
     blockNames: string[];
   };
-  /** 爬取开始时间 */
-  startTime: string;
-  /** 爬取结束时间 */
-  endTime?: string;
-  /** 爬取总耗时（秒） */
-  duration?: number;
+  /** 最后更新时间 */
+  lastUpdate: string;
+  /** 是否完整运行（未中断/未发生错误） */
+  isComplete: boolean;
 }
 

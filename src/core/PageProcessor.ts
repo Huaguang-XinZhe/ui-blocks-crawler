@@ -13,7 +13,6 @@ export class PageProcessor {
   constructor(
     private config: InternalConfig,
     private pageHandler: PageHandler,
-    private taskProgress?: any
   ) {
     this.i18n = createI18n(config.locale);
   }
