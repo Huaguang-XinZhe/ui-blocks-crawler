@@ -51,7 +51,7 @@ export class TaskProgress {
       this.completedBlocks = new Set(data.completedBlocks || []);
       this.completedPages = new Set(data.completedPages || []);
     } catch (error) {
-      console.warn("⚠️ 加载进度文件失败，将重建进度", error);
+      console.warn(this.i18n.t('progress.loadFailed'), error);
       await this.rebuildProgress();
     }
   }

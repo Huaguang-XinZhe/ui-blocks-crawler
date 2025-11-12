@@ -15,6 +15,30 @@ const messages = {
     'common.error': '❌ 处理过程中发生错误',
     'common.complete': '✅ 爬取完成！',
     
+    // 爬虫任务
+    'crawler.taskStart': '🚀 ===== 开始执行爬虫任务 =====',
+    'crawler.targetUrl': '📍 目标URL: {url}',
+    'crawler.maxConcurrency': '⚙️  最大并发数: {count}',
+    'crawler.outputDir': '📂 输出目录: {dir}',
+    'crawler.mode': '🎯 运行模式: {mode}',
+    'crawler.modeBlock': 'Block 处理模式',
+    'crawler.modePage': '页面处理模式',
+    'crawler.initProgress': '📊 初始化任务进度...',
+    'crawler.visiting': '📡 正在访问目标链接...',
+    'crawler.pageLoaded': '✅ 页面加载完成',
+    'crawler.allComplete': '🎉 ===== 所有任务已完成 =====',
+    'crawler.processingCategory': '🔍 正在处理分类: {category}',
+    'crawler.categoryComplete': '✅ 分类 [{category}] 处理完成',
+    'crawler.startConcurrent': '🚀 开始并发处理所有链接 (最大并发: {concurrency})...',
+    'crawler.startProcessing': '📦 开始处理 {total} 个集合链接...',
+    'crawler.skipCompleted': '⏭️  跳过已完成的页面: {name}',
+    'crawler.linkComplete': '✅ [{progress}] 完成: {name}',
+    'crawler.linkFailed': '❌ [{progress}] 失败: {name}',
+    'crawler.statistics': '📊 处理完成统计:',
+    'crawler.success': '✅ 成功: {count}/{total}',
+    'crawler.failed': '❌ 失败: {count}/{total}',
+    'crawler.closePage': '🔍 关闭页面: {path}',
+    
     // 进度相关
     'progress.found': '📁 发现进度文件，加载中...',
     'progress.loaded': '✅ 进度已加载: Block {blocks} 个, Page {pages} 个',
@@ -22,6 +46,10 @@ const messages = {
     'progress.saved': '💾 进度已保存 (已完成 Block: {blocks}, 已完成 Page: {pages})',
     'progress.scanning': '🔍 扫描已完成的输出文件，重建进度...',
     'progress.rebuilt': '♻️  进度已重建: Block {blocks} 个, Page {pages} 个',
+    'progress.loadFailed': '⚠️ 加载进度文件失败，将重建进度',
+    
+    // 配置相关
+    'config.parseUrlFailed': '⚠️ 解析 startUrl 失败，使用默认域名',
     
     // Tab 处理
     'tab.gettingSections': '📑 正在获取所有 Tab Sections（跳过 tab 点击）...',
@@ -50,6 +78,7 @@ const messages = {
     'page.skip': '⏭️  跳过已完成的页面: {path}',
     'page.skipFree': '🆓 跳过 Free 页面: {path}',
     'page.freeError': '❌ Free 页面标记匹配错误：\n   期望找到 1 个匹配项，实际找到 {count} 个\n   匹配文本: "{text}"\n\n请检查：\n   1. 文本是否唯一（建议使用更精确的文本）\n   2. 或使用自定义函数配置更精确的判断逻辑',
+    'page.processFailed': '❌ 处理页面失败: {path}',
     
     // Block 处理
     'block.found': '📦 找到 {count} 个 Block',
@@ -61,6 +90,8 @@ const messages = {
     'block.getNameCustom': '🔧 使用自定义 getBlockName 函数',
     'block.getAllCustom': '🔧 使用自定义 getAllBlocks 函数',
     'block.pageComplete': '✅ 页面处理完成，共 {total} 个 Block',
+    'block.nameEmpty': '⚠️ block 名称为空，跳过',
+    'block.processFailed': '❌ 处理 block 失败: {name}',
     
     // 元信息
     'meta.saved': '✅ 元信息已保存到: {path}',
@@ -84,6 +115,30 @@ const messages = {
     'common.error': '❌ An error occurred during processing',
     'common.complete': '✅ Crawl completed!',
     
+    // Crawler tasks
+    'crawler.taskStart': '🚀 ===== Starting Crawler Task =====',
+    'crawler.targetUrl': '📍 Target URL: {url}',
+    'crawler.maxConcurrency': '⚙️  Max Concurrency: {count}',
+    'crawler.outputDir': '📂 Output Directory: {dir}',
+    'crawler.mode': '🎯 Running Mode: {mode}',
+    'crawler.modeBlock': 'Block Processing Mode',
+    'crawler.modePage': 'Page Processing Mode',
+    'crawler.initProgress': '📊 Initializing task progress...',
+    'crawler.visiting': '📡 Visiting target link...',
+    'crawler.pageLoaded': '✅ Page loaded successfully',
+    'crawler.allComplete': '🎉 ===== All Tasks Completed =====',
+    'crawler.processingCategory': '🔍 Processing category: {category}',
+    'crawler.categoryComplete': '✅ Category [{category}] completed',
+    'crawler.startConcurrent': '🚀 Starting concurrent processing (Max concurrency: {concurrency})...',
+    'crawler.startProcessing': '📦 Processing {total} collection links...',
+    'crawler.skipCompleted': '⏭️  Skipping completed page: {name}',
+    'crawler.linkComplete': '✅ [{progress}] Completed: {name}',
+    'crawler.linkFailed': '❌ [{progress}] Failed: {name}',
+    'crawler.statistics': '📊 Processing Statistics:',
+    'crawler.success': '✅ Success: {count}/{total}',
+    'crawler.failed': '❌ Failed: {count}/{total}',
+    'crawler.closePage': '🔍 Closing page: {path}',
+    
     // Progress
     'progress.found': '📁 Progress file found, loading...',
     'progress.loaded': '✅ Progress loaded: {blocks} blocks, {pages} pages',
@@ -91,6 +146,10 @@ const messages = {
     'progress.saved': '💾 Progress saved (Completed blocks: {blocks}, Completed pages: {pages})',
     'progress.scanning': '🔍 Scanning completed output files, rebuilding progress...',
     'progress.rebuilt': '♻️  Progress rebuilt: {blocks} blocks, {pages} pages',
+    'progress.loadFailed': '⚠️ Failed to load progress file, will rebuild progress',
+    
+    // Configuration
+    'config.parseUrlFailed': '⚠️ Failed to parse startUrl, using default domain',
     
     // Tab processing
     'tab.gettingSections': '📑 Getting all Tab Sections (skip tab clicking)...',
@@ -119,6 +178,7 @@ const messages = {
     'page.skip': '⏭️  Skipping completed page: {path}',
     'page.skipFree': '🆓 Skipping free page: {path}',
     'page.freeError': '❌ Free page marker matching error:\n   Expected 1 match, found {count}\n   Matching text: "{text}"\n\nPlease check:\n   1. Is the text unique (use more specific text)\n   2. Or use custom function for more precise logic',
+    'page.processFailed': '❌ Failed to process page: {path}',
     
     // Block processing
     'block.found': '📦 Found {count} blocks',
@@ -130,6 +190,8 @@ const messages = {
     'block.getNameCustom': '🔧 Using custom getBlockName function',
     'block.getAllCustom': '🔧 Using custom getAllBlocks function',
     'block.pageComplete': '✅ Page processing complete, {total} blocks total',
+    'block.nameEmpty': '⚠️ Block name is empty, skipping',
+    'block.processFailed': '❌ Failed to process block: {name}',
     
     // Meta information
     'meta.saved': '✅ Meta information saved to: {path}',

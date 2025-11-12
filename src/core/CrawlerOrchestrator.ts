@@ -40,25 +40,26 @@ export class CrawlerOrchestrator {
     blockHandler: ((context: any) => Promise<void>) | null,
     pageHandler: ((context: any) => Promise<void>) | null
   ): Promise<void> {
-    console.log("\n🚀 ===== 开始执行爬虫任务 =====");
-    console.log(`📍 目标URL: ${this.config.startUrl}`);
-    console.log(`⚙️  最大并发数: ${this.config.maxConcurrency}`);
-    console.log(`📂 输出目录: ${this.config.outputDir}`);
-    console.log(
-      `🎯 运行模式: ${blockSectionLocator ? "Block 处理模式" : "页面处理模式"}`
-    );
+    console.log(`\n${this.i18n.t('crawler.taskStart')}`);
+    console.log(this.i18n.t('crawler.targetUrl', { url: this.config.startUrl }));
+    console.log(this.i18n.t('crawler.maxConcurrency', { count: this.config.maxConcurrency }));
+    console.log(this.i18n.t('crawler.outputDir', { dir: this.config.outputDir }));
+    const mode = blockSectionLocator 
+      ? this.i18n.t('crawler.modeBlock')
+      : this.i18n.t('crawler.modePage');
+    console.log(this.i18n.t('crawler.mode', { mode }));
 
     // 初始化任务进度
     if (this.taskProgress) {
-      console.log("\n📊 初始化任务进度...");
+      console.log(`\n${this.i18n.t('crawler.initProgress')}`);
       await this.taskProgress.initialize();
     }
 
     try {
       // 访问目标链接
-      console.log("\n📡 正在访问目标链接...");
+      console.log(`\n${this.i18n.t('crawler.visiting')}`);
       await page.goto(this.config.startUrl, this.config.startUrlWaitOptions);
-      console.log("✅ 页面加载完成");
+      console.log(this.i18n.t('crawler.pageLoaded'));
 
       // 处理 Tabs 并收集链接
       await this.processTabsAndCollectLinks(page);
@@ -66,9 +67,9 @@ export class CrawlerOrchestrator {
       // 并发处理所有链接
       await this.processAllLinks(page, blockSectionLocator, blockHandler, pageHandler);
 
-      console.log("\n🎉 ===== 所有任务已完成 ===== \n");
+      console.log(`\n${this.i18n.t('crawler.allComplete')}\n`);
     } catch (error) {
-      console.error("\n❌ 处理过程中发生错误");
+      console.error(`\n${this.i18n.t('common.error')}`);
       throw error;
     } finally {
       await this.cleanup();
@@ -108,8 +109,8 @@ export class CrawlerOrchestrator {
         const section = tabSections[i];
         console.log(`\n${this.i18n.t('tab.processingSection', { current: i + 1, total: tabSections.length, index: i + 1 })}`);
         
-        // 从 section 中提取 tabText
-        const tabText = await this.tabProcessor.extractTabText(section, i);
+        // 提取 tab 文本（内部包含日志输出）
+        await this.tabProcessor.extractTabText(section, i);
         
         // 收集链接
         await this.linkCollector.collectLinks(section);
@@ -149,12 +150,12 @@ export class CrawlerOrchestrator {
    * 处理单个 Tab
    */
   private async handleSingleTab(page: Page, tabText: string): Promise<void> {
-    console.log(`   🔍 正在处理分类: ${tabText}`);
+    console.log(`   ${this.i18n.t('crawler.processingCategory', { category: tabText })}`);
 
     const section = this.tabProcessor.getTabSection(page, tabText);
     await this.linkCollector.collectLinks(section);
     
-    console.log(`   ✅ 分类 [${tabText}] 处理完成`);
+    console.log(`   ${this.i18n.t('crawler.categoryComplete', { category: tabText })}`);
   }
 
   /**
@@ -171,8 +172,8 @@ export class CrawlerOrchestrator {
     let completed = 0;
     let failed = 0;
 
-    console.log(`\n🚀 开始并发处理所有链接 (最大并发: ${this.config.maxConcurrency})...`);
-    console.log(`\n📦 开始处理 ${total} 个集合链接...`);
+    console.log(`\n${this.i18n.t('crawler.startConcurrent', { concurrency: this.config.maxConcurrency })}`);
+    console.log(`\n${this.i18n.t('crawler.startProcessing', { total })}`);
 
     await Promise.allSettled(
       allLinks.map((linkObj, index) =>
@@ -183,7 +184,7 @@ export class CrawlerOrchestrator {
             : linkObj.link;
 
           if (this.taskProgress?.isPageComplete(normalizedPath)) {
-            console.log(`⏭️  跳过已完成的页面: ${linkObj.name || normalizedPath}`);
+            console.log(this.i18n.t('crawler.skipCompleted', { name: linkObj.name || normalizedPath }));
             completed++;
             return;
           }
@@ -198,18 +199,20 @@ export class CrawlerOrchestrator {
               pageHandler
             );
             completed++;
-            console.log(`✅ [${completed + failed}/${total}] 完成: ${linkObj.name || linkObj.link}\n`);
+            const progress = `${completed + failed}/${total}`;
+            console.log(`${this.i18n.t('crawler.linkComplete', { progress, name: linkObj.name || linkObj.link })}\n`);
           } catch (error) {
             failed++;
-            console.error(`❌ [${completed + failed}/${total}] 失败: ${linkObj.name || linkObj.link}\n`, error);
+            const progress = `${completed + failed}/${total}`;
+            console.error(`${this.i18n.t('crawler.linkFailed', { progress, name: linkObj.name || linkObj.link })}\n`, error);
           }
         })
       )
     );
 
-    console.log(`\n📊 处理完成统计:`);
-    console.log(`   ✅ 成功: ${completed}/${total}`);
-    console.log(`   ❌ 失败: ${failed}/${total}`);
+    console.log(`\n${this.i18n.t('crawler.statistics')}`);
+    console.log(`   ${this.i18n.t('crawler.success', { count: completed, total })}`);
+    console.log(`   ${this.i18n.t('crawler.failed', { count: failed, total })}`);
   }
 
   /**
@@ -257,7 +260,7 @@ export class CrawlerOrchestrator {
       }
     } finally {
       if (!isFirst) {
-        console.log(`\n🔍 关闭页面: ${relativeLink}`);
+        console.log(`\n${this.i18n.t('crawler.closePage', { path: relativeLink })}`);
         await newPage.close();
       }
     }

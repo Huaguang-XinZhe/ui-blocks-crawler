@@ -65,7 +65,7 @@ export class PageProcessor {
       await this.pageHandler(context);
       return { isFree: false };
     } catch (error) {
-      console.error(`❌ 处理页面失败: ${currentPath}`, error);
+      console.error(this.i18n.t('page.processFailed', { path: currentPath }), error);
       throw error;
     }
   }

@@ -100,7 +100,7 @@ export class BlockProcessor {
     const blockName = await this.getBlockName(block);
 
     if (!blockName) {
-      console.warn("⚠️ block 名称为空，跳过");
+      console.warn(this.i18n.t('block.nameEmpty'));
       return { success: false, isFree: false };
     }
 
@@ -134,7 +134,7 @@ export class BlockProcessor {
       this.taskProgress?.markBlockComplete(blockPath);
       return { success: true, isFree: false, blockName };
     } catch (error) {
-      console.error(`❌ 处理 block 失败: ${blockName}`, error);
+      console.error(this.i18n.t('block.processFailed', { name: blockName }), error);
       return { success: false, isFree: false, blockName };
     }
   }

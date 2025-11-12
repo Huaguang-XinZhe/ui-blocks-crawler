@@ -10,7 +10,8 @@
 ⚙️ **完全配置化** - 所有参数可配置，支持函数覆盖  
 🏗️ **模块化架构** - 单一职责原则，易于维护和扩展  
 📦 **自动化管理** - 自动生成进度文件和输出目录  
-🔧 **灵活扩展** - 支持配置函数覆盖，无需继承子类
+🔧 **灵活扩展** - 支持配置函数覆盖，无需继承子类  
+🌍 **国际化支持** - 完整的中英文日志输出，可通过 locale 配置切换
 
 ## 📦 安装
 
@@ -37,9 +38,11 @@ src/
 │   ├── LinkCollector.ts          # 链接收集 (~95 行)
 │   ├── BlockProcessor.ts         # Block 处理 (~140 行)
 │   ├── PageProcessor.ts          # Page 处理 (~35 行)
-│   └── CrawlerOrchestrator.ts    # 主协调器 (~210 行)
+│   ├── MetaCollector.ts          # 元信息收集
+│   └── CrawlerOrchestrator.ts    # 主协调器 (~270 行)
 └── utils/
-    └── task-progress.ts          # 进度管理
+    ├── task-progress.ts          # 进度管理
+    └── i18n.ts                   # 国际化支持
 ```
 
 ### 模块职责
@@ -49,7 +52,10 @@ src/
 - **LinkCollector** - 收集页面链接，统计 Block 数量
 - **BlockProcessor** - Block 获取和处理逻辑
 - **PageProcessor** - 单页面处理逻辑
+- **MetaCollector** - 元信息收集和统计
 - **CrawlerOrchestrator** - 协调各模块，管理并发和进度
+- **TaskProgress** - 进度记录和恢复
+- **I18n** - 国际化支持，中英文日志切换
 - **BlockCrawler** - 提供简洁的公共 API
 
 ## 🚀 快速开始

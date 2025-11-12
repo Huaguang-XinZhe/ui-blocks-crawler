@@ -1,6 +1,6 @@
 import path from "path";
 import type { CrawlerConfig } from "../types";
-import type { Locale } from "../utils/i18n";
+import { createI18n, type Locale } from "../utils/i18n";
 
 /**
  * 内部配置接口
@@ -42,12 +42,13 @@ export class ConfigManager {
   /**
    * 从 URL 提取域名
    */
-  static extractHostname(url: string): string {
+  static extractHostname(url: string, locale?: Locale): string {
     try {
       const urlObj = new URL(url);
       return urlObj.hostname.replace(/\./g, "-");
     } catch (error) {
-      console.warn("⚠️ 解析 startUrl 失败，使用默认域名");
+      const i18n = createI18n(locale);
+      console.warn(i18n.t('config.parseUrlFailed'));
       return "default";
     }
   }
@@ -109,7 +110,8 @@ export class ConfigManager {
     this.validateConfig(config);
 
     // 提取域名用于目录划分
-    const hostname = this.extractHostname(config.startUrl);
+    const locale = (config.locale ?? 'zh') as Locale;
+    const hostname = this.extractHostname(config.startUrl, locale);
     
     // 目录结构：
     // - .crawler/域名/progress.json
