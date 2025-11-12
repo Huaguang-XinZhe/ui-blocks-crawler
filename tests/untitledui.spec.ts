@@ -1,5 +1,5 @@
 import { test } from "@playwright/test";
-import { BlockCrawler } from "ui-blocks-crawler";
+import { BlockCrawler } from "block-crawler";
 
 test("untitledui", async ({ page }) => {
   const crawler = new BlockCrawler({

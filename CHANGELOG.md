@@ -1,323 +1,46 @@
-# block-crawler-framework
+# block-crawler
 
-## 2.3.0
+## 0.1.0
 
-### Minor Changes
+### 初始发布
 
-- 3d19d21: 新增 `getAllTabSections` 配置选项，支持跳过 tab 点击直接获取所有 sections
+基于 Playwright 的通用 Block 爬虫框架。
 
-  **新增功能：**
+#### ✨ 核心特性
 
-  - ✨ 新增 `getAllTabSections` 配置，支持直接获取所有 tab sections（跳过 tab 点击）
-  - ✨ 新增 `extractTabTextFromSection` 配置，自定义从 section 中提取 tab 文本的逻辑
-  - 📝 框架会自动从每个 section 的 heading 元素中提取 tab 文本（支持 h1-h6）
-  - ⚠️ 添加配置冲突检查，防止 `getAllTabSections` 与 tab 点击相关配置同时使用
+- 🎯 **双模式支持** - Block 模式和页面模式自由切换
+- 🚀 **受限并发** - 可配置并发数，避免封禁
+- 💾 **进度恢复** - 支持中断后继续爬取，自动跳过已完成任务
+- ⚙️ **完全配置化** - 所有参数可配置，支持函数覆盖
+- 🏗️ **模块化架构** - 单一职责原则，易于维护和扩展
+- 📦 **自动化管理** - 自动生成进度文件和输出目录
 
-  **配置冲突说明：**
+#### 🏗️ 模块化架构
 
-  `getAllTabSections` 不能与以下配置同时使用：
+- **ConfigManager** - 配置生成和验证
+- **TabProcessor** - Tab 获取、点击、Section 定位
+- **LinkCollector** - 收集页面链接，统计 Block 数量
+- **BlockProcessor** - Block 获取和处理逻辑
+- **PageProcessor** - 单页面处理逻辑
+- **CrawlerOrchestrator** - 协调各模块，管理并发和进度
+- **BlockCrawler** - 提供简洁的公共 API
 
-  - `tabListAriaLabel` - 用于定位 tab 列表
-  - `getTabSection` - 用于根据 tabText 获取 section
-  - `tabSectionLocator` - 定位符版本的 getTabSection
+#### 📁 自动文件管理
 
-  **使用示例：**
+根据 `startUrl` 自动生成域名子目录：
+- 进度文件：`.crawler/域名/progress.json`
+- 输出目录：`output/域名/`
 
-  ```typescript
-  const crawler = new BlockCrawler({
-    // 直接获取所有 tab sections（跳过 tab 点击）
-    getAllTabSections: async (page) => {
-      return page.locator("section[data-tab-content]").all();
-    },
+#### ⚙️ 灵活配置
 
-    // 可选：自定义提取 tab 文本（如果不配置，会自动查找 heading）
-    extractTabTextFromSection: async (section) => {
-      return section.getByRole("heading", { level: 2 }).textContent();
-    },
-  });
-  ```
+支持通过配置函数覆盖默认行为，无需继承子类：
+- `getAllTabSections` - 直接获取所有 tab sections（跳过 tab 点击）
+- `extractTabTextFromSection` - 自定义提取 tab 文本
+- `getTabSection` - 自定义获取 tab section
+- `getAllBlocks` - 自定义获取所有 Block 元素
+- `getBlockName` - 自定义获取 Block 名称
+- `extractBlockCount` - 自定义提取 Block 数量
 
-  **适用场景：**
+#### 🛡️ 配置冲突检查
 
-  - ✅ 所有 tab 内容都在页面上，不需要点击切换
-  - ✅ 页面使用 CSS 隐藏/显示 tab 内容
-  - ✅ 想要更快的爬取速度（跳过点击等待）
-
-  **改进点：**
-
-  - 🎯 支持更多网站架构（不依赖 tab 点击）
-  - ⚡ 提升爬取速度（无需等待 tab 切换）
-  - 🛡️ 配置冲突检查，提供清晰的错误提示
-  - 📖 详细的错误提示，帮助开发者快速定位问题
-
-## 2.2.0
-
-### Minor Changes
-
-- 8977f75: 新增 `extractBlockCount` 配置选项，支持自定义 Block 数量提取逻辑
-
-  **新增功能：**
-
-  - ✨ 新增 `extractBlockCount` 配置选项，允许自定义从文本中提取 Block 数量的逻辑
-  - 📝 支持处理复杂的数量文本格式（如 "1 component + 6 variants"）
-  - 🔧 如果配置了自定义函数，将优先使用；否则使用默认的数字匹配逻辑
-
-  **使用示例：**
-
-  ```typescript
-  const crawler = new BlockCrawler({
-    startUrl: "https://example.com",
-
-    // 自定义提取逻辑，处理 "1 component + 6 variants" 格式
-    extractBlockCount: (text) => {
-      const match = text?.match(/(\d+)\s*component.*?(\d+)\s*variant/);
-      if (match) {
-        return parseInt(match[1] ?? "0") + parseInt(match[2] ?? "0");
-      }
-      // 回退到简单数字匹配
-      const simpleMatch = text?.match(/\d+/);
-      return simpleMatch ? parseInt(simpleMatch[0] ?? "0") : 0;
-    },
-
-    // ... 其他配置
-  });
-  ```
-
-  **改进点：**
-
-  - 🎯 更灵活地处理不同网站的数量文本格式
-  - 📊 支持多数字组合计算（如 component + variant）
-  - 🔄 保持向后兼容，默认行为不变
-
-## 2.1.1
-
-### Patch Changes
-
-- a1da8fa: 重构：模块化代码结构，应用单一职责原则
-
-  **重构内容：**
-
-  将 800 行的 `crawler.ts` 重构为模块化架构：
-
-  1. **`ConfigManager`** - 配置管理
-
-     - 负责配置的生成、验证、保存和加载
-     - 提供静态方法用于配置操作
-
-  2. **`TabProcessor`** - Tab 处理
-
-     - 负责所有与 Tab 相关的操作
-     - 获取 Tab、点击 Tab、获取 Tab Section
-
-  3. **`LinkCollector`** - 链接收集
-
-     - 负责收集页面中的集合链接
-     - 统计 Block 数量
-
-  4. **`BlockProcessor`** - Block 处理
-
-     - 负责 Block 的处理逻辑
-     - 获取 Block、处理 Block、获取 Block 名称
-
-  5. **`PageProcessor`** - Page 处理
-
-     - 负责单页面的处理逻辑
-
-  6. **`CrawlerOrchestrator`** - 主协调器
-
-     - 协调各个模块，执行完整的爬取流程
-     - 管理并发和进度
-
-  7. **`BlockCrawler`** - 公共 API
-     - 简化为仅提供公共 API 接口
-     - 从 ~800 行减少到 ~170 行
-
-  **改进：**
-
-  - ✅ 单一职责：每个模块专注于一个职责
-  - ✅ 可维护性：代码更易于理解和修改
-  - ✅ 可测试性：每个模块可独立测试
-  - ✅ 可扩展性：更容易添加新功能
-  - ✅ 向后兼容：保持相同的公共 API
-
-  **文件结构：**
-
-  ```
-  src/
-  ├── crawler.ts          (~170 行，公共 API)
-  ├── types.ts
-  ├── index.ts
-  ├── core/
-  │   ├── ConfigManager.ts      (~150 行)
-  │   ├── TabProcessor.ts       (~95 行)
-  │   ├── LinkCollector.ts      (~95 行)
-  │   ├── BlockProcessor.ts     (~140 行)
-  │   ├── PageProcessor.ts      (~35 行)
-  │   └── CrawlerOrchestrator.ts (~210 行)
-  └── utils/
-      ├── task-progress.ts
-      └── extract-code.ts
-  ```
-
-  **无破坏性变更：** 对外 API 完全兼容，用户代码无需修改。
-
-## 2.1.0
-
-### Minor Changes
-
-- 新增功能：所有 protected 函数都支持直接配置
-
-  **新增配置项：**
-
-  1. **`getAllTabTexts`** - 直接获取所有 Tab 文本，跳过点击逻辑
-
-     ```typescript
-     const crawler = new BlockCrawler({
-       getAllTabTexts: async (page) => {
-         const tabs = await page.getByRole("tab").all();
-         return Promise.all(tabs.map((tab) => tab.textContent() || ""));
-       },
-     });
-     ```
-
-     适用于不需要点击 tab 切换就能获取所有内容的场景。
-
-  2. **`getAllBlocks`** - 自定义获取所有 Block 元素
-
-     ```typescript
-     const crawler = new BlockCrawler({
-       getAllBlocks: async (page) => page.locator(".block-item").all(),
-     });
-     ```
-
-  3. **`getBlockName`** - 自定义获取 Block 名称
-     ```typescript
-     const crawler = new BlockCrawler({
-       getBlockName: async (block) => block.locator("h1").textContent(),
-     });
-     ```
-
-  **改进：**
-
-  - ✅ 所有 protected 方法现在都支持通过配置函数覆盖
-  - 🎯 优先级明确：配置函数 > 配置定位符 > 子类重写
-  - 📝 更好的日志：显示使用了配置函数还是默认逻辑
-  - 🚀 更灵活：无需继承子类即可完全自定义行为
-
-  **优先级顺序：**
-
-  - `getTabSection`: 配置函数 > `tabSectionLocator` > 子类重写
-  - `getAllBlocks`: 配置函数 > `blockSectionLocator` > 子类重写
-  - `getBlockName`: 配置函数 > `blockNameLocator` > 子类重写
-
-## 2.0.0
-
-### Major Changes
-
-- 重大 API 重构：简化配置和使用方式
-
-  **Breaking Changes:**
-
-  1. **`blockSectionLocator` 移至 `onBlock` 参数**
-
-     - 之前：在配置中传入 `blockSectionLocator`
-     - 现在：作为 `onBlock` 的第二个参数传入
-
-     ```typescript
-     // 旧的
-     const crawler = new BlockCrawler({
-       blockSectionLocator: "xpath=//main/div"
-     });
-     await crawler.onBlock(page, handler);
-
-     // 新的
-     const crawler = new BlockCrawler({ ... });
-     await crawler.onBlock(page, "xpath=//main/div", handler);
-     ```
-
-  2. **`getTabSection` 支持直接配置函数**
-
-     - 现在可以直接在配置中传入 `getTabSection` 函数，无需继承子类
-     - 优先级：配置函数 > `tabSectionLocator` > 子类重写
-
-     ```typescript
-     // 方式 1：配置函数（推荐，无需继承）
-     const crawler = new BlockCrawler({
-       getTabSection: (page, tabText) =>
-         page.getByRole("tabpanel", { name: tabText })
-     });
-
-     // 方式 2：配置定位符
-     const crawler = new BlockCrawler({
-       tabSectionLocator: '[role="tabpanel"][aria-label="{tabText}"]'
-     });
-
-     // 方式 3：继承重写（复杂场景）
-     class MyCrawler extends BlockCrawler {
-       protected getTabSection(page, tabText) { ... }
-     }
-     ```
-
-  **改进：**
-
-  - 🎯 更清晰的 API：`blockSectionLocator` 只在 Block 模式需要时传入
-  - 🚀 更简单的使用：无需继承子类，直接配置函数即可
-  - 📝 更好的日志：显示使用了哪种 `getTabSection` 方式
-  - ✨ 更灵活的配置：同时支持字符串定位符、配置函数和继承重写三种方式
-
-## 1.0.1
-
-### Patch Changes
-
-- 补充作者：mufeng
-
-## 1.0.0
-
-### Major Changes
-
-- 重大更改：包名从 `block-crawler-framework` 更改为 `ui-blocks-crawler`
-
-  - 📦 包名更改：`block-crawler-framework` → `ui-blocks-crawler`
-  - 🧹 清理依赖：将 `cli-progress`、`@types/cli-progress`、`ora` 从 dependencies 移到 devDependencies（这些仅在测试中使用）
-  - ⚡ 核心依赖现在仅包含：`fs-extra` 和 `p-limit`
-
-  **迁移指南：**
-
-  如果你之前使用 `block-crawler-framework`，请更新导入：
-
-  ```typescript
-  // 旧的
-  import { BlockCrawler } from "block-crawler-framework";
-
-  // 新的
-  import { BlockCrawler } from "ui-blocks-crawler";
-  ```
-
-  然后重新安装：
-
-  ```bash
-  pnpm remove block-crawler-framework
-  pnpm add -D ui-blocks-crawler
-  ```
-
-## 0.2.0
-
-### Minor Changes
-
-- 3c3a1c3: 🎉 首次发布 Block Crawler Framework
-
-  ### 核心功能
-
-  - ✨ 双模式支持：Block 处理模式和页面处理模式
-  - 🚀 受限并发控制：可配置最大并发数
-  - 💾 进度恢复机制：支持中断后继续爬取
-  - ⚙️ 完全配置化：所有参数可通过配置对象设置
-  - 🔧 易于扩展：提供 protected 方法供子类覆盖
-
-  ### 主要特性
-
-  - 支持通过 `blockLocator` 和 `blockNameLocator` 自定义定位逻辑
-  - 提供 `getAllBlocks()` 和 `getBlockName()` 方法供子类覆盖
-  - 自动管理并发和进度，简化爬虫开发
-  - 完整的 TypeScript 类型支持
-  - 基于 Playwright 的现代化爬虫解决方案
+框架会自动检查配置冲突并提供清晰的错误提示，帮助开发者快速定位问题。

@@ -1,6 +1,6 @@
 import { test, type Page } from "@playwright/test";
 import * as fse from "fs-extra";
-import { BlockCrawler, type PageContext } from "ui-blocks-crawler";
+import { BlockCrawler, type PageContext } from "block-crawler";
 
 test("shadcndesign", async ({ page }) => {
   // 设置超时

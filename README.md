@@ -1,4 +1,4 @@
-# UI Blocks Crawler Framework
+# Block Crawler Framework
 
 基于 Playwright 的通用 Block 爬虫框架，支持受限并发、进度恢复、单页面或单 Block 处理模式。
 
@@ -15,11 +15,11 @@
 ## 📦 安装
 
 ```bash
-npm install ui-blocks-crawler
+npm install block-crawler
 # 或
-pnpm add ui-blocks-crawler
+pnpm add block-crawler
 # 或
-yarn add ui-blocks-crawler
+yarn add block-crawler
 ```
 
 ## 🏗️ 架构设计
@@ -60,7 +60,7 @@ src/
 
 ```typescript
 import { test } from "@playwright/test";
-import { BlockCrawler } from "ui-blocks-crawler";
+import { BlockCrawler } from "block-crawler";
 
 test("爬取组件", async ({ page }) => {
   test.setTimeout(2 * 60 * 1000);
@@ -101,7 +101,7 @@ test("爬取组件", async ({ page }) => {
 
 ```typescript
 import { test } from "@playwright/test";
-import { BlockCrawler } from "ui-blocks-crawler";
+import { BlockCrawler } from "block-crawler";
 
 test("爬取页面", async ({ page }) => {
   const crawler = new BlockCrawler({
@@ -354,6 +354,6 @@ ISC
 
 ## 🔗 链接
 
-- [npm 包](https://www.npmjs.com/package/ui-blocks-crawler)
-- [GitHub 仓库](https://github.com/Huaguang-XinZhe/ui-blocks-crawler)
+- [npm 包](https://www.npmjs.com/package/block-crawler)
+- [GitHub 仓库](https://github.com/Huaguang-XinZhe/block-crawler)
 - [更新日志](./CHANGELOG.md)
