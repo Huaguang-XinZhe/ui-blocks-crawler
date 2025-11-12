@@ -1,5 +1,4 @@
 output/
 playwright-report/
 test-results/
-progress.json
 pnpm-lock.yaml

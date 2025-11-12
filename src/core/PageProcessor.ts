@@ -12,7 +12,8 @@ export class PageProcessor {
   
   constructor(
     private config: InternalConfig,
-    private pageHandler: PageHandler
+    private pageHandler: PageHandler,
+    private taskProgress?: any
   ) {
     this.i18n = createI18n(config.locale);
   }
@@ -52,18 +53,19 @@ export class PageProcessor {
     const isFree = await this.isPageFree(page);
     if (isFree) {
       console.log(this.i18n.t('page.skipFree', { path: currentPath }));
-      return { isFree: true };
     }
 
     const context: PageContext = {
       currentPage: page,
       currentPath,
       outputDir: this.config.outputDir,
+      isFree,
     };
 
     try {
+      // 始终调用 pageHandler，让用户决定是否要处理 free 页面
       await this.pageHandler(context);
-      return { isFree: false };
+      return { isFree };
     } catch (error) {
       console.error(this.i18n.t('page.processFailed', { path: currentPath }), error);
       throw error;

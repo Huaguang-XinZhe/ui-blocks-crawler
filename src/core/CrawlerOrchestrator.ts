@@ -85,7 +85,7 @@ export class CrawlerOrchestrator {
     if (this.taskProgress) {
       await this.taskProgress.saveProgress();
       console.log(
-        `\n💾 进度已保存 (已完成 Block: ${this.taskProgress.getCompletedBlockCount()}, 已完成 Page: ${this.taskProgress.getCompletedPageCount()})`
+        `\n${this.i18n.t('progress.saved', { blocks: this.taskProgress.getCompletedBlockCount(), pages: this.taskProgress.getCompletedPageCount() })}`
       );
     }
     
@@ -250,12 +250,13 @@ export class CrawlerOrchestrator {
           this.metaCollector.addFreeBlock(blockName);
         });
       } else if (pageHandler) {
-        const pageProcessor = new PageProcessor(this.config, pageHandler);
+        const pageProcessor = new PageProcessor(this.config, pageHandler, this.taskProgress);
         const result = await pageProcessor.processPage(newPage, relativeLink);
         
-        // 记录 free pages
+        // 记录 free pages 并标记为完成
         if (result.isFree) {
           this.metaCollector.addFreePage(relativeLink);
+          this.taskProgress?.markPageComplete(this.normalizePagePath(relativeLink));
         }
       }
     } finally {
@@ -264,6 +265,13 @@ export class CrawlerOrchestrator {
         await newPage.close();
       }
     }
+  }
+
+  /**
+   * 标准化页面路径
+   */
+  private normalizePagePath(link: string): string {
+    return link.startsWith("/") ? link.slice(1) : link;
   }
 }
 

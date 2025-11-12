@@ -236,6 +236,7 @@ interface PageContext {
   currentPage: Page;    // 当前页面实例（可能是新打开的页面）
   currentPath: string;  // 当前 URL 路径
   outputDir: string;    // 输出目录
+  isFree?: boolean;     // 是否为 Free 页面
 }
 ```
 

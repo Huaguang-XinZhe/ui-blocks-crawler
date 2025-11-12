@@ -5,7 +5,7 @@ test("untitledui", async ({ page }) => {
   const crawler = new BlockCrawler({
     startUrl: "https://www.untitledui.com/react/components",
     skipPageFree: "FREE",
-
+    locale: "en",
     // 使用新的 getAllTabSections 模式（跳过 tab 点击）
     getAllTabSections: async (page) => {
       // 返回所有包含内容的 sections
