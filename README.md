@@ -44,7 +44,7 @@ src/
 
 ### 模块职责
 
-- **ConfigManager** - 配置生成、验证、保存和加载
+- **ConfigManager** - 配置生成和验证
 - **TabProcessor** - Tab 获取、点击、Section 定位
 - **LinkCollector** - 收集页面链接，统计 Block 数量
 - **BlockProcessor** - Block 获取和处理逻辑
@@ -119,34 +119,6 @@ test("爬取页面", async ({ page }) => {
 });
 ```
 
-### 配置文件模式（推荐）
-
-**首次使用：创建配置文件**
-
-```typescript
-const crawler = new BlockCrawler({
-  startUrl: "https://example.com/components",
-  maxConcurrency: 5,
-  // ... 其他配置
-});
-
-// 保存配置到 .crawler/config.json
-await crawler.saveConfigFile();
-```
-
-**后续使用：从配置文件加载**
-
-```typescript
-test("爬取组件", async ({ page }) => {
-  // 从 .crawler/config.json 加载配置
-  const crawler = await BlockCrawler.fromConfigFile();
-  
-  await crawler.onBlock(page, "xpath=//div", async (context) => {
-    // 处理逻辑...
-  });
-});
-```
-
 ## ⚙️ 配置选项
 
 ### 基础配置
@@ -156,8 +128,8 @@ test("爬取组件", async ({ page }) => {
 | `startUrl` | `string` | - | 起始 URL（必填） |
 | `tabListAriaLabel` | `string?` | undefined | 分类标签的 aria-label |
 | `maxConcurrency` | `number` | 5 | 最大并发页面数 |
-| `outputDir` | `string?` | 自动生成 | 输出目录 |
-| `configDir` | `string` | ".crawler" | 配置目录 |
+| `outputDir` | `string` | "output" | 输出目录（会自动在此目录下创建域名子目录） |
+| `stateDir` | `string` | ".crawler" | 状态目录（存放进度文件和网站元信息，会自动创建域名子目录） |
 | `enableProgressResume` | `boolean` | true | 是否启用进度恢复 |
 | `blockNameLocator` | `string` | `role=heading[level=1] >> role=link` | Block 名称定位符 |
 
@@ -272,21 +244,39 @@ interface PageContext {
 
 ### 自动文件管理
 
-根据 `startUrl` 自动生成：
+根据 `startUrl` 自动生成域名子目录：
 
-**进度文件命名规则：**
+**目录结构：**
 ```
-格式: .crawler/progress-{hostname}-{hash}.json
-示例: https://example.com/components
-  → .crawler/progress-example-com-a1b2c3d4.json
+project/
+├── .crawler/              # 状态目录 (stateDir)
+│   ├── example-com/       # 域名子目录
+│   │   └── progress.json  # 进度文件
+│   └── site-a-com/
+│       └── progress.json
+└── output/               # 输出目录 (outputDir)
+    ├── example-com/      # 域名子目录
+    │   ├── component-1/
+    │   └── component-2/
+    └── site-a-com/
+        └── ...
 ```
 
-**输出目录命名规则：**
+**示例：**
 ```
-格式: output/{hostname}-{hash}
-示例: https://example.com/components
-  → output/example-com-a1b2c3
+https://example.com/components
+  → 进度: .crawler/example-com/progress.json
+  → 输出: output/example-com/
+
+https://site-a.com/library
+  → 进度: .crawler/site-a-com/progress.json
+  → 输出: output/site-a-com/
 ```
+
+**特点：**
+- ✅ 简洁明了 - 直接使用域名，无哈希
+- ✅ 自动隔离 - 不同网站自动分离
+- ✅ 易于管理 - 一目了然的目录结构
 
 ### 多站点支持
 
@@ -297,15 +287,15 @@ interface PageContext {
 const crawlerA = new BlockCrawler({
   startUrl: "https://site-a.com/components",
 });
-// 进度: .crawler/progress-site-a-com-abc12345.json
-// 输出: output/site-a-com-a1b2c3
+// 进度: .crawler/site-a-com/progress.json
+// 输出: output/site-a-com/
 
 // 网站 B
 const crawlerB = new BlockCrawler({
   startUrl: "https://site-b.com/library",
 });
-// 进度: .crawler/progress-site-b-com-def67890.json
-// 输出: output/site-b-com-d4e5f6
+// 进度: .crawler/site-b-com/progress.json
+// 输出: output/site-b-com/
 ```
 
 ## 🛠️ 开发命令

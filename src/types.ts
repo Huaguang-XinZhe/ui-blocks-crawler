@@ -73,13 +73,17 @@ export interface CrawlerConfig {
    * @default 5
    */
   maxConcurrency?: number;
-  /** 输出目录 */
+  /** 
+   * 输出目录（会自动在此目录下创建域名子目录）
+   * @default 'output'
+   */
   outputDir?: string;
   /** 
-   * 配置目录（用于存放 progress.json 等文件）
+   * 状态目录（用于存放进度文件和网站元信息）
+   * 会在此目录下为每个域名创建子目录，存放 progress.json 等
    * @default '.crawler'
    */
-  configDir?: string;
+  stateDir?: string;
   /** 
    * Block 名称定位符，用于获取 Block 名称
    * @default 'role=heading[level=1] >> role=link'

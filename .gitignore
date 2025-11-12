@@ -6,8 +6,5 @@ output/
 dist/
 *.tsbuildinfo
 
-# 爬虫配置和进度文件
-.crawler/progress*.json
-.crawler/config.json
-.crawler-*/
-progress.json
+# 爬虫状态文件（进度文件和网站元信息）
+.crawler/

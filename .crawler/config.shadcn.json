@@ -1,9 +1,0 @@
-{
-  "startUrl": "https://www.shadcndesign.com/pro-blocks",
-  "maxConcurrency": 3,
-  "blockSectionLocator": "xpath=//main/div/div/div",
-  "collectionLinkLocator": "role=link",
-  "collectionNameLocator": "[data-slot=\"card-title\"]",
-  "collectionCountLocator": "p"
-}
-

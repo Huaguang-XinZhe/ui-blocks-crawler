@@ -1,6 +1,4 @@
-import crypto from "crypto";
 import path from "path";
-import fse from "fs-extra";
 import type { CrawlerConfig } from "../types";
 
 /**
@@ -8,7 +6,7 @@ import type { CrawlerConfig } from "../types";
  */
 export interface InternalConfig extends Required<Omit<CrawlerConfig, 
   'tabListAriaLabel' | 'tabSectionLocator' | 'getTabSection' | 'getAllTabSections' | 'extractTabTextFromSection' |
-  'getAllBlocks' | 'getBlockName' | 'extractBlockCount' | 'outputDir' | 'configDir' | 'blockNameLocator' | 
+  'getAllBlocks' | 'getBlockName' | 'extractBlockCount' | 'outputDir' | 'stateDir' | 'blockNameLocator' | 
   'startUrlWaitOptions' | 'collectionLinkWaitOptions'>> {
   tabListAriaLabel?: string;
   tabSectionLocator?: string;
@@ -19,53 +17,30 @@ export interface InternalConfig extends Required<Omit<CrawlerConfig,
   getBlockName?: CrawlerConfig['getBlockName'];
   extractBlockCount?: CrawlerConfig['extractBlockCount'];
   outputDir: string;
-  configDir: string;
+  stateDir: string;
   progressFile: string;
   blockNameLocator: string;
   startUrlWaitOptions?: CrawlerConfig['startUrlWaitOptions'];
   collectionLinkWaitOptions?: CrawlerConfig['collectionLinkWaitOptions'];
+  /** 域名（用于子目录划分） */
+  hostname: string;
 }
 
 /**
  * 配置管理器
- * 职责：处理配置的生成、验证、保存和加载
+ * 职责：处理配置的生成和验证
  */
 export class ConfigManager {
   /**
-   * 根据 URL 生成唯一的进度文件名
+   * 从 URL 提取域名
    */
-  static generateProgressFileName(url: string): string {
+  static extractHostname(url: string): string {
     try {
       const urlObj = new URL(url);
-      const hostname = urlObj.hostname;
-      const pathname = urlObj.pathname;
-      
-      // 使用 pathname 的 hash 来区分同一域名下的不同路径
-      const pathHash = crypto.createHash("md5").update(pathname).digest("hex").slice(0, 8);
-      
-      return `progress-${hostname.replace(/\./g, "-")}-${pathHash}.json`;
+      return urlObj.hostname.replace(/\./g, "-");
     } catch (error) {
-      console.warn("⚠️ 解析 startUrl 失败，使用默认进度文件名");
-      return "progress.json";
-    }
-  }
-
-  /**
-   * 根据 URL 生成唯一的输出目录名
-   */
-  static generateOutputDir(url: string): string {
-    try {
-      const urlObj = new URL(url);
-      const hostname = urlObj.hostname;
-      const pathname = urlObj.pathname;
-      
-      // 使用 pathname 的 hash 来区分同一域名下的不同路径
-      const pathHash = crypto.createHash("md5").update(pathname).digest("hex").slice(0, 6);
-      
-      return `output/${hostname.replace(/\./g, "-")}-${pathHash}`;
-    } catch (error) {
-      console.warn("⚠️ 解析 startUrl 失败，使用默认输出目录");
-      return "output";
+      console.warn("⚠️ 解析 startUrl 失败，使用默认域名");
+      return "default";
     }
   }
 
@@ -125,9 +100,16 @@ export class ConfigManager {
     // 验证配置冲突
     this.validateConfig(config);
 
-    const configDir = config.configDir ?? ".crawler";
-    const progressFileName = this.generateProgressFileName(config.startUrl);
-    const outputDir = config.outputDir ?? this.generateOutputDir(config.startUrl);
+    // 提取域名用于目录划分
+    const hostname = this.extractHostname(config.startUrl);
+    
+    // 目录结构：
+    // - .crawler/域名/progress.json
+    // - output/域名/
+    const stateDir = config.stateDir ?? ".crawler";
+    const outputBaseDir = config.outputDir ?? "output";
+    const outputDir = path.join(outputBaseDir, hostname);
+    const progressFile = path.join(stateDir, hostname, "progress.json");
 
     return {
       startUrl: config.startUrl,
@@ -141,8 +123,8 @@ export class ConfigManager {
       extractBlockCount: config.extractBlockCount,
       maxConcurrency: config.maxConcurrency ?? 5,
       outputDir,
-      configDir,
-      progressFile: path.join(configDir, progressFileName),
+      stateDir,
+      progressFile,
       blockNameLocator: config.blockNameLocator ?? "role=heading[level=1] >> role=link",
       enableProgressResume: config.enableProgressResume ?? true,
       startUrlWaitOptions: config.startUrlWaitOptions,
@@ -150,45 +132,9 @@ export class ConfigManager {
       collectionLinkLocator: config.collectionLinkLocator,
       collectionNameLocator: config.collectionNameLocator,
       collectionCountLocator: config.collectionCountLocator,
+      hostname,
     };
   }
 
-  /**
-   * 保存配置到文件
-   */
-  static async saveConfig(config: InternalConfig, configPath: string): Promise<void> {
-    const configToSave: CrawlerConfig = {
-      startUrl: config.startUrl,
-      tabListAriaLabel: config.tabListAriaLabel,
-      tabSectionLocator: config.tabSectionLocator,
-      maxConcurrency: config.maxConcurrency,
-      outputDir: config.outputDir,
-      configDir: config.configDir,
-      blockNameLocator: config.blockNameLocator,
-      enableProgressResume: config.enableProgressResume,
-      startUrlWaitOptions: config.startUrlWaitOptions,
-      collectionLinkWaitOptions: config.collectionLinkWaitOptions,
-      collectionLinkLocator: config.collectionLinkLocator,
-      collectionNameLocator: config.collectionNameLocator,
-      collectionCountLocator: config.collectionCountLocator,
-    };
-
-    await fse.outputJson(configPath, configToSave, { spaces: 2 });
-    console.log(`✅ 配置已保存到: ${configPath}`);
-    console.log(`📝 进度文件将保存到: ${config.progressFile}`);
-  }
-
-  /**
-   * 从文件加载配置
-   */
-  static async loadConfig(configPath: string = ".crawler/config.json"): Promise<CrawlerConfig> {
-    try {
-      const config = await fse.readJson(configPath);
-      console.log(`✅ 配置已从文件加载: ${configPath}`);
-      return config;
-    } catch (error) {
-      throw new Error(`无法加载配置文件 ${configPath}: ${error}`);
-    }
-  }
 }
 

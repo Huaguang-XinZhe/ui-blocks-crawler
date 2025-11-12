@@ -45,29 +45,6 @@ export class BlockCrawler {
     }
   }
 
-  /**
-   * 从配置文件加载配置并创建爬虫实例
-   * 
-   * @param configPath 配置文件路径，默认为 '.crawler/config.json'
-   * @example
-   * const crawler = await BlockCrawler.fromConfigFile();
-   * const crawler = await BlockCrawler.fromConfigFile(".crawler/my-config.json");
-   */
-  static async fromConfigFile(
-    configPath: string = ".crawler/config.json"
-  ): Promise<BlockCrawler> {
-    const config = await ConfigManager.loadConfig(configPath);
-    return new BlockCrawler(config);
-  }
-
-  /**
-   * 保存当前配置到文件
-   * 
-   * @param configPath 配置文件路径，默认为 '.crawler/config.json'
-   */
-  async saveConfigFile(configPath: string = ".crawler/config.json"): Promise<void> {
-    await ConfigManager.saveConfig(this.config, configPath);
-  }
 
   /**
    * 设置页面处理器并运行爬虫（单页面模式）
@@ -144,10 +121,10 @@ export class BlockCrawler {
   }
 
   /**
-   * 获取配置目录
+   * 获取状态目录
    */
-  get configDir(): string {
-    return this.config.configDir;
+  get stateDir(): string {
+    return this.config.stateDir;
   }
 
   /**
@@ -155,5 +132,12 @@ export class BlockCrawler {
    */
   get progressFile(): string {
     return this.config.progressFile;
+  }
+
+  /**
+   * 获取域名（用于子目录划分）
+   */
+  get hostname(): string {
+    return this.config.hostname;
   }
 }
