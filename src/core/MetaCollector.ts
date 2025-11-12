@@ -10,10 +10,12 @@ export class MetaCollector {
   private meta: SiteMeta;
   private metaFile: string;
   private i18n: I18n;
+  private startTime: Date;
 
   constructor(startUrl: string, metaFile: string, locale?: Locale) {
     this.metaFile = metaFile;
     this.i18n = createI18n(locale);
+    this.startTime = new Date();
     this.meta = {
       startUrl,
       collectionLinks: [],
@@ -103,8 +105,11 @@ export class MetaCollector {
    */
   async save(isComplete: boolean = false): Promise<void> {
     // 更新时间和完成状态
-    this.meta.lastUpdate = new Date().toISOString();
+    const endTime = new Date();
+    this.meta.lastUpdate = endTime.toISOString();
     this.meta.isComplete = isComplete;
+    this.meta.startTime = this.startTime.toISOString();
+    this.meta.duration = Math.floor((endTime.getTime() - this.startTime.getTime()) / 1000);
     
     // 更新链接总数
     this.meta.totalLinks = this.meta.collectionLinks.length;
@@ -119,6 +124,7 @@ export class MetaCollector {
     console.log(this.i18n.t('meta.actualTotal', { count: this.meta.actualTotalCount }));
     console.log(this.i18n.t('meta.freePages', { count: this.meta.freePages.total }));
     console.log(this.i18n.t('meta.freeBlocks', { count: this.meta.freeBlocks.total }));
+    console.log(this.i18n.t('meta.duration', { duration: this.meta.duration }));
     const statusText = this.i18n.getLocale() === 'zh' 
       ? (isComplete ? '是' : '否')
       : (isComplete ? 'Yes' : 'No');

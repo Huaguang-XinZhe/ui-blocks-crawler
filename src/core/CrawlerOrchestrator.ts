@@ -259,11 +259,13 @@ export class CrawlerOrchestrator {
         const pageProcessor = new PageProcessor(this.config, pageHandler);
         const result = await pageProcessor.processPage(newPage, relativeLink);
         
-        // 记录 free pages 并标记为完成
+        // 记录 free pages
         if (result.isFree) {
           this.metaCollector.addFreePage(relativeLink);
-          this.taskProgress?.markPageComplete(this.normalizePagePath(relativeLink));
         }
+        
+        // 标记页面为完成（无论是否为 free）
+        this.taskProgress?.markPageComplete(this.normalizePagePath(relativeLink));
       }
     } finally {
       if (!isFirst) {

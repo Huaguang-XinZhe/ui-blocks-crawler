@@ -243,5 +243,9 @@ export interface SiteMeta {
   lastUpdate: string;
   /** 是否完整运行（未中断/未发生错误） */
   isComplete: boolean;
+  /** 本次运行耗时（秒） */
+  duration?: number;
+  /** 本次运行开始时间 */
+  startTime?: string;
 }
 
