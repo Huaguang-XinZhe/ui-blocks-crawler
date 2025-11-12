@@ -1,4 +1,5 @@
 import type { Page, Locator } from "@playwright/test";
+import type { Locale } from "./utils/i18n";
 
 /**
  * 爬虫配置接口
@@ -6,6 +7,8 @@ import type { Page, Locator } from "@playwright/test";
 export interface CrawlerConfig {
   /** 起始 URL */
   startUrl: string;
+  /** 语言设置，支持 'zh' (中文) 和 'en' (英文)，默认为 'zh' */
+  locale?: Locale;
   /** TabList 的 aria-label，用于定位分类标签，如果不传则获取第一个 tablist */
   tabListAriaLabel?: string;
   /**

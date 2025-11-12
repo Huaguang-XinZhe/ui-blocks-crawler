@@ -1,12 +1,17 @@
 import type { Page, Locator } from "@playwright/test";
 import type { InternalConfig } from "./ConfigManager";
+import { createI18n, type I18n } from "../utils/i18n";
 
 /**
  * Tab 处理器
  * 职责：处理所有与 Tab 相关的操作
  */
 export class TabProcessor {
-  constructor(private config: InternalConfig) {}
+  private i18n: I18n;
+  
+  constructor(private config: InternalConfig) {
+    this.i18n = createI18n(config.locale);
+  }
 
   /**
    * 获取所有的 Tab 元素
@@ -30,11 +35,10 @@ export class TabProcessor {
 
     // 第一个跳过点击（默认选中）
     if (index === 0) {
-      console.log(`   ⏭️  跳过第一个标签 (默认选中): ${text}`);
       return;
     }
 
-    console.log(`   🖱️  点击标签: ${text}`);
+    console.log(`   ${this.i18n.t('tab.clicking', { current: index + 1, total: index + 1, text })}`);
     await tab.click();
   }
 
@@ -49,14 +53,12 @@ export class TabProcessor {
   getTabSection(page: Page, tabText: string): Locator {
     // 优先级 1：配置的函数
     if (this.config.getTabSection) {
-      console.log("  ✅ 使用配置的 getTabSection 函数");
       return this.config.getTabSection(page, tabText);
     }
 
     // 优先级 2：配置的定位符
     if (this.config.tabSectionLocator) {
       const locator = this.config.tabSectionLocator.replace("{tabText}", tabText);
-      console.log(`  ✅ 使用配置的 tabSectionLocator: ${locator}`);
       return page.locator(locator);
     }
 
@@ -83,7 +85,6 @@ export class TabProcessor {
    */
   async getAllTabSections(page: Page): Promise<Locator[] | null> {
     if (this.config.getAllTabSections) {
-      console.log("  ✅ 使用配置的 getAllTabSections 函数");
       return await this.config.getAllTabSections(page);
     }
     return null;
@@ -99,7 +100,6 @@ export class TabProcessor {
   async extractTabText(section: Locator, index: number): Promise<string> {
     // 优先级 1：配置的函数
     if (this.config.extractTabTextFromSection) {
-      console.log(`    🔧 使用配置的 extractTabTextFromSection 函数`);
       const text = await this.config.extractTabTextFromSection(section);
       if (!text) {
         throw new Error(`Tab Section ${index + 1} 提取文本失败：extractTabTextFromSection 返回了 null`);
@@ -108,7 +108,6 @@ export class TabProcessor {
     }
 
     // 优先级 2：自动查找 heading
-    console.log(`    📝 自动查找 Tab Section ${index + 1} 中的 heading 元素`);
     
     // 尝试查找所有级别的 heading
     const headings = await section.getByRole("heading").all();
@@ -147,7 +146,7 @@ export class TabProcessor {
       throw new Error(`Tab Section ${index + 1} 的 heading 元素文本为空`);
     }
 
-    console.log(`    ✅ 提取到 tab 文本: "${text}"`);
+    console.log(`    ${this.i18n.t('tab.extractingText', { text })}`);
     return text;
   }
 }

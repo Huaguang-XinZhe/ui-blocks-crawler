@@ -7,6 +7,7 @@ import type {
 } from "./types";
 import { ConfigManager, type InternalConfig } from "./core/ConfigManager";
 import { CrawlerOrchestrator } from "./core/CrawlerOrchestrator";
+import { createI18n, type I18n } from "./utils/i18n";
 
 /**
  * Block 爬虫核心类
@@ -33,16 +34,19 @@ export class BlockCrawler {
   private blockSectionLocator?: string;
   private orchestrator?: CrawlerOrchestrator;
   private signalHandler?: NodeJS.SignalsListener;
+  private i18n: I18n;
 
   constructor(config: CrawlerConfig) {
     // 创建内部配置
     this.config = ConfigManager.createInternalConfig(config);
+    this.i18n = createI18n(this.config.locale);
 
     // 初始化进度管理器
     if (this.config.enableProgressResume) {
       this.taskProgress = new TaskProgress(
         this.config.progressFile,
-        this.config.outputDir
+        this.config.outputDir,
+        this.config.locale
       );
     }
   }
@@ -115,14 +119,14 @@ export class BlockCrawler {
    */
   private setupSignalHandlers(): void {
     this.signalHandler = async (signal: NodeJS.Signals) => {
-      console.log(`\n\n⚠️  收到 ${signal} 信号，正在保存进度和元信息...\n`);
+      console.log(`\n\n${this.i18n.t('signal.received', { signal })}\n`);
       
       if (this.orchestrator) {
         try {
           await this.orchestrator.cleanup();
-          console.log("\n✅ 进度和元信息已保存，程序退出\n");
+          console.log(`\n${this.i18n.t('signal.saved')}\n`);
         } catch (error) {
-          console.error("\n❌ 保存失败:", error);
+          console.error(`\n${this.i18n.t('signal.saveFailed', { error: String(error) })}`);
         }
       }
       

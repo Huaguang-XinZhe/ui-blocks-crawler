@@ -2,18 +2,23 @@ import type { Page, Locator } from "@playwright/test";
 import type { BlockHandler, BlockContext } from "../types";
 import type { InternalConfig } from "./ConfigManager";
 import type { TaskProgress } from "../utils/task-progress";
+import { createI18n, type I18n } from "../utils/i18n";
 
 /**
  * Block 处理器
  * 职责：处理所有与 Block 相关的操作
  */
 export class BlockProcessor {
+  private i18n: I18n;
+  
   constructor(
     private config: InternalConfig,
     private blockSectionLocator: string,
     private blockHandler: BlockHandler,
     private taskProgress?: TaskProgress
-  ) {}
+  ) {
+    this.i18n = createI18n(config.locale);
+  }
 
   /**
    * 处理页面中的所有 Blocks
@@ -22,11 +27,9 @@ export class BlockProcessor {
     totalCount: number;
     freeBlocks: string[];
   }> {
-    console.log(`\n🔄 开始处理页面中的 blocks: ${pagePath}`);
-
     // 获取所有 block 节点
     const blocks = await this.getAllBlocks(page);
-    console.log(`✅ 找到 ${blocks.length} 个 blocks`);
+    console.log(this.i18n.t('block.found', { count: blocks.length }));
 
     let completedCount = 0;
     const freeBlocks: string[] = [];
@@ -49,7 +52,7 @@ export class BlockProcessor {
     if (completedCount === blocks.length && blocks.length > 0) {
       const normalizedPath = this.normalizePagePath(pagePath);
       this.taskProgress?.markPageComplete(normalizedPath);
-      console.log(`✨ 页面所有 block 已完成: ${normalizedPath}`);
+      console.log(this.i18n.t('block.pageComplete', { total: blocks.length }));
     }
 
     return {
@@ -75,14 +78,7 @@ export class BlockProcessor {
       }
       
       if (count !== 1) {
-        throw new Error(
-          `❌ Free Block 标记匹配错误：\n` +
-          `   期望找到 1 个匹配项，实际找到 ${count} 个\n` +
-          `   匹配文本: "${this.config.skipBlockFree}"\n\n` +
-          `请检查：\n` +
-          `   1. 文本是否唯一（建议使用更精确的文本）\n` +
-          `   2. 或使用自定义函数配置更精确的判断逻辑`
-        );
+        throw new Error(this.i18n.t('block.freeError', { count, text: this.config.skipBlockFree }));
       }
       
       return true;
@@ -108,12 +104,10 @@ export class BlockProcessor {
       return { success: false, isFree: false };
     }
 
-    console.log(`\n🔍 正在处理 block: ${blockName}`);
-
     // 检查是否为 Free Block
     const isFree = await this.isBlockFree(block);
     if (isFree) {
-      console.log(`🆓 跳过 Free Block: ${blockName}`);
+      console.log(this.i18n.t('block.skipFree', { name: blockName }));
       return { success: true, isFree: true, blockName };
     }
 
@@ -123,7 +117,7 @@ export class BlockProcessor {
 
     // 检查是否已完成
     if (this.taskProgress?.isBlockComplete(blockPath)) {
-      console.log(`⏭️  跳过已完成的 block: ${blockName}`);
+      console.log(this.i18n.t('block.skip', { name: blockName }));
       return { success: true, isFree: false, blockName };
     }
 
@@ -154,7 +148,7 @@ export class BlockProcessor {
    */
   private async getAllBlocks(page: Page): Promise<Locator[]> {
     if (this.config.getAllBlocks) {
-      console.log("  ✅ 使用配置的 getAllBlocks 函数");
+      console.log(`  ${this.i18n.t('block.getAllCustom')}`);
       return await this.config.getAllBlocks(page);
     }
 

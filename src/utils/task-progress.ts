@@ -1,5 +1,6 @@
 import fse from "fs-extra";
 import path from "path";
+import { createI18n, type I18n, type Locale } from "./i18n";
 
 /**
  * 任务进度管理器
@@ -12,12 +13,14 @@ export class TaskProgress {
   private completedBlocks: Set<string>;
   private completedPages: Set<string>;
   private isDirty: boolean = false;
+  private i18n: I18n;
 
-  constructor(progressFile: string = "progress.json", outputDir: string = "output") {
+  constructor(progressFile: string = "progress.json", outputDir: string = "output", locale?: Locale) {
     this.progressFile = progressFile;
     this.outputDir = outputDir;
     this.completedBlocks = new Set();
     this.completedPages = new Set();
+    this.i18n = createI18n(locale);
   }
 
   /**
@@ -25,16 +28,16 @@ export class TaskProgress {
    */
   async initialize(): Promise<void> {
     if (await fse.pathExists(this.progressFile)) {
-      console.log("📁 发现进度文件，加载中...");
+      console.log(this.i18n.t('progress.found'));
       await this.loadProgress();
       console.log(
-        `✅ 已加载进度 - ${this.completedPages.size} 个页面已完成，${this.completedBlocks.size} 个 block 已完成`
+        this.i18n.t('progress.loaded', { blocks: this.completedBlocks.size, pages: this.completedPages.size })
       );
     } else {
-      console.log("📁 进度文件不存在，扫描输出目录重建进度...");
+      console.log(this.i18n.t('progress.scanning'));
       await this.rebuildProgress();
       console.log(
-        `✅ 重建完成 - ${this.completedPages.size} 个页面已完成，${this.completedBlocks.size} 个 block 已完成`
+        this.i18n.t('progress.rebuilt', { blocks: this.completedBlocks.size, pages: this.completedPages.size })
       );
     }
   }
@@ -62,7 +65,6 @@ export class TaskProgress {
    */
   private async rebuildProgress(): Promise<void> {
     if (!(await fse.pathExists(this.outputDir))) {
-      console.log("📂 输出目录不存在，跳过重建");
       return;
     }
 
@@ -200,6 +202,8 @@ export class TaskProgress {
       totalPages: this.completedPages.size,
     };
 
+    // 确保目录存在
+    await fse.ensureDir(path.dirname(this.progressFile));
     await fse.writeJson(this.progressFile, data, { spaces: 2 });
     this.isDirty = false;
   }
@@ -234,7 +238,6 @@ export class TaskProgress {
   async deleteProgressFile(): Promise<void> {
     if (await fse.pathExists(this.progressFile)) {
       await fse.remove(this.progressFile);
-      console.log("🗑️ 已删除进度文件");
     }
   }
 }

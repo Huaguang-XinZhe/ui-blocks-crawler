@@ -1,5 +1,6 @@
 import path from "path";
 import type { CrawlerConfig } from "../types";
+import type { Locale } from "../utils/i18n";
 
 /**
  * 内部配置接口
@@ -8,7 +9,8 @@ export interface InternalConfig extends Required<Omit<CrawlerConfig,
   'tabListAriaLabel' | 'tabSectionLocator' | 'getTabSection' | 'getAllTabSections' | 'extractTabTextFromSection' |
   'getAllBlocks' | 'getBlockName' | 'extractBlockCount' | 'outputDir' | 'stateDir' | 'blockNameLocator' | 
   'startUrlWaitOptions' | 'collectionLinkWaitOptions' | 'collectionNameLocator' | 'collectionCountLocator' |
-  'skipPageFree' | 'skipBlockFree'>> {
+  'skipPageFree' | 'skipBlockFree' | 'locale'>> {
+  locale: Locale;
   tabListAriaLabel?: string;
   tabSectionLocator?: string;
   getTabSection?: CrawlerConfig['getTabSection'];
@@ -121,6 +123,7 @@ export class ConfigManager {
 
     return {
       startUrl: config.startUrl,
+      locale: config.locale ?? 'zh',
       tabListAriaLabel: config.tabListAriaLabel,
       tabSectionLocator: config.tabSectionLocator,
       getTabSection: config.getTabSection,

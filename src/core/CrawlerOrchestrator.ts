@@ -7,6 +7,7 @@ import { LinkCollector } from "./LinkCollector";
 import { BlockProcessor } from "./BlockProcessor";
 import { PageProcessor } from "./PageProcessor";
 import { MetaCollector } from "./MetaCollector";
+import { createI18n, type I18n } from "../utils/i18n";
 
 /**
  * 爬虫协调器
@@ -17,6 +18,7 @@ export class CrawlerOrchestrator {
   private linkCollector: LinkCollector;
   private metaCollector: MetaCollector;
   private limit: ReturnType<typeof pLimit>;
+  private i18n: I18n;
 
   constructor(
     private config: InternalConfig,
@@ -24,8 +26,9 @@ export class CrawlerOrchestrator {
   ) {
     this.tabProcessor = new TabProcessor(config);
     this.linkCollector = new LinkCollector(config);
-    this.metaCollector = new MetaCollector(config.startUrl, config.metaFile);
+    this.metaCollector = new MetaCollector(config.startUrl, config.metaFile, config.locale);
     this.limit = pLimit(config.maxConcurrency);
+    this.i18n = createI18n(config.locale);
   }
 
   /**
@@ -97,32 +100,29 @@ export class CrawlerOrchestrator {
     const tabSections = await this.tabProcessor.getAllTabSections(page);
     
     if (tabSections) {
-      console.log("\n📑 正在获取所有 Tab Sections（跳过 tab 点击）...");
-      console.log(`✅ 找到 ${tabSections.length} 个 Tab Section`);
+      console.log(`\n${this.i18n.t('tab.gettingSections')}`);
+      console.log(this.i18n.t('tab.foundSections', { count: tabSections.length }));
 
-      console.log("\n🔄 开始遍历所有 Tab Sections...");
+      console.log(`\n${this.i18n.t('tab.processingSections')}`);
       for (let i = 0; i < tabSections.length; i++) {
         const section = tabSections[i];
-        console.log(`\n📌 [${i + 1}/${tabSections.length}] 处理 Tab Section ${i + 1}...`);
+        console.log(`\n${this.i18n.t('tab.processingSection', { current: i + 1, total: tabSections.length, index: i + 1 })}`);
         
         // 从 section 中提取 tabText
         const tabText = await this.tabProcessor.extractTabText(section, i);
-        console.log(`   🏷️  Tab 文本: ${tabText}`);
         
         // 收集链接
         await this.linkCollector.collectLinks(section);
-        console.log(`   ✅ Tab Section [${tabText}] 处理完成`);
       }
     } else {
       // 优先级 2：原有逻辑 - 获取 tab 元素并点击
-      console.log("\n📑 正在获取所有分类标签...");
+      console.log(`\n${this.i18n.t('tab.getting')}`);
       const tabs = await this.tabProcessor.getAllTabs(page);
-      console.log(`✅ 找到 ${tabs.length} 个分类标签`);
+      console.log(this.i18n.t('tab.found', { count: tabs.length }));
 
-      console.log("\n🔄 开始遍历所有分类标签...");
+      console.log(`\n${this.i18n.t('tab.processing')}`);
       for (let i = 0; i < tabs.length; i++) {
         const tab = tabs[i];
-        console.log(`\n📌 [${i + 1}/${tabs.length}] 处理分类标签...`);
         await this.tabProcessor.clickTab(tab, i);
         const tabText = (await tab.textContent()) ?? "";
         await this.handleSingleTab(page, tabText);
@@ -132,9 +132,14 @@ export class CrawlerOrchestrator {
     const allLinks = this.linkCollector.getAllLinks();
     const totalBlocks = this.linkCollector.getTotalBlockCount();
     
-    console.log(`\n✨ 收集完成！`);
-    console.log(`   📊 总链接数: ${allLinks.length}`);
-    console.log(`   📦 总组件数: ${totalBlocks} (展示的数量)\n`);
+    console.log(`\n${this.i18n.t('link.complete')}`);
+    console.log(`   ${this.i18n.t('link.totalLinks', { count: allLinks.length })}`);
+    
+    // 只有配置了 collectionCountLocator 时才输出总组件数
+    if (this.config.collectionCountLocator) {
+      console.log(`   ${this.i18n.t('link.totalBlocks', { count: totalBlocks })}`);
+    }
+    console.log();
     
     // 将收集到的链接添加到元信息收集器
     this.metaCollector.addCollectionLinks(allLinks);

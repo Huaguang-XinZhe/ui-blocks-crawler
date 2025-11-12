@@ -16,4 +16,5 @@ export type {
   SiteMeta,
   FreeItem,
 } from "./types";
+export type { Locale } from "./utils/i18n";
 

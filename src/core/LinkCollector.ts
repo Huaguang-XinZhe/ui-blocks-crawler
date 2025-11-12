@@ -1,6 +1,7 @@
 import type { Locator } from "@playwright/test";
 import type { CollectionLink } from "../types";
 import type { InternalConfig } from "./ConfigManager";
+import { createI18n, type I18n } from "../utils/i18n";
 
 /**
  * 链接收集器
@@ -9,8 +10,11 @@ import type { InternalConfig } from "./ConfigManager";
 export class LinkCollector {
   private allCollectionLinks: CollectionLink[] = [];
   private totalBlockCount = 0;
+  private i18n: I18n;
 
-  constructor(private config: InternalConfig) {}
+  constructor(private config: InternalConfig) {
+    this.i18n = createI18n(config.locale);
+  }
 
   /**
    * 收集所有的链接
@@ -18,7 +22,7 @@ export class LinkCollector {
   async collectLinks(section: Locator): Promise<void> {
     // 获取所有链接元素（统一使用 getByRole('link')）
     const aTags = await section.getByRole('link').all();
-    console.log(`      🔗 找到 ${aTags.length} 个集合链接`);
+    console.log(`      ${this.i18n.t('link.found', { count: aTags.length })}`);
 
     // 遍历每个链接
     for (let i = 0; i < aTags.length; i++) {
@@ -47,12 +51,12 @@ export class LinkCollector {
       }
 
       // 日志输出
-      console.log(`      ├─ [${i + 1}/${aTags.length}] 🔗 ${collectionLink}`);
+      console.log(`      ${this.i18n.t('link.item', { current: i + 1, total: aTags.length, link: collectionLink })}`);
       if (blockCollectionName) {
-        console.log(`      │  ├─ Name: ${blockCollectionName}`);
+        console.log(`      ${this.i18n.t('link.name', { name: blockCollectionName })}`);
       }
       if (blockCountText) {
-        console.log(`      │  └─ Count: ${blockCountText}`);
+        console.log(`      ${this.i18n.t('link.count', { count: blockCountText })}`);
       }
 
       if (collectionLink) {
@@ -71,13 +75,13 @@ export class LinkCollector {
   private extractBlockCount(blockCountText: string | null): number {
     // 如果配置了自定义提取函数，优先使用
     if (this.config.extractBlockCount) {
-      console.log(`      🔧 使用自定义 extractBlockCount 函数`);
+      console.log(`      ${this.i18n.t('link.extractCustom')}`);
       return this.config.extractBlockCount(blockCountText);
     }
     
     // 默认实现：匹配文本中的第一个数字
     // 文本可能像这样：7 blocks、10 components
-    console.log(`      📝 使用默认数字匹配逻辑提取 Block 数量`);
+    console.log(`      ${this.i18n.t('link.extractDefault')}`);
     const match = blockCountText?.match(/\d+/);
     return match ? parseInt(match[0] ?? "0") : 0;
   }

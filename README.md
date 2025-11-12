@@ -67,6 +67,7 @@ test("爬取组件", async ({ page }) => {
 
   const crawler = new BlockCrawler({
     startUrl: "https://example.com/components",
+    locale: "zh", // 可选：'zh' (中文，默认) 或 'en' (英文)
     tabListAriaLabel: "Categories",
     maxConcurrency: 5,
     
@@ -124,6 +125,7 @@ test("爬取页面", async ({ page }) => {
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
 | `startUrl` | `string` | - | 起始 URL（必填） |
+| `locale` | `'zh' \| 'en'` | `'zh'` | 日志语言（中文或英文） |
 | `tabListAriaLabel` | `string?` | undefined | 分类标签的 aria-label |
 | `maxConcurrency` | `number` | 5 | 最大并发页面数 |
 | `outputDir` | `string` | "output" | 输出目录（会自动在此目录下创建域名子目录） |

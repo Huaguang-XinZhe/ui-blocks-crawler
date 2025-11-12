@@ -1,5 +1,7 @@
 import * as fse from "fs-extra";
+import path from "path";
 import type { CollectionLink, SiteMeta } from "../types";
+import { createI18n, type I18n, type Locale } from "../utils/i18n";
 
 /**
  * 元信息收集器 - 负责收集和保存网站爬取元信息
@@ -7,9 +9,11 @@ import type { CollectionLink, SiteMeta } from "../types";
 export class MetaCollector {
   private meta: SiteMeta;
   private metaFile: string;
+  private i18n: I18n;
 
-  constructor(startUrl: string, metaFile: string) {
+  constructor(startUrl: string, metaFile: string, locale?: Locale) {
     this.metaFile = metaFile;
+    this.i18n = createI18n(locale);
     this.meta = {
       startUrl,
       collectionLinks: [],
@@ -79,17 +83,18 @@ export class MetaCollector {
     // 更新链接总数
     this.meta.totalLinks = this.meta.collectionLinks.length;
 
-    await fse.ensureDir(this.metaFile.substring(0, this.metaFile.lastIndexOf("/")));
+    // 确保目录存在
+    await fse.ensureDir(path.dirname(this.metaFile));
     await fse.writeJson(this.metaFile, this.meta, { spaces: 2 });
     
-    console.log(`\n✅ 元信息已保存到: ${this.metaFile}`);
-    console.log(`📊 统计信息:`);
-    console.log(`   - 收集链接数: ${this.meta.totalLinks}`);
-    console.log(`   - 展示总组件数: ${this.meta.displayedTotalCount}`);
-    console.log(`   - 真实总组件数: ${this.meta.actualTotalCount}`);
-    console.log(`   - Free 页面数: ${this.meta.freePages.total}`);
-    console.log(`   - Free Block 数: ${this.meta.freeBlocks.total}`);
-    console.log(`   - 总耗时: ${this.meta.duration}s`);
+    console.log(`\n${this.i18n.t('meta.saved', { path: this.metaFile })}`);
+    console.log(this.i18n.t('meta.stats'));
+    console.log(this.i18n.t('meta.collectedLinks', { count: this.meta.totalLinks }));
+    console.log(this.i18n.t('meta.displayedTotal', { count: this.meta.displayedTotalCount }));
+    console.log(this.i18n.t('meta.actualTotal', { count: this.meta.actualTotalCount }));
+    console.log(this.i18n.t('meta.freePages', { count: this.meta.freePages.total }));
+    console.log(this.i18n.t('meta.freeBlocks', { count: this.meta.freeBlocks.total }));
+    console.log(this.i18n.t('meta.duration', { duration: this.meta.duration }));
   }
 
   /**
@@ -101,7 +106,8 @@ export class MetaCollector {
         return await fse.readJson(metaFile);
       }
     } catch (error) {
-      console.warn(`⚠️ 加载元信息失败: ${error}`);
+      const i18n = createI18n();
+      console.warn(i18n.t('meta.loadFailed', { error: String(error) }));
     }
     return null;
   }
