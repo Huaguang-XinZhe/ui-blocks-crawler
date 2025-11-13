@@ -111,6 +111,14 @@ const messages = {
     'signal.received': '⚠️  收到 {signal} 信号，正在保存进度和元信息...',
     'signal.saved': '✅ 进度和元信息已保存，程序退出',
     'signal.saveFailed': '❌ 保存失败: {error}',
+    
+    // 脚本注入
+    'script.notFound': '⚠️ 脚本文件未找到: {path}',
+    'script.loaded': '✅ 脚本已加载: {name}',
+    'script.loadError': '❌ 加载脚本失败 [{name}]: {error}',
+    'script.injectedBefore': '💉 脚本已在页面加载前注入: {name}',
+    'script.injectedAfter': '💉 脚本已在页面加载后注入: {name}',
+    'script.injectError': '❌ 注入脚本失败 [{name}]: {error}',
   },
   en: {
     // Common
@@ -214,6 +222,14 @@ const messages = {
     'signal.received': '⚠️  Received {signal} signal, saving progress and metadata...',
     'signal.saved': '✅ Progress and metadata saved, exiting',
     'signal.saveFailed': '❌ Save failed: {error}',
+    
+    // Script injection
+    'script.notFound': '⚠️ Script file not found: {path}',
+    'script.loaded': '✅ Script loaded: {name}',
+    'script.loadError': '❌ Failed to load script [{name}]: {error}',
+    'script.injectedBefore': '💉 Script injected before page load: {name}',
+    'script.injectedAfter': '💉 Script injected after page load: {name}',
+    'script.injectError': '❌ Failed to inject script [{name}]: {error}',
   }
 };
 

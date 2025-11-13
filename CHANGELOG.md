@@ -1,5 +1,11 @@
 # block-crawler
 
+## 1.1.0
+
+### Minor Changes
+
+- 实现页面脚本注入
+
 ## 1.0.0
 
 ### Major Changes

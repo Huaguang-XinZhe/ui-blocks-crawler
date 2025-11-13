@@ -7,6 +7,7 @@ import { LinkCollector } from "./LinkCollector";
 import { BlockProcessor } from "./BlockProcessor";
 import { PageProcessor } from "./PageProcessor";
 import { MetaCollector } from "./MetaCollector";
+import { ScriptInjector } from "./ScriptInjector";
 import { createI18n, type I18n } from "../utils/i18n";
 
 /**
@@ -17,6 +18,7 @@ export class CrawlerOrchestrator {
   private tabProcessor: TabProcessor;
   private linkCollector: LinkCollector;
   private metaCollector: MetaCollector;
+  private scriptInjector: ScriptInjector;
   private limit: ReturnType<typeof pLimit>;
   private i18n: I18n;
 
@@ -27,6 +29,7 @@ export class CrawlerOrchestrator {
     this.tabProcessor = new TabProcessor(config);
     this.linkCollector = new LinkCollector(config);
     this.metaCollector = new MetaCollector(config.startUrl, config.metaFile, config.locale);
+    this.scriptInjector = new ScriptInjector(config);
     this.limit = pLimit(config.maxConcurrency);
     this.i18n = createI18n(config.locale);
   }
@@ -242,7 +245,17 @@ export class CrawlerOrchestrator {
     const newPage = isFirst ? page : await page.context().newPage();
 
     try {
+      // 注入脚本（仅对非首页的新页面注入，且在页面加载前注入）
+      if (!isFirst && this.scriptInjector.isEnabled()) {
+        await this.scriptInjector.inject(newPage, true);
+      }
+
       await newPage.goto(url, this.config.collectionLinkWaitOptions);
+
+      // 注入脚本（仅对非首页的新页面注入，且在页面加载后注入）
+      if (!isFirst && this.scriptInjector.isEnabled()) {
+        await this.scriptInjector.inject(newPage, false);
+      }
 
       // 根据模式决定处理方式
       if (blockSectionLocator && blockHandler) {

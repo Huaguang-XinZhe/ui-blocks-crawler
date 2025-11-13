@@ -31,8 +31,8 @@ importers:
         specifier: ^24.10.0
         version: 24.10.0
       block-crawler:
-        specifier: ^1.0.0
-        version: 1.0.0(@playwright/test@1.56.1)
+        specifier: ^1.1.0
+        version: 1.1.0(@playwright/test@1.56.1)
       cli-progress:
         specifier: ^3.12.0
         version: 3.12.0
@@ -486,8 +486,8 @@ packages:
     resolution: {integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==}
     engines: {node: '>=4'}
 
-  block-crawler@1.0.0:
-    resolution: {integrity: sha512-EtR+SF69D25lq1hvAm9U/Bjgu0a1bsSMsHPlRqg7xAyD5zEYPChDiZkf+QbnADIhhOM2jbZcrdNKUnK9lW0S+w==}
+  block-crawler@1.1.0:
+    resolution: {integrity: sha512-iKIEQ21rB2/eL9Sl2+1PSu1TU41rDt4t2oGdtz+4WitBVbSA54JMfzFHWW7+Dh2O8/IgUFh7tRCKevlNrzTSmg==}
     peerDependencies:
       '@playwright/test': ^1.0.0
 
@@ -1523,7 +1523,7 @@ snapshots:
     dependencies:
       is-windows: 1.0.2
 
-  block-crawler@1.0.0(@playwright/test@1.56.1):
+  block-crawler@1.1.0(@playwright/test@1.56.1):
     dependencies:
       '@playwright/test': 1.56.1
       fs-extra: 11.3.2

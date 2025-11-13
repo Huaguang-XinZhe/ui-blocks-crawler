@@ -153,6 +153,33 @@ export interface CrawlerConfig {
    * @example async (block) => (await block.getByText("Free", {exact: true}).count()) > 0 // 函数配置
    */
   skipBlockFree?: string | ((block: Locator) => Promise<boolean>);
+  
+  // ========== 脚本注入配置 ==========
+  /**
+   * 脚本注入配置
+   * 注意：startUrl 的 page 不会注入脚本，只有并发访问的链接 page 会注入
+   * 
+   * @example
+   * {
+   *   scripts: ['custom.js'],
+   *   timing: 'afterPageLoad'
+   * }
+   */
+  scriptInjection?: {
+    /** 
+     * 要注入的脚本文件名列表
+     * 脚本文件从 .crawler/域名/ 目录下读取
+     * @example ['custom.js', 'utils.js']
+     */
+    scripts: string[];
+    /** 
+     * 脚本注入时机
+     * - 'beforePageLoad': 在页面加载前注入（使用 addInitScript）
+     * - 'afterPageLoad': 在页面加载后注入（在 goto 之后执行）
+     * @default 'afterPageLoad'
+     */
+    timing?: 'beforePageLoad' | 'afterPageLoad';
+  };
 }
 
 /**

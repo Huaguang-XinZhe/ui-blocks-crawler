@@ -9,7 +9,7 @@ export interface InternalConfig extends Required<Omit<CrawlerConfig,
   'tabListAriaLabel' | 'tabSectionLocator' | 'getTabSection' | 'getAllTabSections' | 'extractTabTextFromSection' |
   'getAllBlocks' | 'getBlockName' | 'extractBlockCount' | 'outputDir' | 'stateDir' | 'blockNameLocator' | 
   'startUrlWaitOptions' | 'collectionLinkWaitOptions' | 'collectionNameLocator' | 'collectionCountLocator' |
-  'skipPageFree' | 'skipBlockFree' | 'locale'>> {
+  'skipPageFree' | 'skipBlockFree' | 'locale' | 'scriptInjection'>> {
   locale: Locale;
   tabListAriaLabel?: string;
   tabSectionLocator?: string;
@@ -23,6 +23,7 @@ export interface InternalConfig extends Required<Omit<CrawlerConfig,
   skipBlockFree?: CrawlerConfig['skipBlockFree'];
   collectionNameLocator?: string;
   collectionCountLocator?: string;
+  scriptInjection?: CrawlerConfig['scriptInjection'];
   outputDir: string;
   stateDir: string;
   progressFile: string;
@@ -136,9 +137,10 @@ export class ConfigManager {
       extractBlockCount: config.extractBlockCount,
       skipPageFree: config.skipPageFree,
       skipBlockFree: config.skipBlockFree,
+      scriptInjection: config.scriptInjection,
       maxConcurrency: config.maxConcurrency ?? 5,
       outputDir,
-      stateDir,
+      stateDir: path.join(stateDir, hostname), // 修改：stateDir 应该包含域名子目录
       progressFile,
       metaFile,
       blockNameLocator: config.blockNameLocator ?? "role=heading[level=1] >> role=link",

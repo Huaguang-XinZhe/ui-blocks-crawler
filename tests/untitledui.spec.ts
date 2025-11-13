@@ -1,5 +1,6 @@
 import { test, type Page, type Locator } from "@playwright/test";
 import { BlockCrawler } from "block-crawler";
+import fse from "fs-extra";
 
 test("untitledui", async ({ page }) => {
   const crawler = new BlockCrawler(page, {
@@ -8,6 +9,10 @@ test("untitledui", async ({ page }) => {
     // locale: "en",
     collectionNameLocator: "p:first-of-type",
     collectionCountLocator: "p:last-of-type",
+    // todo 名字改一改
+    collectionLinkWaitOptions: {
+      waitUntil: "networkidle",
+    },
     // 使用新的 getAllTabSections 模式（跳过 tab 点击）
     getAllTabSections: async (page) => {
       // 返回所有包含内容的 sections
@@ -22,7 +27,14 @@ test("untitledui", async ({ page }) => {
       await clickIfVisibleNow(currentPage, currentPage.getByRole('tab', { name: 'List view' }));
     })
     .each(async ({ block, blockName, blockPath, outputDir, currentPage }) => {
-      console.log(`blockName: ${blockName}`);
+      // 点击 Code
+      await block.getByRole("tab", { name: "Code" }).click();
+      // 获取内部 pre
+      const pre = block.locator('pre').last();
+      // 获取内部 pre 的文本
+      const text = await pre.textContent() ?? "";
+      // 输出到文件
+      await fse.outputFile(`${outputDir}/${blockPath}/App.tsx`, text);
     });
 });
 

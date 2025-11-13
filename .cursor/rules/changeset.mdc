@@ -9,6 +9,5 @@ alwaysApply: false
 - ⚠️ **版本格式：0.x.x** - major 版本号始终为 0（开发阶段）
 - ❌ **永远不要选择 major** - 等项目稳定后手动发布 1.0.0
 - 📝 **每次修改都创建 changeset** - 写 changeset md 文件
-- 🏃 **写完马上运行 `pnpm release-all`** - 发布 npm 包、Git 提交和推送
 
 

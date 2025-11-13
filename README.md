@@ -11,6 +11,7 @@
 🏗️ **模块化架构** - 单一职责原则，易于维护和扩展  
 📦 **自动化管理** - 自动生成进度文件和输出目录  
 🔧 **灵活扩展** - 支持配置函数覆盖，无需继承子类  
+💉 **脚本注入** - 支持在并发页面中注入自定义 JavaScript 脚本  
 🌍 **国际化支持** - 完整的中英文日志输出，可通过 locale 配置切换
 
 ## 📦 安装
@@ -39,6 +40,7 @@ src/
 │   ├── BlockProcessor.ts         # Block 处理 (~140 行)
 │   ├── PageProcessor.ts          # Page 处理 (~35 行)
 │   ├── MetaCollector.ts          # 元信息收集
+│   ├── ScriptInjector.ts         # 脚本注入 (~110 行)
 │   └── CrawlerOrchestrator.ts    # 主协调器 (~270 行)
 └── utils/
     ├── task-progress.ts          # 进度管理
@@ -53,6 +55,7 @@ src/
 - **BlockProcessor** - Block 获取和处理逻辑
 - **PageProcessor** - 单页面处理逻辑
 - **MetaCollector** - 元信息收集和统计
+- **ScriptInjector** - 脚本注入管理，支持在并发页面注入自定义脚本
 - **CrawlerOrchestrator** - 协调各模块，管理并发和进度
 - **TaskProgress** - 进度记录和恢复
 - **I18n** - 国际化支持，中英文日志切换
@@ -171,6 +174,47 @@ test("爬取页面", async ({ page }) => {
   waitUntil: "domcontentloaded",  // "load" | "domcontentloaded" | "networkidle" | "commit"
   timeout: 30000
 }
+```
+
+### 脚本注入配置
+
+支持在并发访问的页面中注入自定义 JavaScript 脚本，可用于修改页面行为、注入工具函数等。
+
+**注意：** `startUrl` 的初始页面不会注入脚本，只有并发访问的链接页面会注入。
+
+| 配置项 | 类型 | 说明 |
+|--------|------|------|
+| `scriptInjection` | `object?` | 脚本注入配置 |
+| `scriptInjection.scripts` | `string[]` | 要注入的脚本文件名列表，从 `.crawler/域名/` 目录读取 |
+| `scriptInjection.timing` | `'beforePageLoad' \| 'afterPageLoad'` | 注入时机，默认 `'afterPageLoad'` |
+
+```typescript
+// 脚本注入示例
+const crawler = new BlockCrawler(page, {
+  startUrl: "https://example.com/components",
+  scriptInjection: {
+    scripts: ['custom-script.js', 'utils.js'],  // 从 .crawler/example.com/ 读取
+    timing: 'afterPageLoad'  // 或 'beforePageLoad'
+  }
+});
+```
+
+**注入时机说明：**
+- `beforePageLoad`：在页面加载前注入（使用 `addInitScript`），适合需要在页面初始化前执行的脚本
+- `afterPageLoad`：在页面加载完成后注入（在 `goto` 之后执行），适合操作已加载的 DOM
+
+**示例脚本文件（`.crawler/example.com/custom-script.js`）：**
+```javascript
+// 在控制台输出信息
+console.log('🎨 Custom script injected!');
+
+// 添加自定义属性到 body
+document.body.setAttribute('data-script-injected', 'true');
+
+// 注入工具函数
+window.customUtils = {
+  log: (msg) => console.log(`[Custom] ${msg}`)
+};
 ```
 
 ### 高级配置（函数覆盖）
