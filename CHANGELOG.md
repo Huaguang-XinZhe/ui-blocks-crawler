@@ -1,5 +1,35 @@
 # block-crawler
 
+## 1.0.0
+
+### Major Changes
+
+- 重大 API 重构：链式调用设计
+
+  **BREAKING CHANGES:**
+
+  - ✨ BlockCrawler 构造函数：page 作为第一个参数 `new BlockCrawler(page, config)`
+  - 🔄 移除 `onBlock()` 和 `onPage()` 方法
+  - ✨ 新增链式调用 API：
+    - Block 模式：`crawler.blocks(locator).before(fn).each(fn)`
+    - Page 模式：`crawler.pages().each(fn)`
+  - 📝 before() 是可选的链式方法，语义更清晰
+  - 🎯 统一优雅的 API 设计，顺序固定且自然
+
+  **迁移指南：**
+
+  ```typescript
+  // 旧 API
+  const crawler = new BlockCrawler(config);
+  await crawler.onBlock(page, locator, handler, beforeHandler);
+  await crawler.onPage(page, handler);
+
+  // 新 API
+  const crawler = new BlockCrawler(page, config);
+  await crawler.blocks(locator).before(beforeHandler).each(handler);
+  await crawler.pages().each(handler);
+  ```
+
 ## 0.8.1
 
 ### Patch Changes
