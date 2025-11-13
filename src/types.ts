@@ -64,11 +64,17 @@ export interface CrawlerConfig {
   getBlockName?: (block: Locator) => Promise<string | null>;
   /**
    * 自定义从文本中提取 Block 数量的函数
-   * 如果提供了此函数，将优先使用；否则使用默认的数字匹配逻辑
+   * 如果提供了此函数，将优先使用；否则使用默认逻辑（匹配文本中的所有数字然后相加）
    * 
    * @param blockCountText Block 数量文本（如 "7 blocks"、"1 component + 6 variants"）
    * @returns Block 数量
-   * @example (text) => { const match = text?.match(/(\d+)\s*component.*?(\d+)\s*variant/); return match ? parseInt(match[1]) + parseInt(match[2]) : 0; }
+   * @example
+   * // 默认行为："7 blocks" → 7，"1 component + 6 variants" → 7
+   * // 自定义示例：只提取特定格式
+   * (text) => {
+   *   const match = text?.match(/(\d+)\s*component/);
+   *   return match ? parseInt(match[1]) : 0;
+   * }
    */
   extractBlockCount?: (blockCountText: string | null) => number;
   /** 

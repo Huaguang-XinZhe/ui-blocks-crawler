@@ -79,11 +79,11 @@ export class LinkCollector {
       return this.config.extractBlockCount(blockCountText);
     }
     
-    // 默认实现：匹配文本中的第一个数字
-    // 文本可能像这样：7 blocks、10 components
+    // 默认实现：匹配文本中的所有数字，然后相加
+    // 文本可能像这样：7 blocks、1 component + 6 variants
     console.log(`      ${this.i18n.t('link.extractDefault')}`);
-    const match = blockCountText?.match(/\d+/);
-    return match ? parseInt(match[0] ?? "0") : 0;
+    const matches = blockCountText?.match(/\d+/g);
+    return matches ? matches.reduce((sum, num) => sum + parseInt(num), 0) : 0;
   }
 
   /**
