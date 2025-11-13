@@ -1,5 +1,16 @@
 # block-crawler
 
+## 0.8.0
+
+### Minor Changes
+
+- 添加 beforeProcessBlocks 前置函数支持
+
+  - ✨ `onBlock` 方法新增第四个可选参数 `beforeProcessBlocks`
+  - 🔧 在匹配页面所有 Block 之前执行前置逻辑
+  - 📝 支持点击按钮、toggle 切换、滚动触发懒加载等场景
+  - 📚 更新文档和示例代码
+
 ## 0.7.0
 
 ### Minor Changes
