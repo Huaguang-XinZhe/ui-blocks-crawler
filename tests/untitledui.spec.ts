@@ -1,4 +1,4 @@
-import { test, type Page, type Locator } from "@playwright/test";
+import { test, type Locator } from "@playwright/test";
 import { BlockCrawler } from "@huaguang/block-crawler";
 import fse from "fs-extra";
 
