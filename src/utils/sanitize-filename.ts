@@ -10,7 +10,7 @@ export function sanitizeFilename(filename: string): string {
   // 同时移除控制字符（ASCII 0-31）和删除字符（127）
   // 替换空格为下划线（可选，但更安全）
   
-  return filename
+  const sanitized = filename
     // 移除或替换非法字符
     .replace(/[<>:"/\\|?*\x00-\x1F\x7F]/g, '')
     // 替换连续的点为单个点（但保留最后一个扩展名的点）
@@ -24,5 +24,26 @@ export function sanitizeFilename(filename: string): string {
     .slice(0, 200)
     // 如果清理后为空，使用默认名称
     || 'unnamed';
+  
+  return sanitized;
+}
+
+/**
+ * 清理文件名并返回原始和清理后的文件名
+ * 
+ * @param filename 原始文件名
+ * @returns 包含原始文件名和清理后文件名的对象
+ */
+export function sanitizeFilenameWithOriginal(filename: string): {
+  original: string;
+  sanitized: string;
+  changed: boolean;
+} {
+  const sanitized = sanitizeFilename(filename);
+  return {
+    original: filename,
+    sanitized,
+    changed: filename !== sanitized,
+  };
 }
 

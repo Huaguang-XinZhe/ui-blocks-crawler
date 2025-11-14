@@ -21,4 +21,6 @@ export type {
 } from "./types";
 export type { Locale } from "./utils/i18n";
 export type { SafeOutput } from "./utils/safe-output";
+export { FilenameMappingManager } from "./utils/filename-mapping";
+export type { FilenameMapping } from "./utils/filename-mapping";
 

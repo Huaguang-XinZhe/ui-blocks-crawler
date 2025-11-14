@@ -3,6 +3,7 @@ import type { PageHandler, PageContext } from "../types";
 import type { InternalConfig } from "./ConfigManager";
 import { createI18n, type I18n } from "../utils/i18n";
 import { createSafeOutput } from "../utils/safe-output";
+import type { FilenameMappingManager } from "../utils/filename-mapping";
 
 /**
  * Page 处理器
@@ -14,6 +15,7 @@ export class PageProcessor {
   constructor(
     private config: InternalConfig,
     private pageHandler: PageHandler,
+    private filenameMappingManager?: FilenameMappingManager
   ) {
     this.i18n = createI18n(config.locale);
   }
@@ -55,7 +57,7 @@ export class PageProcessor {
       currentPage: page,
       currentPath,
       outputDir: this.config.outputDir,
-      safeOutput: createSafeOutput('page', this.config.outputDir),
+      safeOutput: createSafeOutput('page', this.config.outputDir, this.filenameMappingManager),
     };
 
     try {

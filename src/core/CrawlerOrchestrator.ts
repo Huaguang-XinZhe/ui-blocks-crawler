@@ -11,6 +11,7 @@ import { ScriptInjector } from "./ScriptInjector";
 import { BlockNameExtractor } from "./BlockNameExtractor";
 import { createI18n, type I18n } from "../utils/i18n";
 import { createSafeOutput } from "../utils/safe-output";
+import { FilenameMappingManager } from "../utils/filename-mapping";
 
 /**
  * 爬虫协调器
@@ -22,6 +23,7 @@ export class CrawlerOrchestrator {
   private metaCollector: MetaCollector;
   private scriptInjector: ScriptInjector;
   private blockNameExtractor: BlockNameExtractor;
+  private filenameMappingManager: FilenameMappingManager;
   private limit: ReturnType<typeof pLimit>;
   private i18n: I18n;
 
@@ -34,8 +36,23 @@ export class CrawlerOrchestrator {
     this.metaCollector = new MetaCollector(config.startUrl, config.metaFile, config.locale);
     this.scriptInjector = new ScriptInjector(config);
     this.blockNameExtractor = new BlockNameExtractor(config);
+    this.filenameMappingManager = new FilenameMappingManager(config.stateDir);
     this.limit = pLimit(config.maxConcurrency);
     this.i18n = createI18n(config.locale);
+  }
+
+  /**
+   * 初始化文件名映射管理器
+   */
+  async initializeFilenameMapping(): Promise<void> {
+    await this.filenameMappingManager.initialize();
+  }
+
+  /**
+   * 保存文件名映射
+   */
+  async saveFilenameMapping(): Promise<void> {
+    await this.filenameMappingManager.save();
   }
 
   /**
@@ -88,6 +105,9 @@ export class CrawlerOrchestrator {
     // 初始化元信息收集器（加载已有数据）
     await this.metaCollector.initialize();
 
+    // 初始化文件名映射管理器（加载已有映射）
+    await this.initializeFilenameMapping();
+
     let isComplete = false;
     try {
       // 访问目标链接
@@ -127,6 +147,9 @@ export class CrawlerOrchestrator {
     
     // 保存元信息
     await this.metaCollector.save(isComplete);
+    
+    // 保存文件名映射
+    await this.saveFilenameMapping();
   }
 
   /**
@@ -318,7 +341,8 @@ export class CrawlerOrchestrator {
           blockSectionLocator,
           blockHandler,
           this.taskProgress,
-          beforeProcessBlocks
+          beforeProcessBlocks,
+          this.filenameMappingManager
         );
         const result = await blockProcessor.processBlocksInPage(newPage, relativeLink);
         
@@ -328,7 +352,7 @@ export class CrawlerOrchestrator {
           this.metaCollector.addFreeBlock(blockName);
         });
       } else if (pageHandler) {
-        const pageProcessor = new PageProcessor(this.config, pageHandler);
+        const pageProcessor = new PageProcessor(this.config, pageHandler, this.filenameMappingManager);
         await pageProcessor.processPage(newPage, relativeLink);
         
         // 标记页面为完成
@@ -435,6 +459,9 @@ export class CrawlerOrchestrator {
         console.log(`\n${this.i18n.t('crawler.testUsingFirst', { name: blockName })}`);
       }
       
+      // 初始化文件名映射管理器（测试模式也需要）
+      await this.initializeFilenameMapping();
+      
       // 执行测试逻辑
       console.log(`\n${this.i18n.t('crawler.testRunning')}`);
       await testMode.handler({
@@ -442,8 +469,11 @@ export class CrawlerOrchestrator {
         section: targetSection,
         blockName,
         outputDir: this.config.outputDir,
-        safeOutput: createSafeOutput('test', this.config.outputDir, undefined, blockName),
+        safeOutput: createSafeOutput('test', this.config.outputDir, this.filenameMappingManager, undefined, blockName),
       });
+      
+      // 保存文件名映射（测试模式）
+      await this.saveFilenameMapping();
       
       console.log(`\n${this.i18n.t('crawler.testComplete')}`);
     } catch (error) {

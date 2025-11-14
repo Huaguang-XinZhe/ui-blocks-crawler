@@ -5,6 +5,7 @@ import type { TaskProgress } from "../utils/task-progress";
 import { createI18n, type I18n } from "../utils/i18n";
 import { BlockNameExtractor } from "./BlockNameExtractor";
 import { createSafeOutput } from "../utils/safe-output";
+import type { FilenameMappingManager } from "../utils/filename-mapping";
 
 /**
  * Block 处理器
@@ -19,7 +20,8 @@ export class BlockProcessor {
     private blockSectionLocator: string,
     private blockHandler: BlockHandler,
     private taskProgress?: TaskProgress,
-    private beforeProcessBlocks?: ((page: Page) => Promise<void>) | null
+    private beforeProcessBlocks?: ((page: Page) => Promise<void>) | null,
+    private filenameMappingManager?: FilenameMappingManager
   ) {
     this.i18n = createI18n(config.locale);
     this.blockNameExtractor = new BlockNameExtractor(config);
@@ -139,7 +141,7 @@ export class BlockProcessor {
       blockPath,
       blockName,
       outputDir: this.config.outputDir,
-      safeOutput: createSafeOutput('block', this.config.outputDir, blockPath),
+      safeOutput: createSafeOutput('block', this.config.outputDir, this.filenameMappingManager, blockPath),
     };
 
     try {
