@@ -264,16 +264,28 @@ test("测试指定组件", async ({ page }) => {
 | 配置项 | 类型 | 说明 |
 |--------|------|------|
 | `scriptInjection` | `object?` | 脚本注入配置 |
-| `scriptInjection.scripts` | `string[]` | 要注入的脚本文件名列表，从 `.crawler/域名/` 目录读取 |
-| `scriptInjection.timing` | `'beforePageLoad' \| 'afterPageLoad'` | 注入时机，默认 `'afterPageLoad'` |
+| `scriptInjection.script` | `string?` | 单个脚本文件名，从 `.crawler/域名/` 目录读取 |
+| `scriptInjection.scripts` | `string[]?` | 多个脚本文件名列表，从 `.crawler/域名/scripts/` 目录读取 |
+| `scriptInjection.timing` | `'beforePageLoad' \| 'afterPageLoad'?` | 注入时机，默认 `'afterPageLoad'` |
+
+**注意：** `script` 和 `scripts` 不能同时设置，必须选择其中一个。
 
 ```typescript
-// 脚本注入示例
+// 示例 1：单个脚本（从根目录）
 const crawler = new BlockCrawler(page, {
   startUrl: "https://example.com/components",
   scriptInjection: {
-    scripts: ['custom-script.js', 'utils.js'],  // 从 .crawler/example.com/ 读取
-    timing: 'afterPageLoad'  // 或 'beforePageLoad'
+    script: 'custom-script.js',  // 从 .crawler/example.com/ 读取
+    timing: 'afterPageLoad'
+  }
+});
+
+// 示例 2：多个脚本（从 scripts 子目录）
+const crawler = new BlockCrawler(page, {
+  startUrl: "https://example.com/components",
+  scriptInjection: {
+    scripts: ['utils.js', 'helpers.js'],  // 从 .crawler/example.com/scripts/ 读取
+    timing: 'afterPageLoad'
   }
 });
 ```

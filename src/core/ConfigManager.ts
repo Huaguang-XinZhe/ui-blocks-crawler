@@ -94,6 +94,47 @@ export class ConfigManager {
       }
     }
 
+    // 冲突 2: scriptInjection 的 script 和 scripts 不能同时设置
+    if (config.scriptInjection) {
+      const { script, scripts } = config.scriptInjection;
+      
+      if (script && scripts && scripts.length > 0) {
+        throw new Error(
+          `❌ 配置冲突：scriptInjection 中的 script 和 scripts 不能同时设置\n\n` +
+          `原因：\n` +
+          `  • script（单数）：单个脚本，从 .crawler/域名/ 目录读取\n` +
+          `  • scripts（复数）：多个脚本，从 .crawler/域名/scripts/ 目录读取\n\n` +
+          `请选择以下方案之一：\n\n` +
+          `方案 1：使用 script（单个脚本）\n` +
+          `const crawler = new BlockCrawler({\n` +
+          `  scriptInjection: {\n` +
+          `    script: 'custom-script.js',  // 从 .crawler/域名/ 读取\n` +
+          `    timing: 'afterPageLoad'\n` +
+          `  }\n` +
+          `});\n\n` +
+          `方案 2：使用 scripts（多个脚本）\n` +
+          `const crawler = new BlockCrawler({\n` +
+          `  scriptInjection: {\n` +
+          `    scripts: ['utils.js', 'helpers.js'],  // 从 .crawler/域名/scripts/ 读取\n` +
+          `    timing: 'afterPageLoad'\n` +
+          `  }\n` +
+          `});\n`
+        );
+      }
+      
+      // 检查至少设置了一个
+      if (!script && (!scripts || scripts.length === 0)) {
+        throw new Error(
+          `❌ 配置错误：scriptInjection 必须设置 script 或 scripts 之一\n\n` +
+          `示例：\n` +
+          `scriptInjection: {\n` +
+          `  script: 'custom-script.js'  // 或\n` +
+          `  scripts: ['utils.js']       // 或\n` +
+          `}\n`
+        );
+      }
+    }
+
     // 注意：以下配置可以共存，因为它们有优先级关系
     // 
     // ✅ 允许共存的配置组：

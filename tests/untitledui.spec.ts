@@ -13,8 +13,7 @@ test("untitledui", async ({ page }) => {
       waitUntil: "networkidle",
     },
     scriptInjection: {
-      scripts: ["custom-script.js"],
-      timing: "afterPageLoad", // 在页面加载后注入
+      script: "custom-script.js"  // 单个脚本，从 .crawler/www.untitledui.com/ 读取
     },
     // 使用新的 getAllTabSections 模式（跳过 tab 点击）
     getAllTabSections: async (page) => {
@@ -23,40 +22,43 @@ test("untitledui", async ({ page }) => {
     },
   });
 
-  // await crawler
-  //   .blocks("[data-preview]")
-  //   .before(async (currentPage) => {
-  //     // 前置逻辑示例：在匹配所有 Block 之前执行
-  //     await clickIfVisibleNow(currentPage.getByRole('tab', { name: 'List view' }));
-  //   })
-  //   .each(async ({ block, blockName, blockPath, outputDir, currentPage }) => {
-  //     // 点击 Code
-  //     await block.getByRole("tab", { name: "Code" }).click();
-  //     // 获取内部 pre
-  //     const pre = block.locator('pre').last();
-  //     // 获取内部 pre 的文本
-  //     const text = await pre.textContent() ?? "";
-  //     // 输出到文件
-  //     await fse.outputFile(`${outputDir}/${blockPath}/index.tsx`, text);
-  //   });
-
   await crawler
-    .test(
-      "https://www.untitledui.com/react/marketing/landing-pages",
-      "[data-preview]"
-    )
-    .run(async ({ section, blockName, currentPage, outputDir }) => {
-      console.log(`测试组件: ${blockName}`);
+    .blocks("[data-preview]")
+    .before(async (currentPage) => {
+      // 前置逻辑示例：在匹配所有 Block 之前执行
+      await clickIfVisibleNow(currentPage.getByRole('tab', { name: 'List view' }));
+    })
+    .each(async ({ block, blockName, blockPath, outputDir, currentPage }) => {
       // 点击 Code
       await currentPage.getByRole('tab', { name: 'Code' }).click();
       // 获取内部 pre
-      const pre = section.locator('pre').last();
-      // 获取内部 pre 的文本
-      const text = await pre.textContent() ?? "";
+      const code = await extractCodeFromDOM(block);
       // 输出到文件
-      await fse.outputFile(`${outputDir}/test-${blockName}.tsx`, text);
+      await fse.outputFile(`${outputDir}/${blockPath}/index.tsx`, code);
     });
+
+  // await crawler
+  //   .test(
+  //     "https://www.untitledui.com/react/marketing/landing-pages",
+  //     "[data-preview]"
+  //   )
+  //   .run(async ({ section, blockName, currentPage, outputDir }) => {
+  //     console.log(`测试组件: ${blockName}`);
+  //     // 点击 Code
+  //     await currentPage.getByRole('tab', { name: 'Code' }).click();
+  //     // 获取内部 pre
+  //     const code = await extractCodeFromDOM(section);
+  //     // 输出到文件
+  //     await fse.outputFile(`${outputDir}/test-${blockName}.tsx`, code);
+  //   });
 });
+
+// 从 DOM 中提取 Code
+async function extractCodeFromDOM(section: Locator): Promise<string> {
+  const pre = section.locator('pre').last();
+  const rawText = await pre.textContent() ?? "";
+  return rawText.replace(/Show more/, "").trim();
+}
 
 // 如果元素存在且可见（立即判断），则点击
 async function clickIfVisibleNow(locator: Locator) {

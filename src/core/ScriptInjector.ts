@@ -26,15 +26,28 @@ export class ScriptInjector {
 
     // 预加载所有脚本内容
     if (this.enabled && config.scriptInjection) {
-      this.loadScripts(config.scriptInjection.scripts);
+      const { script, scripts } = config.scriptInjection;
+      
+      // 处理单个脚本（从根目录）
+      if (script) {
+        this.loadScripts([script], false);
+      }
+      
+      // 处理多个脚本（从 scripts 子目录）
+      if (scripts && scripts.length > 0) {
+        this.loadScripts(scripts, true);
+      }
     }
   }
 
   /**
    * 加载脚本文件内容并处理油猴脚本格式
+   * @param scriptNames 脚本文件名列表
+   * @param useSubDir 是否使用 scripts 子目录
    */
-  private loadScripts(scriptNames: string[]): void {
-    const scriptsDir = this.config.stateDir; // .crawler/域名/
+  private loadScripts(scriptNames: string[], useSubDir: boolean): void {
+    const baseDir = this.config.stateDir; // .crawler/域名/
+    const scriptsDir = useSubDir ? join(baseDir, 'scripts') : baseDir;
 
     for (const scriptName of scriptNames) {
       const scriptPath = join(scriptsDir, scriptName);

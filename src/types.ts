@@ -167,11 +167,19 @@ export interface CrawlerConfig {
    */
   scriptInjection?: {
     /** 
-     * 要注入的脚本文件名列表
-     * 脚本文件从 .crawler/域名/ 目录下读取
-     * @example ['custom.js', 'utils.js']
+     * 单个脚本文件名
+     * 从 `.crawler/域名/` 目录读取
+     * 
+     * @example 'custom-script.js'
      */
-    scripts: string[];
+    script?: string;
+    /** 
+     * 多个脚本文件名列表
+     * 从 `.crawler/域名/scripts/` 目录读取
+     * 
+     * @example ['utils.js', 'helpers.js']
+     */
+    scripts?: string[];
     /** 
      * 脚本注入时机
      * - 'beforePageLoad': 在页面加载前注入（使用 addInitScript）
