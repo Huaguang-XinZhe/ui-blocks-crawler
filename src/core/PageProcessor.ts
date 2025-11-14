@@ -21,27 +21,27 @@ export class PageProcessor {
    * 检查页面是否为 Free
    */
   private async isPageFree(page: Page): Promise<boolean> {
-    if (!this.config.skipPageFree) {
+    if (!this.config.skipFree) {
       return false;
     }
 
     // 字符串配置：使用 getByText 精确匹配
-    if (typeof this.config.skipPageFree === "string") {
-      const count = await page.getByText(this.config.skipPageFree, { exact: true }).count();
+    if (typeof this.config.skipFree === "string") {
+      const count = await page.getByText(this.config.skipFree, { exact: true }).count();
       
       if (count === 0) {
         return false;
       }
       
       if (count !== 1) {
-        throw new Error(this.i18n.t('page.freeError', { count, text: this.config.skipPageFree }));
+        throw new Error(this.i18n.t('page.freeError', { count, text: this.config.skipFree }));
       }
       
       return true;
     }
     
     // 函数配置：使用自定义判断逻辑
-    return await this.config.skipPageFree(page);
+    return await this.config.skipFree(page);
   }
 
   /**

@@ -40,6 +40,20 @@ export class BlockProcessor {
     const blocks = await this.getAllBlocks(page);
     console.log(this.i18n.t('block.found', { count: blocks.length }));
 
+    // 检查整个页面是否为 Free（如果是，说明单个 block 没有 Free 标志）
+    const isPageFree = await this.isPageFree(page);
+    if (isPageFree) {
+      console.log(this.i18n.t('page.skipFree', { path: pagePath }));
+      // 标记页面为完成（虽然跳过了处理）
+      const normalizedPath = this.normalizePagePath(pagePath);
+      this.taskProgress?.markPageComplete(normalizedPath);
+      // 返回所有 block 都是 free 的标记
+      return {
+        totalCount: blocks.length,
+        freeBlocks: [], // 整个页面跳过，不记录单个 block 名称
+      };
+    }
+
     let completedCount = 0;
     const freeBlocks: string[] = [];
 
@@ -71,30 +85,48 @@ export class BlockProcessor {
   }
 
   /**
-   * 检查 Block 是否为 Free
+   * 检查整个页面是否为 Free
    */
-  private async isBlockFree(block: Locator): Promise<boolean> {
-    if (!this.config.skipBlockFree) {
+  private async isPageFree(page: Page): Promise<boolean> {
+    if (!this.config.skipFree) {
       return false;
     }
 
     // 字符串配置：使用 getByText 精确匹配
-    if (typeof this.config.skipBlockFree === "string") {
-      const count = await block.getByText(this.config.skipBlockFree, { exact: true }).count();
+    if (typeof this.config.skipFree === "string") {
+      const count = await page.getByText(this.config.skipFree, { exact: true }).count();
+      return count > 0;
+    }
+    
+    // 函数配置：使用自定义判断逻辑
+    return await this.config.skipFree(page);
+  }
+
+  /**
+   * 检查单个 Block 是否为 Free
+   */
+  private async isBlockFree(block: Locator): Promise<boolean> {
+    if (!this.config.skipFree) {
+      return false;
+    }
+
+    // 字符串配置：使用 getByText 精确匹配
+    if (typeof this.config.skipFree === "string") {
+      const count = await block.getByText(this.config.skipFree, { exact: true }).count();
       
       if (count === 0) {
         return false;
       }
       
       if (count !== 1) {
-        throw new Error(this.i18n.t('block.freeError', { count, text: this.config.skipBlockFree }));
+        throw new Error(this.i18n.t('block.freeError', { count, text: this.config.skipFree }));
       }
       
       return true;
     }
     
     // 函数配置：使用自定义判断逻辑
-    return await this.config.skipBlockFree(block);
+    return await this.config.skipFree(block);
   }
 
   /**

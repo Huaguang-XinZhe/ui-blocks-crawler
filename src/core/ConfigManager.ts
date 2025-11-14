@@ -9,7 +9,7 @@ export interface InternalConfig extends Required<Omit<CrawlerConfig,
   'tabListAriaLabel' | 'tabSectionLocator' | 'getTabSection' | 'getAllTabSections' | 'extractTabTextFromSection' |
   'getAllBlocks' | 'getBlockName' | 'extractBlockCount' | 'outputDir' | 'stateDir' | 'blockNameLocator' | 
   'startUrlWaitOptions' | 'collectionLinkWaitOptions' | 'collectionNameLocator' | 'collectionCountLocator' |
-  'skipPageFree' | 'skipBlockFree' | 'locale' | 'scriptInjection'>> {
+  'skipFree' | 'locale' | 'scriptInjection'>> {
   locale: Locale;
   tabListAriaLabel?: string;
   tabSectionLocator?: string;
@@ -19,8 +19,7 @@ export interface InternalConfig extends Required<Omit<CrawlerConfig,
   getAllBlocks?: CrawlerConfig['getAllBlocks'];
   getBlockName?: CrawlerConfig['getBlockName'];
   extractBlockCount?: CrawlerConfig['extractBlockCount'];
-  skipPageFree?: CrawlerConfig['skipPageFree'];
-  skipBlockFree?: CrawlerConfig['skipBlockFree'];
+  skipFree?: CrawlerConfig['skipFree'];
   collectionNameLocator?: string;
   collectionCountLocator?: string;
   scriptInjection?: CrawlerConfig['scriptInjection'];
@@ -176,8 +175,7 @@ export class ConfigManager {
       getAllBlocks: config.getAllBlocks,
       getBlockName: config.getBlockName,
       extractBlockCount: config.extractBlockCount,
-      skipPageFree: config.skipPageFree,
-      skipBlockFree: config.skipBlockFree,
+      skipFree: config.skipFree,
       scriptInjection: config.scriptInjection,
       maxConcurrency: config.maxConcurrency ?? 5,
       outputDir,

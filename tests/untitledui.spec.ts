@@ -5,8 +5,9 @@ import fse from "fs-extra";
 test("untitledui", async ({ page }) => {
   const crawler = new BlockCrawler(page, {
     startUrl: "https://www.untitledui.com/react/components",
-    skipPageFree: "FREE",
+    skipFree: "FREE",
     // locale: "en",
+    enableProgressResume: false,
     collectionNameLocator: "p:first-of-type",
     collectionCountLocator: "p:last-of-type",
     collectionLinkWaitOptions: {
@@ -28,13 +29,13 @@ test("untitledui", async ({ page }) => {
       // 前置逻辑示例：在匹配所有 Block 之前执行
       await clickIfVisibleNow(currentPage.getByRole('tab', { name: 'List view' }));
     })
-    .each(async ({ block, blockName, blockPath, outputDir, currentPage }) => {
+    .each(async ({ block, blockPath, outputDir }) => {
       // 点击 Code
       await block.getByRole('tab', { name: 'Code' }).click();
       // 获取内部 pre
       const code = await extractCodeFromDOM(block);
       // 输出到文件
-      await fse.outputFile(`${outputDir}/${blockPath}/index.tsx`, code);
+      await fse.outputFile(`${outputDir}/${blockPath}.tsx`, code);
     });
 
   // await crawler

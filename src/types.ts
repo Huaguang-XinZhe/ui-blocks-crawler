@@ -138,21 +138,20 @@ export interface CrawlerConfig {
   
   // ========== Free 过滤配置 ==========
   /**
-   * 跳过 Free 页面的配置
+   * 跳过 Free 内容的配置（自动适配 Page 模式和 Block 模式）
+   * 
+   * **Page 模式：** 检查页面是否有 Free 标志，有则跳过整个页面
+   * **Block 模式：**
+   *   1. 先检查整个页面是否有 Free 标志（说明单个 block 没有 Free 标志），有则跳过所有 block
+   *   2. 如果页面没有 Free 标志，再检查单个 block 是否有 Free 标志
+   * 
    * - 字符串：使用 getByText(text, {exact: true}) 精确匹配文本
-   * - 函数：自定义判断逻辑
+   * - 函数：自定义判断逻辑（接收 Page 或 Locator 参数）
+   * 
    * @example "FREE" // 字符串配置
-   * @example async (page) => (await page.getByText("FREE", {exact: true}).count()) > 0 // 函数配置
+   * @example async (pageOrBlock) => (await pageOrBlock.getByText("FREE", {exact: true}).count()) > 0 // 函数配置
    */
-  skipPageFree?: string | ((page: Page) => Promise<boolean>);
-  /**
-   * 跳过 Free Block 的配置
-   * - 字符串：使用 getByText(text, {exact: true}) 精确匹配文本
-   * - 函数：自定义判断逻辑
-   * @example "Free" // 字符串配置
-   * @example async (block) => (await block.getByText("Free", {exact: true}).count()) > 0 // 函数配置
-   */
-  skipBlockFree?: string | ((block: Locator) => Promise<boolean>);
+  skipFree?: string | ((pageOrBlock: Page | Locator) => Promise<boolean>);
   
   // ========== 脚本注入配置 ==========
   /**
