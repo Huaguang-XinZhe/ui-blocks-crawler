@@ -1,6 +1,7 @@
 import fse from "fs-extra";
 import type { CollectionLink, SiteMeta } from "../types";
 import { createI18n, type I18n, type Locale } from "../utils/i18n";
+import { atomicWriteJson } from "../utils/atomic-write";
 
 /**
  * 元信息收集器 - 负责收集和保存网站爬取元信息
@@ -99,128 +100,94 @@ export class MetaCollector {
   }
 
   /**
-   * 保存元信息到文件
+   * 检查是否有实际内容
    */
-  async save(isComplete: boolean = false): Promise<void> {
-    // 更新时间和完成状态
-    const endTime = new Date();
-    this.meta.isComplete = isComplete;
-    this.meta.startTime = this.startTime.toLocaleString();
-    this.meta.duration = Math.floor((endTime.getTime() - this.startTime.getTime()) / 1000);
-    
-    // 更新链接总数
-    this.meta.totalLinks = this.meta.collectionLinks.length;
-
-    // 检查是否有实际内容
-    const hasContent = 
+  private hasContent(): boolean {
+    return (
       this.meta.collectionLinks.length > 0 ||
       this.meta.freePages.links.length > 0 ||
       this.meta.freeBlocks.blockNames.length > 0 ||
       this.meta.displayedTotalCount > 0 ||
-      this.meta.actualTotalCount > 0;
+      this.meta.actualTotalCount > 0
+    );
+  }
 
-    // 如果没有任何内容，且已有文件存在，则不覆盖
+  /**
+   * 判断是否应该跳过保存（无内容且已有文件存在）
+   */
+  private async shouldSkipSave(): Promise<boolean> {
+    if (this.hasContent()) {
+      return false;
+    }
     const existingMeta = await MetaCollector.load(this.metaFile);
-    if (!hasContent && existingMeta) {
-      console.log(this.i18n.t('meta.skipEmpty', { path: this.metaFile }));
-      return;
-    }
+    return existingMeta !== null;
+  }
 
-    // 合并已有数据（保留已有的 collectionLinks、freePages、freeBlocks）
-    let finalMeta: SiteMeta;
+  /**
+   * 合并已有数据（保留已有的 collectionLinks、freePages、freeBlocks）
+   */
+  private mergeWithExisting(existingMeta: SiteMeta): SiteMeta {
+    // 合并 collectionLinks（去重）
+    const existingLinks = new Map<string, CollectionLink>();
+    (existingMeta.collectionLinks || []).forEach(link => {
+      existingLinks.set(link.link, link);
+    });
+    this.meta.collectionLinks.forEach(link => {
+      existingLinks.set(link.link, link);
+    });
+
+    // 合并 freePages（去重）
+    const existingFreePages = new Set(existingMeta.freePages?.links || []);
+    this.meta.freePages.links.forEach(link => existingFreePages.add(link));
+
+    // 合并 freeBlocks（去重）
+    const existingFreeBlocks = new Set(existingMeta.freeBlocks?.blockNames || []);
+    this.meta.freeBlocks.blockNames.forEach(name => existingFreeBlocks.add(name));
+
+    return {
+      ...this.meta,
+      collectionLinks: Array.from(existingLinks.values()),
+      totalLinks: existingLinks.size,
+      displayedTotalCount: Math.max(
+        existingMeta.displayedTotalCount || 0,
+        this.meta.displayedTotalCount
+      ),
+      actualTotalCount: Math.max(
+        existingMeta.actualTotalCount || 0,
+        this.meta.actualTotalCount
+      ),
+      freePages: {
+        total: existingFreePages.size,
+        links: Array.from(existingFreePages),
+      },
+      freeBlocks: {
+        total: existingFreeBlocks.size,
+        blockNames: Array.from(existingFreeBlocks),
+      },
+    };
+  }
+
+  /**
+   * 准备要保存的元数据（更新时间和状态，合并已有数据）
+   */
+  private async prepareMetaForSave(isComplete: boolean): Promise<SiteMeta> {
+    const endTime = new Date();
+    this.meta.isComplete = isComplete;
+    this.meta.startTime = this.startTime.toLocaleString();
+    this.meta.duration = Math.floor((endTime.getTime() - this.startTime.getTime()) / 1000);
+    this.meta.totalLinks = this.meta.collectionLinks.length;
+
+    const existingMeta = await MetaCollector.load(this.metaFile);
     if (existingMeta) {
-      // 合并 collectionLinks（去重）
-      const existingLinks = new Map<string, CollectionLink>();
-      (existingMeta.collectionLinks || []).forEach(link => {
-        existingLinks.set(link.link, link);
-      });
-      this.meta.collectionLinks.forEach(link => {
-        existingLinks.set(link.link, link);
-      });
-
-      // 合并 freePages（去重）
-      const existingFreePages = new Set(existingMeta.freePages?.links || []);
-      this.meta.freePages.links.forEach(link => existingFreePages.add(link));
-
-      // 合并 freeBlocks（去重）
-      const existingFreeBlocks = new Set(existingMeta.freeBlocks?.blockNames || []);
-      this.meta.freeBlocks.blockNames.forEach(name => existingFreeBlocks.add(name));
-
-      finalMeta = {
-        ...this.meta,
-        collectionLinks: Array.from(existingLinks.values()),
-        totalLinks: existingLinks.size,
-        displayedTotalCount: Math.max(
-          existingMeta.displayedTotalCount || 0,
-          this.meta.displayedTotalCount
-        ),
-        actualTotalCount: Math.max(
-          existingMeta.actualTotalCount || 0,
-          this.meta.actualTotalCount
-        ),
-        freePages: {
-          total: existingFreePages.size,
-          links: Array.from(existingFreePages),
-        },
-        freeBlocks: {
-          total: existingFreeBlocks.size,
-          blockNames: Array.from(existingFreeBlocks),
-        },
-      };
-    } else {
-      finalMeta = { ...this.meta };
+      return this.mergeWithExisting(existingMeta);
     }
+    return { ...this.meta };
+  }
 
-    // 使用原子写入确保数据完整性
-    const tempFile = `${this.metaFile}.tmp`;
-    let retries = 3;
-    let lastError: Error | null = null;
-
-    while (retries > 0) {
-      try {
-        // 先写入临时文件
-        await fse.outputJson(tempFile, finalMeta, { spaces: 2 });
-        
-        // 验证临时文件是否写入成功
-        const tempContent = await fse.readJson(tempFile);
-        if (!tempContent || Object.keys(tempContent).length === 0) {
-          throw new Error('写入的文件内容为空');
-        }
-
-        // 原子性替换：将临时文件重命名为目标文件
-        await fse.move(tempFile, this.metaFile, { overwrite: true });
-
-        // 验证最终文件
-        const finalContent = await fse.readJson(this.metaFile);
-        if (!finalContent || Object.keys(finalContent).length === 0) {
-          throw new Error('最终文件内容为空');
-        }
-
-        // 写入成功，跳出重试循环
-        break;
-      } catch (error) {
-        lastError = error as Error;
-        retries--;
-        
-        // 清理临时文件
-        if (await fse.pathExists(tempFile)) {
-          await fse.remove(tempFile).catch(() => {});
-        }
-
-        if (retries > 0) {
-          // 等待后重试
-          await new Promise(resolve => setTimeout(resolve, 100));
-        } else {
-          // 所有重试都失败，抛出错误
-          console.error(this.i18n.t('meta.saveFailed', { 
-            path: this.metaFile, 
-            error: String(lastError) 
-          }));
-          throw new Error(`保存 meta.json 失败: ${lastError.message}`);
-        }
-      }
-    }
-    
+  /**
+   * 输出保存统计信息
+   */
+  private logSaveStats(finalMeta: SiteMeta, isComplete: boolean): void {
     console.log(`\n${this.i18n.t('meta.saved', { path: this.metaFile })}`);
     console.log(this.i18n.t('meta.stats'));
     console.log(this.i18n.t('meta.collectedLinks', { count: finalMeta.totalLinks }));
@@ -233,6 +200,34 @@ export class MetaCollector {
       ? (isComplete ? '是' : '否')
       : (isComplete ? 'Yes' : 'No');
     console.log(this.i18n.t('meta.isComplete', { status: statusText }));
+  }
+
+  /**
+   * 保存元信息到文件
+   */
+  async save(isComplete: boolean = false): Promise<void> {
+    // 检查是否应该跳过保存
+    if (await this.shouldSkipSave()) {
+      console.log(this.i18n.t('meta.skipEmpty', { path: this.metaFile }));
+      return;
+    }
+
+    // 准备要保存的数据
+    const finalMeta = await this.prepareMetaForSave(isComplete);
+
+    // 使用原子写入工具保存
+    try {
+      await atomicWriteJson(this.metaFile, finalMeta);
+    } catch (error) {
+      console.error(this.i18n.t('meta.saveFailed', { 
+        path: this.metaFile, 
+        error: String(error) 
+      }));
+      throw error;
+    }
+
+    // 输出统计信息
+    this.logSaveStats(finalMeta, isComplete);
   }
 
   /**
