@@ -307,8 +307,7 @@ window.customUtils = {
 3. 默认逻辑：使用 `block.getByRole('heading')` 查找 heading 元素
    - 如果 heading 内部子元素 > 1（结构复杂），自动提取内部的 link 文本
    - 如果 heading 内部子元素 ≤ 1，直接取 heading 的文本内容
-   - Block 模式：如果结构复杂但未找到 link，会抛出错误提示
-   - 测试模式：如果结构复杂但未找到 link，返回 heading 的文本内容
+   - 如果结构复杂但未找到 link，会抛出错误提示配置 `getBlockName` 或 `blockNameLocator`
 
 ### Block 前置逻辑
 
