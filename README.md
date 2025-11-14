@@ -529,6 +529,57 @@ interface PageContext {
 }
 ```
 
+## 📝 安全文件输出
+
+框架提供了 `safeOutput` 函数，用于安全地写入文件，自动处理文件名中的非法字符。
+
+### 特性
+
+- ✅ **自动文件名清理** - 移除或替换非法字符（`< > : " / \ | ? *` 等）
+- ✅ **智能默认路径** - 根据模式自动生成默认路径
+- ✅ **路径 sanitize** - 所有路径（包括用户传入的）都会自动 sanitize
+- ✅ **跨平台兼容** - 确保在 Windows、macOS、Linux 上都能正常工作
+
+### 使用方式
+
+```typescript
+// Block 模式 - 使用默认路径
+await crawler
+  .blocks("[data-preview]")
+  .each(async ({ block, safeOutput }) => {
+    const code = await extractCode(block);
+    await safeOutput(code); // 默认路径：${outputDir}/${blockPath}.tsx
+  });
+
+// Test 模式 - 使用默认路径
+await crawler
+  .test("https://example.com/page", "[data-preview]", 1)
+  .run(async ({ section, safeOutput }) => {
+    const code = await extractCode(section);
+    await safeOutput(code); // 默认路径：${outputDir}/test-${blockName}.tsx
+  });
+
+// 自定义路径（也会自动 sanitize）
+await safeOutput(code, "custom/path/to/file.tsx");
+
+// Page 模式 - 必须显式传入路径
+await crawler
+  .pages()
+  .each(async ({ safeOutput }) => {
+    const content = await extractContent();
+    await safeOutput(content, "page-content.html");
+  });
+```
+
+### 解决的问题
+
+当组件名包含特殊字符时（如 `"Step 1: Forgot password"`），直接使用 `fse.outputFile` 可能会导致：
+- ❌ 文件名被截断
+- ❌ 内容无法写入
+- ❌ 文件系统异常
+
+使用 `safeOutput` 可以自动处理这些问题，确保文件安全写入。
+
 ## 🎯 自动化功能
 
 ### 自动进度管理
