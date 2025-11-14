@@ -77,43 +77,6 @@ export function createSafeOutput(
 }
 
 /**
- * 清理路径中的非法字符
- * 处理路径中的每个部分（目录名和文件名）
- * 
- * @param filePath 文件路径（可以是相对路径或绝对路径）
- * @returns 清理后的路径
- */
-function sanitizePath(filePath: string): string {
-  // 标准化路径（处理 .. 和 . 等）
-  const normalized = path.normalize(filePath);
-  
-  // 分离目录和文件名
-  const dir = path.dirname(normalized);
-  const filename = path.basename(normalized);
-  
-  // 清理文件名
-  const sanitizedFilename = sanitizeFilename(filename);
-  
-  // 如果目录是根目录或当前目录，直接返回清理后的文件名
-  if (dir === '.' || dir === path.sep) {
-    return sanitizedFilename;
-  }
-  
-  // 清理目录路径的每个部分
-  const dirParts = dir.split(path.sep).filter(part => part !== '');
-  const sanitizedDirParts = dirParts.map(part => sanitizeFilename(part));
-  
-  // 重新组合路径
-  if (path.isAbsolute(normalized)) {
-    // 绝对路径：保留根分隔符
-    return path.sep + path.join(...sanitizedDirParts, sanitizedFilename);
-  } else {
-    // 相对路径
-    return path.join(...sanitizedDirParts, sanitizedFilename);
-  }
-}
-
-/**
  * 清理路径并记录文件名映射
  * 
  * @param filePath 文件路径（可以是相对路径或绝对路径）

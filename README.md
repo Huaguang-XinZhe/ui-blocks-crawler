@@ -580,6 +580,45 @@ await crawler
 
 使用 `safeOutput` 可以自动处理这些问题，确保文件安全写入。
 
+### 文件名映射
+
+框架会自动在 `.crawler/域名/filename-mapping.json` 中记录文件名 sanitize 前后的对应关系，方便从 sanitize 后的文件名反推出原始组件名。
+
+**映射文件位置：**
+```
+.crawler/
+└── www.untitledui.com/
+    ├── progress.json
+    ├── meta.json
+    └── filename-mapping.json  # 文件名映射文件
+```
+
+**使用示例：**
+
+```typescript
+import { FilenameMappingManager } from "@huaguang/block-crawler";
+
+// 从 sanitize 后的文件名获取原始文件名
+const original = await FilenameMappingManager.getOriginal(
+  ".crawler/www.untitledui.com",
+  "test-Step_1__Forgot_password.tsx"
+);
+// 返回: "test-Step 1: Forgot password.tsx"
+
+// 加载所有映射
+const mapping = await FilenameMappingManager.load(".crawler/www.untitledui.com");
+// 返回: { 
+//   "test-Step_1__Forgot_password.tsx": "test-Step 1: Forgot password.tsx",
+//   ...
+// }
+```
+
+**特性：**
+- ✅ 自动记录：当文件名被 sanitize 改变时自动记录
+- ✅ 避免冗余：仅在文件名发生变化时记录
+- ✅ 原子写入：使用原子写入确保数据一致性
+- ✅ 易于查询：提供静态方法方便外部查询
+
 ## 🎯 自动化功能
 
 ### 自动进度管理
@@ -598,9 +637,13 @@ await crawler
 project/
 ├── .crawler/              # 状态目录 (stateDir)
 │   ├── example.com/       # 域名子目录
-│   │   └── progress.json  # 进度文件
+│   │   ├── progress.json  # 进度文件
+│   │   ├── meta.json      # 元信息文件
+│   │   └── filename-mapping.json  # 文件名映射文件
 │   └── site-a.com/
-│       └── progress.json
+│       ├── progress.json
+│       ├── meta.json
+│       └── filename-mapping.json
 └── output/               # 输出目录 (outputDir)
     ├── example.com/      # 域名子目录
     │   ├── component-1/
