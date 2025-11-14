@@ -1,6 +1,6 @@
 import { test, type Page, type Locator } from "@playwright/test";
 import fse from "fs-extra";
-import { BlockCrawler } from "block-crawler";
+import { BlockCrawler } from "@huaguang/block-crawler";
 import { extractCodeFromBlock } from "./utils/extract-code";
 
 test("heroui-pro crawler", async ({ page }) => {

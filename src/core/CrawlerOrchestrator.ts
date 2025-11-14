@@ -412,19 +412,57 @@ export class CrawlerOrchestrator {
 
   /**
    * 提取 block 名称（用于测试模式）
+   * 
+   * 优先级：
+   * 1. 配置的 getBlockName 函数
+   * 2. 配置的 blockNameLocator（非默认值）
+   * 3. 默认逻辑：getByRole('heading')
    */
   private async extractBlockName(section: any): Promise<string> {
     try {
-      // 优先使用自定义 getBlockName
+      // 1. 优先使用配置的 getBlockName 函数
       if (this.config.getBlockName) {
         const name = await this.config.getBlockName(section);
         return name || "Unknown";
       }
+
+      // 2. 如果配置了非默认的 blockNameLocator，使用它
+      const defaultLocator = "role=heading[level=1] >> role=link";
+      if (this.config.blockNameLocator !== defaultLocator) {
+        const nameElement = section.locator(this.config.blockNameLocator).first();
+        const name = await nameElement.textContent();
+        return name?.trim() || "Unknown";
+      }
+
+      // 3. 默认逻辑：使用 getByRole('heading')
+      const heading = section.getByRole('heading').first();
+      const count = await heading.count();
       
-      // 使用 blockNameLocator
-      const nameElement = section.locator(this.config.blockNameLocator).first();
-      const name = await nameElement.textContent();
-      return name?.trim() || "Unknown";
+      if (count === 0) {
+        return "Unknown";
+      }
+
+      // 获取 heading 内部的所有子元素
+      const children = await heading.locator('> *').count();
+      
+      // 如果内部子元素 > 1，尝试取 link 文本
+      if (children > 1) {
+        const link = heading.getByRole('link').first();
+        const linkCount = await link.count();
+        
+        if (linkCount === 0) {
+          // 结构复杂但没有 link，返回 heading 的文本
+          const text = await heading.textContent();
+          return text?.trim() || "Unknown";
+        }
+        
+        const linkText = await link.textContent();
+        return linkText?.trim() || "Unknown";
+      }
+      
+      // 否则直接取 heading 的文本内容
+      const text = await heading.textContent();
+      return text?.trim() || "Unknown";
     } catch (error) {
       return "Unknown";
     }

@@ -302,10 +302,13 @@ window.customUtils = {
 | `getBlockName` | `(block: Locator) => Promise<string \| null>` | `getByRole('heading')` | 获取 Block 名称 |
 
 **getBlockName 默认逻辑：**
-1. 使用 `block.getByRole('heading')` 查找 heading 元素
-2. 如果 heading 内部子元素 > 1（结构复杂），自动提取内部的 link 文本
-3. 如果 heading 内部子元素 ≤ 1，直接取 heading 的文本内容
-4. 如果结构复杂但未找到 link，会抛出错误提示配置 `getBlockName` 或 `blockNameLocator`
+1. 优先使用配置的 `getBlockName` 函数
+2. 如果配置了非默认的 `blockNameLocator`，使用它
+3. 默认逻辑：使用 `block.getByRole('heading')` 查找 heading 元素
+   - 如果 heading 内部子元素 > 1（结构复杂），自动提取内部的 link 文本
+   - 如果 heading 内部子元素 ≤ 1，直接取 heading 的文本内容
+   - Block 模式：如果结构复杂但未找到 link，会抛出错误提示
+   - 测试模式：如果结构复杂但未找到 link，返回 heading 的文本内容
 
 ### Block 前置逻辑
 
