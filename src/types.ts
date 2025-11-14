@@ -200,8 +200,6 @@ export interface PageContext {
   currentPath: string;
   /** 输出目录 */
   outputDir: string;
-  /** 是否为 Free 页面 */
-  isFree?: boolean;
 }
 
 /**
@@ -218,8 +216,6 @@ export interface BlockContext {
   blockName: string;
   /** 输出目录 */
   outputDir: string;
-  /** 是否为 Free Block */
-  isFree?: boolean;
 }
 
 /**

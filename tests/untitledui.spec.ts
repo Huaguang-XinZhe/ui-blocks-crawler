@@ -30,7 +30,7 @@ test("untitledui", async ({ page }) => {
     })
     .each(async ({ block, blockName, blockPath, outputDir, currentPage }) => {
       // 点击 Code
-      await currentPage.getByRole('tab', { name: 'Code' }).click();
+      await block.getByRole('tab', { name: 'Code' }).click();
       // 获取内部 pre
       const code = await extractCodeFromDOM(block);
       // 输出到文件

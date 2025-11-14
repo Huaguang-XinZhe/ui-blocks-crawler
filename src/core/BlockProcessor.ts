@@ -117,6 +117,7 @@ export class BlockProcessor {
     const isFree = await this.isBlockFree(block);
     if (isFree) {
       console.log(this.i18n.t('block.skipFree', { name: blockName }));
+      // 如果是 Free Block，直接跳过处理
       return { success: true, isFree: true, blockName };
     }
 
@@ -136,10 +137,10 @@ export class BlockProcessor {
       blockPath,
       blockName,
       outputDir: this.config.outputDir,
-      isFree,
     };
 
     try {
+      // 只有非 Free Block 才调用 blockHandler
       await this.blockHandler(context);
       this.taskProgress?.markBlockComplete(blockPath);
       return { success: true, isFree: false, blockName };

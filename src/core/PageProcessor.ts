@@ -52,19 +52,20 @@ export class PageProcessor {
     const isFree = await this.isPageFree(page);
     if (isFree) {
       console.log(this.i18n.t('page.skipFree', { path: currentPath }));
+      // 如果是 Free 页面，直接跳过处理
+      return { isFree };
     }
 
     const context: PageContext = {
       currentPage: page,
       currentPath,
       outputDir: this.config.outputDir,
-      isFree,
     };
 
     try {
-      // 始终调用 pageHandler，让用户决定是否要处理 free 页面
+      // 只有非 Free 页面才调用 pageHandler
       await this.pageHandler(context);
-      return { isFree };
+      return { isFree: false };
     } catch (error) {
       console.error(this.i18n.t('page.processFailed', { path: currentPath }), error);
       throw error;
