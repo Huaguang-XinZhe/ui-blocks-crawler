@@ -1,5 +1,4 @@
 import fse from "fs-extra";
-import path from "path";
 import type { CollectionLink, SiteMeta } from "../types";
 import { createI18n, type I18n, type Locale } from "../utils/i18n";
 
@@ -112,17 +111,124 @@ export class MetaCollector {
     // 更新链接总数
     this.meta.totalLinks = this.meta.collectionLinks.length;
 
-    // 使用 outputJson 自动确保目录存在并写入
-    await fse.outputJson(this.metaFile, this.meta, { spaces: 2 });
+    // 检查是否有实际内容
+    const hasContent = 
+      this.meta.collectionLinks.length > 0 ||
+      this.meta.freePages.links.length > 0 ||
+      this.meta.freeBlocks.blockNames.length > 0 ||
+      this.meta.displayedTotalCount > 0 ||
+      this.meta.actualTotalCount > 0;
+
+    // 如果没有任何内容，且已有文件存在，则不覆盖
+    const existingMeta = await MetaCollector.load(this.metaFile);
+    if (!hasContent && existingMeta) {
+      console.log(this.i18n.t('meta.skipEmpty', { path: this.metaFile }));
+      return;
+    }
+
+    // 合并已有数据（保留已有的 collectionLinks、freePages、freeBlocks）
+    let finalMeta: SiteMeta;
+    if (existingMeta) {
+      // 合并 collectionLinks（去重）
+      const existingLinks = new Map<string, CollectionLink>();
+      (existingMeta.collectionLinks || []).forEach(link => {
+        existingLinks.set(link.link, link);
+      });
+      this.meta.collectionLinks.forEach(link => {
+        existingLinks.set(link.link, link);
+      });
+
+      // 合并 freePages（去重）
+      const existingFreePages = new Set(existingMeta.freePages?.links || []);
+      this.meta.freePages.links.forEach(link => existingFreePages.add(link));
+
+      // 合并 freeBlocks（去重）
+      const existingFreeBlocks = new Set(existingMeta.freeBlocks?.blockNames || []);
+      this.meta.freeBlocks.blockNames.forEach(name => existingFreeBlocks.add(name));
+
+      finalMeta = {
+        ...this.meta,
+        collectionLinks: Array.from(existingLinks.values()),
+        totalLinks: existingLinks.size,
+        displayedTotalCount: Math.max(
+          existingMeta.displayedTotalCount || 0,
+          this.meta.displayedTotalCount
+        ),
+        actualTotalCount: Math.max(
+          existingMeta.actualTotalCount || 0,
+          this.meta.actualTotalCount
+        ),
+        freePages: {
+          total: existingFreePages.size,
+          links: Array.from(existingFreePages),
+        },
+        freeBlocks: {
+          total: existingFreeBlocks.size,
+          blockNames: Array.from(existingFreeBlocks),
+        },
+      };
+    } else {
+      finalMeta = { ...this.meta };
+    }
+
+    // 使用原子写入确保数据完整性
+    const tempFile = `${this.metaFile}.tmp`;
+    let retries = 3;
+    let lastError: Error | null = null;
+
+    while (retries > 0) {
+      try {
+        // 先写入临时文件
+        await fse.outputJson(tempFile, finalMeta, { spaces: 2 });
+        
+        // 验证临时文件是否写入成功
+        const tempContent = await fse.readJson(tempFile);
+        if (!tempContent || Object.keys(tempContent).length === 0) {
+          throw new Error('写入的文件内容为空');
+        }
+
+        // 原子性替换：将临时文件重命名为目标文件
+        await fse.move(tempFile, this.metaFile, { overwrite: true });
+
+        // 验证最终文件
+        const finalContent = await fse.readJson(this.metaFile);
+        if (!finalContent || Object.keys(finalContent).length === 0) {
+          throw new Error('最终文件内容为空');
+        }
+
+        // 写入成功，跳出重试循环
+        break;
+      } catch (error) {
+        lastError = error as Error;
+        retries--;
+        
+        // 清理临时文件
+        if (await fse.pathExists(tempFile)) {
+          await fse.remove(tempFile).catch(() => {});
+        }
+
+        if (retries > 0) {
+          // 等待后重试
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } else {
+          // 所有重试都失败，抛出错误
+          console.error(this.i18n.t('meta.saveFailed', { 
+            path: this.metaFile, 
+            error: String(lastError) 
+          }));
+          throw new Error(`保存 meta.json 失败: ${lastError.message}`);
+        }
+      }
+    }
     
     console.log(`\n${this.i18n.t('meta.saved', { path: this.metaFile })}`);
     console.log(this.i18n.t('meta.stats'));
-    console.log(this.i18n.t('meta.collectedLinks', { count: this.meta.totalLinks }));
-    console.log(this.i18n.t('meta.displayedTotal', { count: this.meta.displayedTotalCount }));
-    console.log(this.i18n.t('meta.actualTotal', { count: this.meta.actualTotalCount }));
-    console.log(this.i18n.t('meta.freePages', { count: this.meta.freePages.total }));
-    console.log(this.i18n.t('meta.freeBlocks', { count: this.meta.freeBlocks.total }));
-    console.log(this.i18n.t('meta.duration', { duration: this.meta.duration }));
+    console.log(this.i18n.t('meta.collectedLinks', { count: finalMeta.totalLinks }));
+    console.log(this.i18n.t('meta.displayedTotal', { count: finalMeta.displayedTotalCount }));
+    console.log(this.i18n.t('meta.actualTotal', { count: finalMeta.actualTotalCount }));
+    console.log(this.i18n.t('meta.freePages', { count: finalMeta.freePages.total }));
+    console.log(this.i18n.t('meta.freeBlocks', { count: finalMeta.freeBlocks.total }));
+    console.log(this.i18n.t('meta.duration', { duration: finalMeta.duration }));
     const statusText = this.i18n.getLocale() === 'zh' 
       ? (isComplete ? '是' : '否')
       : (isComplete ? 'Yes' : 'No');

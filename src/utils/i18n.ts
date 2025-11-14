@@ -121,6 +121,8 @@ const messages = {
     'meta.isComplete': '   - 是否完整运行: {status}',
     'meta.loaded': '📥 已加载已有元信息 (Free 页面: {freePages}, Free Block: {freeBlocks})',
     'meta.loadFailed': '⚠️ 加载元信息失败: {error}',
+    'meta.skipEmpty': '⏭️  跳过保存（无内容，保留已有文件）: {path}',
+    'meta.saveFailed': '❌ 保存元信息失败: {path}\n   错误: {error}',
     
     // 信号处理
     'signal.received': '⚠️  收到 {signal} 信号，正在保存进度和元信息...',
@@ -247,6 +249,8 @@ const messages = {
     'meta.isComplete': '   - Complete run: {status}',
     'meta.loaded': '📥 Loaded existing meta data (Free pages: {freePages}, Free blocks: {freeBlocks})',
     'meta.loadFailed': '⚠️ Failed to load meta information: {error}',
+    'meta.skipEmpty': '⏭️  Skipping save (no content, preserving existing file): {path}',
+    'meta.saveFailed': '❌ Failed to save meta info: {path}\n   Error: {error}',
     
     // Signal handling
     'signal.received': '⚠️  Received {signal} signal, saving progress and metadata...',

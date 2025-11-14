@@ -194,6 +194,22 @@ export class TaskProgress {
       return; // 没有变化且文件存在，不需要保存
     }
 
+    // 如果没有任何进度，且已有文件存在，则不覆盖
+    const hasProgress = this.completedBlocks.size > 0 || this.completedPages.size > 0;
+    if (!hasProgress && await fse.pathExists(this.progressFile)) {
+      try {
+        const existingData = await fse.readJson(this.progressFile);
+        const existingHasProgress = 
+          (existingData.completedBlocks?.length > 0) || 
+          (existingData.completedPages?.length > 0);
+        if (existingHasProgress) {
+          return; // 没有进度且已有文件有进度，不覆盖
+        }
+      } catch {
+        // 读取失败，继续保存
+      }
+    }
+
     const data = {
       completedBlocks: Array.from(this.completedBlocks),
       completedPages: Array.from(this.completedPages),
@@ -202,9 +218,52 @@ export class TaskProgress {
       totalPages: this.completedPages.size,
     };
 
-    // 使用 outputJson 自动确保目录存在并写入
-    await fse.outputJson(this.progressFile, data, { spaces: 2 });
-    this.isDirty = false;
+    // 使用原子写入确保数据完整性
+    const tempFile = `${this.progressFile}.tmp`;
+    let retries = 3;
+    let lastError: Error | null = null;
+
+    while (retries > 0) {
+      try {
+        // 先写入临时文件
+        await fse.outputJson(tempFile, data, { spaces: 2 });
+        
+        // 验证临时文件是否写入成功
+        const tempContent = await fse.readJson(tempFile);
+        if (!tempContent || Object.keys(tempContent).length === 0) {
+          throw new Error('写入的文件内容为空');
+        }
+
+        // 原子性替换：将临时文件重命名为目标文件
+        await fse.move(tempFile, this.progressFile, { overwrite: true });
+
+        // 验证最终文件
+        const finalContent = await fse.readJson(this.progressFile);
+        if (!finalContent || Object.keys(finalContent).length === 0) {
+          throw new Error('最终文件内容为空');
+        }
+
+        // 写入成功，跳出重试循环
+        this.isDirty = false;
+        break;
+      } catch (error) {
+        lastError = error as Error;
+        retries--;
+        
+        // 清理临时文件
+        if (await fse.pathExists(tempFile)) {
+          await fse.remove(tempFile).catch(() => {});
+        }
+
+        if (retries > 0) {
+          // 等待后重试
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } else {
+          // 所有重试都失败，抛出错误
+          throw new Error(`保存进度文件失败: ${lastError.message}`);
+        }
+      }
+    }
   }
 
   /**

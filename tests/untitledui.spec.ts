@@ -8,7 +8,7 @@ test("untitledui", async ({ page }) => {
   const crawler = new BlockCrawler(page, {
     startUrl: "https://www.untitledui.com/react/components",
     skipFree: "FREE",
-    // enableProgressResume: false,
+    enableProgressResume: false,
     locale: "en",
     collectionNameLocator: "p:first-of-type",
     collectionCountLocator: "p:last-of-type",
@@ -59,6 +59,8 @@ test("untitledui", async ({ page }) => {
 // 从 DOM 中提取 Code
 async function extractCodeFromDOM(section: Locator): Promise<string> {
   const pre = section.locator('pre').last();
+  // 等待 import 文本出现
+  await pre.getByText("import").first().waitFor({ state: "visible", timeout: 1500 });
   const rawText = await pre.textContent() ?? "";
   return rawText.replace(/Show more/, "").trim();
 }
