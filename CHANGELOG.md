@@ -1,5 +1,11 @@
 # block-crawler
 
+## 0.2.1
+
+### Patch Changes
+
+- 8f87d6b: 临时修改包名为 @huaguang/block-crawler（24 小时后将改回 block-crawler）
+
 ## 0.2.0
 
 ### Minor Changes

@@ -18,11 +18,11 @@
 ## 📦 安装
 
 ```bash
-npm install @mufeng/block-crawler
+npm install @huaguang/block-crawler
 # 或
-pnpm add @mufeng/block-crawler
+pnpm add @huaguang/block-crawler
 # 或
-yarn add @mufeng/block-crawler
+yarn add @huaguang/block-crawler
 ```
 
 ## 🏗️ 架构设计
@@ -70,7 +70,7 @@ src/
 
 ```typescript
 import { test } from "@playwright/test";
-import { BlockCrawler } from "@mufeng/block-crawler";
+import { BlockCrawler } from "@huaguang/block-crawler";
 
 test("爬取组件", async ({ page }) => {
   test.setTimeout(2 * 60 * 1000);
@@ -114,7 +114,7 @@ test("爬取组件", async ({ page }) => {
 
 ```typescript
 import { test } from "@playwright/test";
-import { BlockCrawler } from "@mufeng/block-crawler";
+import { BlockCrawler } from "@huaguang/block-crawler";
 
 test("爬取页面", async ({ page }) => {
   const crawler = new BlockCrawler(page, {
@@ -145,7 +145,7 @@ test("爬取页面", async ({ page }) => {
 
 ```typescript
 import { test } from "@playwright/test";
-import { BlockCrawler } from "@mufeng/block-crawler";
+import { BlockCrawler } from "@huaguang/block-crawler";
 import fse from "fs-extra";
 
 test("测试组件提取", async ({ page }) => {
