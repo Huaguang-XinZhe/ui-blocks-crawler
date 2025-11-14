@@ -1,5 +1,41 @@
 # block-crawler
 
+## 0.2.2
+
+### Patch Changes
+
+- 3906d1d: 修复测试模式中的 extractBlockName 方法
+
+  **问题：**
+
+  - 测试模式中 extractBlockName 方法实现过于简单，导致无法正确提取组件名称，总是返回 "Unknown"
+
+  **修复：**
+
+  - 将 BlockProcessor 中的完整默认逻辑移植到测试模式的 extractBlockName 方法
+  - 实现了完整的三级优先级：getBlockName 函数 > blockNameLocator > 默认逻辑
+  - 默认逻辑会检查 heading 内部子元素数量，智能提取组件名称
+
+  **文档更新：**
+
+  - 完善了 README.md 中 getBlockName 默认逻辑的说明
+  - 区分了 Block 模式和测试模式在错误处理上的差异
+
+- ad62611: 重构 block 名称提取逻辑
+
+  **优化内容：**
+
+  - 创建独立的 `BlockNameExtractor` 工具类，统一处理 block 名称提取逻辑
+  - `BlockProcessor` 和 `CrawlerOrchestrator` 共享同一套提取逻辑，避免重复代码
+  - 明确类型定义：`section` 参数从 `any` 改为 `Locator`
+  - 统一错误处理：测试模式和 Block 模式行为一致，结构复杂但未找到 link 时都会抛出错误
+
+  **技术改进：**
+
+  - 单一职责：提取逻辑独立封装
+  - 代码复用：两处调用共享同一实现
+  - 类型安全：移除 `any` 类型使用
+
 ## 0.2.1
 
 ### Patch Changes
