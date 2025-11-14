@@ -53,9 +53,6 @@ export function createSafeOutput(
           throw new Error(`未知模式: ${mode}`);
       }
     }
-
-    // 确保目录存在
-    await fse.ensureDir(path.dirname(finalPath));
     
     // 写入文件
     await fse.outputFile(finalPath, data);

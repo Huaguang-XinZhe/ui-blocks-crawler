@@ -100,10 +100,11 @@ test("爬取组件", async ({ page }) => {
       await currentPage.getByRole('button', { name: 'Show All' }).click();
       await currentPage.waitForTimeout(1000); // 等待动画完成
     })
-    .each(async ({ block, blockName, blockPath, outputDir, currentPage }) => {
+    .each(async ({ block, blockName, blockPath, safeOutput, currentPage }) => {
       // 处理每个 Block
       const code = await block.textContent();
-      await fse.outputFile(`${outputDir}/${blockPath}.txt`, code);
+      // 使用 safeOutput 安全输出（自动处理文件名 sanitize）
+      await safeOutput(code ?? '', `${blockPath}.txt`);
     });
 });
 ```
@@ -146,7 +147,6 @@ test("爬取页面", async ({ page }) => {
 ```typescript
 import { test } from "@playwright/test";
 import { BlockCrawler } from "@huaguang/block-crawler";
-import fse from "fs-extra";
 
 test("测试组件提取", async ({ page }) => {
   const crawler = new BlockCrawler(page, {
@@ -166,10 +166,11 @@ test("测试组件提取", async ({ page }) => {
       "https://example.com/components/buttons",  // 页面 URL（必填）
       "[data-preview]"                            // 所有 blockSection 的定位符（必填）
     )
-    .run(async ({ section, blockName, currentPage, outputDir }) => {
+    .run(async ({ section, blockName, safeOutput }) => {
       console.log(`测试组件: ${blockName}`);
       const code = await section.locator('pre').textContent();
-      await fse.outputFile(`${outputDir}/test-${blockName}.tsx`, code ?? '');
+      // 使用 safeOutput 安全输出（自动处理文件名 sanitize，默认路径：test-${blockName}.tsx）
+      await safeOutput(code ?? '');
     });
 });
 
@@ -501,6 +502,19 @@ interface BlockContext {
   blockPath: string;    // Block 路径（URL路径 + Block名称）
   blockName: string;    // Block 名称
   outputDir: string;    // 输出目录
+  safeOutput: SafeOutput; // 安全输出函数（自动处理文件名 sanitize，默认路径：${outputDir}/${blockPath}.tsx）
+}
+```
+
+### TestContext
+
+```typescript
+interface TestContext {
+  currentPage: Page;    // 当前页面实例
+  section: Locator;     // 目标 section
+  blockName: string;    // Block 名称
+  outputDir: string;    // 输出目录
+  safeOutput: SafeOutput; // 安全输出函数（自动处理文件名 sanitize，默认路径：${outputDir}/test-${blockName}.tsx）
 }
 ```
 
@@ -511,7 +525,7 @@ interface PageContext {
   currentPage: Page;    // 当前页面实例（可能是新打开的页面）
   currentPath: string;  // 当前 URL 路径
   outputDir: string;    // 输出目录
-  isFree?: boolean;     // 是否为 Free 页面
+  safeOutput: SafeOutput; // 安全输出函数（自动处理文件名 sanitize，需要显式传入 filePath）
 }
 ```
 
