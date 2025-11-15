@@ -295,6 +295,56 @@ const crawler = new BlockCrawler(page, {
 - `beforePageLoad`：在页面加载前注入（使用 `addInitScript`），适合需要在页面初始化前执行的脚本
 - `afterPageLoad`：在页面加载完成后注入（在 `goto` 之后执行），适合操作已加载的 DOM
 
+### 调试配置
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `verifyBlockCompletion` | `boolean` | `false` | 验证 Block 采集完整性 |
+
+**功能说明：**
+
+当开启 `verifyBlockCompletion` 时，框架会在关闭页面前验证 Block 采集完整性：
+
+1. 记录 `sectionLocator` 定位到的 block 总数（预期数量）
+2. 记录实际采集的 block 数量（包括 free、跳过的）
+3. 如果两者不一致，调用 `page.pause()` 暂停，方便检查问题
+4. 打印详细的采集信息，包括已处理的 block 列表
+
+**使用场景：**
+
+适合在 `--debug` 模式下运行测试时开启，确保组件采集完整：
+
+```typescript
+// 调试时开启验证
+const crawler = new BlockCrawler(page, {
+  startUrl: "https://example.com/components",
+  verifyBlockCompletion: true,  // 开启完整性验证
+  // ... 其他配置
+});
+
+await crawler
+  .blocks("[data-preview]")
+  .each(async ({ block, safeOutput }) => {
+    // 采集逻辑
+  });
+
+// 如果采集不完整，页面会自动暂停，输出类似信息：
+// ⚠️  Block 采集不完整！
+//    页面: /components/buttons
+//    预期数量: 10
+//    实际处理: 8
+//    差异: 2
+//
+//    已处理的 Block:
+//      1. Primary Button
+//      2. Secondary Button
+//      ...
+//
+//    ⏸️  页面即将暂停，请检查问题...
+```
+
+**注意：** 问题解决后，建议关闭此配置以避免不必要的暂停。
+
 #### 普通脚本示例
 
 `.crawler/example.com/custom-script.js`：

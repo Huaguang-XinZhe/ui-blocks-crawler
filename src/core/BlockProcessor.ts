@@ -40,17 +40,26 @@ export class BlockProcessor {
       await this.beforeProcessBlocks(page);
     }
     
-    // 获取所有 block 节点
+    // 获取所有 block 节点（作为预期数量）
     const blocks = await this.getAllBlocks(page);
-    console.log(this.i18n.t('block.found', { count: blocks.length }));
+    const expectedCount = blocks.length;
+    console.log(this.i18n.t('block.found', { count: expectedCount }));
 
     let completedCount = 0;
+    let processedCount = 0; // 实际处理的 block 数量（包括 free 和跳过的）
     const freeBlocks: string[] = [];
+    const processedBlockNames: string[] = []; // 记录所有处理过的 block 名称
 
     // 遍历处理每个 block
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
       const result = await this.processSingleBlock(page, block, pagePath);
+      
+      if (result.blockName) {
+        processedBlockNames.push(result.blockName);
+      }
+      
+      processedCount++;
       
       if (result.success) {
         completedCount++;
@@ -66,6 +75,17 @@ export class BlockProcessor {
       const normalizedPath = this.normalizePagePath(pagePath);
       this.taskProgress?.markPageComplete(normalizedPath);
       console.log(this.i18n.t('block.pageComplete', { total: blocks.length }));
+    }
+
+    // 验证 Block 采集完整性（如果启用）
+    if (this.config.verifyBlockCompletion) {
+      await this.verifyBlockCompletion(
+        page,
+        pagePath,
+        expectedCount,
+        processedCount,
+        processedBlockNames
+      );
     }
 
     return {
@@ -177,6 +197,41 @@ export class BlockProcessor {
    */
   private async getBlockName(block: Locator): Promise<string | null> {
     return await this.blockNameExtractor.extract(block);
+  }
+
+  /**
+   * 验证 Block 采集完整性
+   * 如果预期数量与实际处理数量不一致，暂停并提示用户检查
+   */
+  private async verifyBlockCompletion(
+    page: Page,
+    pagePath: string,
+    expectedCount: number,
+    processedCount: number,
+    processedBlockNames: string[]
+  ): Promise<void> {
+    if (expectedCount !== processedCount) {
+      console.error(
+        `\n⚠️  Block 采集不完整！\n` +
+        `   页面: ${pagePath}\n` +
+        `   预期数量: ${expectedCount}\n` +
+        `   实际处理: ${processedCount}\n` +
+        `   差异: ${expectedCount - processedCount}\n\n` +
+        `   已处理的 Block:\n` +
+        processedBlockNames.map((name, idx) => `     ${idx + 1}. ${name}`).join('\n') +
+        `\n\n   ⏸️  页面即将暂停，请检查问题...\n`
+      );
+      
+      // 暂停页面，方便用户检查
+      await page.pause();
+    } else {
+      console.log(
+        `\n✅ Block 采集验证通过\n` +
+        `   页面: ${pagePath}\n` +
+        `   预期数量: ${expectedCount}\n` +
+        `   实际处理: ${processedCount}\n`
+      );
+    }
   }
 
   /**

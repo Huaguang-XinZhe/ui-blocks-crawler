@@ -69,7 +69,7 @@ async function extractCodeFromDOM(section: Locator): Promise<string> {
   await pre
     .getByText("import")
     .first()
-    .waitFor({ state: "visible", timeout: 2500 });
+    .waitFor({ state: "visible", timeout: 10000 }); // 最大等待 10s
   const rawText = (await pre.textContent()) ?? "";
   return rawText.replace(/Show more/, "").trim();
 }
