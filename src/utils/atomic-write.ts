@@ -1,4 +1,7 @@
 import fse from "fs-extra";
+import os from "os";
+import path from "path";
+import { randomUUID } from "crypto";
 
 /**
  * 原子写入选项
@@ -16,11 +19,12 @@ export interface AtomicWriteOptions {
  * 原子写入 JSON 文件
  * 
  * 使用临时文件 + 原子替换的方式确保写入的原子性：
- * 1. 先写入临时文件 (.tmp)
- * 2. 验证临时文件内容
- * 3. 原子性替换（move）
- * 4. 验证最终文件
- * 5. 失败时自动重试
+ * 1. 在系统临时目录创建临时文件
+ * 2. 先写入临时文件
+ * 3. 验证临时文件内容
+ * 4. 原子性替换（move）
+ * 5. 验证最终文件
+ * 6. 失败时自动重试
  * 
  * @param filePath 目标文件路径
  * @param data 要写入的数据
@@ -38,7 +42,12 @@ export async function atomicWriteJson<T extends object>(
     verify = true,
   } = options;
 
-  const tempFile = `${filePath}.tmp`;
+  // 确保目标文件目录存在
+  await fse.ensureDir(path.dirname(filePath));
+
+  // 在系统临时目录创建临时文件，使用 UUID 确保唯一性
+  const tempFileName = `block-crawler-${randomUUID()}.tmp`;
+  const tempFile = path.join(os.tmpdir(), tempFileName);
   let retries = maxRetries;
   let lastError: Error | null = null;
 
@@ -55,7 +64,7 @@ export async function atomicWriteJson<T extends object>(
         }
       }
 
-      // 3. 原子性替换：将临时文件重命名为目标文件
+      // 3. 原子性替换：将临时文件移动到目标文件位置
       await fse.move(tempFile, filePath, { overwrite: true });
 
       // 4. 验证最终文件（如果启用）

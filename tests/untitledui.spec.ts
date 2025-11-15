@@ -11,9 +11,9 @@ test("untitledui", async ({ page }) => {
     locale: "en",
     collectionNameLocator: "p:first-of-type",
     collectionCountLocator: "p:last-of-type",
-    collectionLinkWaitOptions: {
-      waitUntil: "networkidle",
-    },
+    // collectionLinkWaitOptions: {
+    //   waitUntil: "networkidle",
+    // },
     scriptInjection: {
       script: "custom-script.js", // 单个脚本，从 .crawler/www.untitledui.com/ 读取
     },
@@ -24,42 +24,42 @@ test("untitledui", async ({ page }) => {
     },
   });
 
-  // await crawler
-  //   .blocks("[data-preview]")
-  //   .before(async (currentPage) => {
-  //     // 前置逻辑示例：在匹配所有 Block 之前执行
-  //     await clickIfVisibleNow(currentPage.getByRole('tab', { name: 'List view' }));
-  //   })
-  //   .each(async ({ block, blockPath, outputDir }) => {
-  //     // 点击 Code
-  //     await block.getByRole('tab', { name: 'Code' }).click();
-  //     // 获取内部 pre
-  //     const code = await extractCodeFromDOM(block);
-  //     // 输出到文件
-  //     await fse.outputFile(`${outputDir}/${blockPath}.tsx`, code);
-  //   });
-
   await crawler
-    .test(
-      "https://www.untitledui.com/react/components/forgot-password-pages",
-      "[data-preview]",
-      1
-    )
+    .blocks("[data-preview]")
     .before(async (currentPage) => {
       // 前置逻辑示例：在匹配所有 Block 之前执行
-      await clickIfVisibleNow(
-        currentPage.getByRole("tab", { name: "List view" })
-      );
+      await clickIfVisibleNow(currentPage.getByRole('tab', { name: 'List view' }));
     })
-    .run(async ({ section, blockName, safeOutput }) => {
-      console.log(`测试组件: ${blockName}`);
+    .each(async ({ block, safeOutput }) => {
       // 点击 Code
-      await section.getByRole("tab", { name: "Code" }).click();
+      await block.getByRole('tab', { name: 'Code' }).click();
       // 获取内部 pre
-      const code = await extractCodeFromDOM(section);
-      // 使用 safeOutput 安全输出（自动处理文件名 sanitize）
+      const code = await extractCodeFromDOM(block);
+      // 输出到文件
       await safeOutput(code);
     });
+
+  // await crawler
+  //   .test(
+  //     "https://www.untitledui.com/react/components/forgot-password-pages",
+  //     "[data-preview]",
+  //     1
+  //   )
+  //   .before(async (currentPage) => {
+  //     // 前置逻辑示例：在匹配所有 Block 之前执行
+  //     await clickIfVisibleNow(
+  //       currentPage.getByRole("tab", { name: "List view" })
+  //     );
+  //   })
+  //   .run(async ({ section, blockName, safeOutput }) => {
+  //     console.log(`测试组件: ${blockName}`);
+  //     // 点击 Code
+  //     await section.getByRole("tab", { name: "Code" }).click();
+  //     // 获取内部 pre
+  //     const code = await extractCodeFromDOM(section);
+  //     // 使用 safeOutput 安全输出（自动处理文件名 sanitize）
+  //     await safeOutput(code);
+  //   });
 });
 
 // 从 DOM 中提取 Code
@@ -69,7 +69,7 @@ async function extractCodeFromDOM(section: Locator): Promise<string> {
   await pre
     .getByText("import")
     .first()
-    .waitFor({ state: "visible", timeout: 1500 });
+    .waitFor({ state: "visible", timeout: 2500 });
   const rawText = (await pre.textContent()) ?? "";
   return rawText.replace(/Show more/, "").trim();
 }
