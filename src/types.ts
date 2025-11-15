@@ -188,6 +188,33 @@ export interface CrawlerConfig {
      */
     timing?: 'beforePageLoad' | 'afterPageLoad';
   };
+
+  // ========== 调试配置 ==========
+  /**
+   * 遇到错误时自动暂停（调试功能）
+   * 
+   * 当开启时，在处理过程中遇到错误（如 timeout、selector 错误等）会自动调用 page.pause()，
+   * 方便开发者检查问题，而不是直接跳过继续执行。
+   * 
+   * 使用场景：
+   * - 在 --debug 模式下运行时开启
+   * - 生产环境建议关闭，避免阻塞流程
+   * 
+   * @default true
+   * @example
+   * // 调试时使用（默认）
+   * const crawler = new BlockCrawler(page, {
+   *   pauseOnError: true,  // 遇到错误自动暂停
+   *   // ... 其他配置
+   * });
+   * 
+   * // 生产环境关闭
+   * const crawler = new BlockCrawler(page, {
+   *   pauseOnError: false,  // 遇到错误继续执行
+   *   // ... 其他配置
+   * });
+   */
+  pauseOnError?: boolean;
 }
 
 /**

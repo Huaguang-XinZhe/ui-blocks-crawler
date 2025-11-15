@@ -251,6 +251,51 @@ await crawler.blocks("[data-preview]", { verifyBlockCompletion: false }).each(..
 | `enableProgressResume` | `boolean` | true | 是否启用进度恢复 |
 | `blockNameLocator` | `string` | `role=heading[level=1] >> role=link` | Block 名称定位符 |
 
+### 调试配置
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `pauseOnError` | `boolean` | `true` | 遇到错误时自动暂停 |
+
+**功能说明：**
+
+当开启时（默认），在处理过程中遇到错误（如 timeout、selector 错误等）会自动调用 `page.pause()`，方便开发者检查问题，而不是直接跳过继续执行。
+
+**使用场景：**
+- 在 `--debug` 模式下运行时开启（默认）
+- 生产环境建议关闭，避免阻塞流程
+
+**使用示例：**
+
+```typescript
+// 调试时使用（默认）
+const crawler = new BlockCrawler(page, {
+  startUrl: "https://example.com/components",
+  pauseOnError: true,  // 默认开启，遇到错误自动暂停
+  // ... 其他配置
+});
+
+// 生产环境关闭
+const crawler = new BlockCrawler(page, {
+  startUrl: "https://example.com/components",
+  pauseOnError: false,  // 遇到错误继续执行
+  // ... 其他配置
+});
+```
+
+**错误暂停示例：**
+
+```
+❌ 处理 block 失败: Button Component
+TimeoutError: Timeout 10000ms exceeded.
+
+🛑 检测到错误，页面已暂停方便检查
+   类型: Block
+   错误: Timeout 10000ms exceeded.
+
+   💡 提示: 检查完成后，可以在全局配置中关闭 pauseOnError 以继续运行
+```
+
 ### 链接收集配置
 
 | 配置项 | 类型 | 默认值 | 说明 |

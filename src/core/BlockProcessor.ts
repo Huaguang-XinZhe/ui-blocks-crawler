@@ -172,6 +172,16 @@ export class BlockProcessor {
       return { success: true, isFree: false, blockName };
     } catch (error) {
       console.error(this.i18n.t('block.processFailed', { name: blockName }), error);
+      
+      // 如果开启了 pauseOnError，暂停页面方便检查
+      if (this.config.pauseOnError) {
+        console.error(this.i18n.t('error.pauseOnError', { 
+          type: 'Block',
+          error: error instanceof Error ? error.message : String(error)
+        }));
+        await page.pause();
+      }
+      
       return { success: false, isFree: false, blockName };
     }
   }

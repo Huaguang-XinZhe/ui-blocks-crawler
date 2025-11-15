@@ -9,8 +9,9 @@ export interface InternalConfig extends Required<Omit<CrawlerConfig,
   'tabListAriaLabel' | 'tabSectionLocator' | 'getTabSection' | 'getAllTabSections' | 'extractTabTextFromSection' |
   'getAllBlocks' | 'getBlockName' | 'extractBlockCount' | 'outputDir' | 'stateDir' | 'blockNameLocator' | 
   'startUrlWaitOptions' | 'collectionLinkWaitOptions' | 'collectionNameLocator' | 'collectionCountLocator' |
-  'skipFree' | 'locale' | 'scriptInjection'>> {
+  'skipFree' | 'locale' | 'scriptInjection' | 'pauseOnError'>> {
   locale: Locale;
+  pauseOnError: boolean;
   tabListAriaLabel?: string;
   tabSectionLocator?: string;
   getTabSection?: CrawlerConfig['getTabSection'];
@@ -167,6 +168,7 @@ export class ConfigManager {
     return {
       startUrl: config.startUrl,
       locale: config.locale ?? 'zh',
+      pauseOnError: config.pauseOnError ?? true,
       tabListAriaLabel: config.tabListAriaLabel,
       tabSectionLocator: config.tabSectionLocator,
       getTabSection: config.getTabSection,

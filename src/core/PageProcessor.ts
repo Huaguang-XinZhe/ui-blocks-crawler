@@ -64,6 +64,16 @@ export class PageProcessor {
       await this.pageHandler(context);
     } catch (error) {
       console.error(this.i18n.t('page.processFailed', { path: currentPath }), error);
+      
+      // 如果开启了 pauseOnError，暂停页面方便检查
+      if (this.config.pauseOnError) {
+        console.error(this.i18n.t('error.pauseOnError', { 
+          type: 'Page',
+          error: error instanceof Error ? error.message : String(error)
+        }));
+        await page.pause();
+      }
+      
       throw error;
     }
   }
