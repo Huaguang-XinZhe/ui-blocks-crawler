@@ -286,12 +286,10 @@ const crawler = new BlockCrawler(page, {
 **错误暂停示例：**
 
 ```
-❌ 处理 block 失败: Button Component
-TimeoutError: Timeout 10000ms exceeded.
-
 🛑 检测到错误，页面已暂停方便检查
    类型: Block
-   错误: Timeout 10000ms exceeded.
+   位置: Button Component
+   错误: locator.waitFor: Timeout 10000ms exceeded.
 
    💡 提示: 检查完成后，可以在全局配置中关闭 pauseOnError 以继续运行
 ```

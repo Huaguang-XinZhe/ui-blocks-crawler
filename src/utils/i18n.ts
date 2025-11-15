@@ -113,7 +113,7 @@ const messages = {
     'block.verifyComplete': '\n✅ Block 采集验证通过\n   页面: {pagePath}\n   预期数量: {expectedCount}\n   实际处理: {processedCount}\n',
     
     // 错误处理
-    'error.pauseOnError': '\n🛑 检测到错误，页面已暂停方便检查\n   类型: {type}\n   错误: {error}\n\n   💡 提示: 检查完成后，可以在全局配置中关闭 pauseOnError 以继续运行\n',
+    'error.pauseOnError': '\n🛑 检测到错误，页面已暂停方便检查\n   类型: {type}\n   位置: {name}{path}\n   错误: {error}\n\n   💡 提示: 检查完成后，可以在全局配置中关闭 pauseOnError 以继续运行\n',
     
     // 元信息
     'meta.saved': '✅ 元信息已保存到: {path}',
@@ -247,7 +247,7 @@ const messages = {
     'block.verifyComplete': '\n✅ Block collection verification passed\n   Page: {pagePath}\n   Expected: {expectedCount}\n   Processed: {processedCount}\n',
     
     // Error handling
-    'error.pauseOnError': '\n🛑 Error detected, page paused for inspection\n   Type: {type}\n   Error: {error}\n\n   💡 Tip: After inspection, you can disable pauseOnError in config to continue\n',
+    'error.pauseOnError': '\n🛑 Error detected, page paused for inspection\n   Type: {type}\n   Location: {name}{path}\n   Error: {error}\n\n   💡 Tip: After inspection, you can disable pauseOnError in config to continue\n',
     
     // Meta information
     'meta.saved': '✅ Meta information saved to: {path}',
