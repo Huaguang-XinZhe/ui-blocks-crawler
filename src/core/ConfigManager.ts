@@ -9,7 +9,7 @@ export interface InternalConfig extends Required<Omit<CrawlerConfig,
   'tabListAriaLabel' | 'tabSectionLocator' | 'getTabSection' | 'getAllTabSections' | 'extractTabTextFromSection' |
   'getAllBlocks' | 'getBlockName' | 'extractBlockCount' | 'outputDir' | 'stateDir' | 'blockNameLocator' | 
   'startUrlWaitOptions' | 'collectionLinkWaitOptions' | 'collectionNameLocator' | 'collectionCountLocator' |
-  'skipFree' | 'locale' | 'scriptInjection' | 'verifyBlockCompletion'>> {
+  'skipFree' | 'locale' | 'scriptInjection'>> {
   locale: Locale;
   tabListAriaLabel?: string;
   tabSectionLocator?: string;
@@ -23,7 +23,6 @@ export interface InternalConfig extends Required<Omit<CrawlerConfig,
   collectionNameLocator?: string;
   collectionCountLocator?: string;
   scriptInjection?: CrawlerConfig['scriptInjection'];
-  verifyBlockCompletion: boolean;
   outputDir: string;
   stateDir: string;
   progressFile: string;
@@ -178,7 +177,6 @@ export class ConfigManager {
       extractBlockCount: config.extractBlockCount,
       skipFree: config.skipFree,
       scriptInjection: config.scriptInjection,
-      verifyBlockCompletion: config.verifyBlockCompletion ?? false,
       maxConcurrency: config.maxConcurrency ?? 5,
       outputDir,
       stateDir: path.join(stateDir, hostname), // 修改：stateDir 应该包含域名子目录

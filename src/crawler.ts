@@ -12,6 +12,23 @@ import { CrawlerOrchestrator } from "./core/CrawlerOrchestrator";
 import { createI18n, type I18n } from "./utils/i18n";
 
 /**
+ * Block 模式配置选项
+ */
+export interface BlockModeOptions {
+  /**
+   * 验证 Block 采集完整性
+   * 
+   * 当开启时，在关闭页面前会验证：
+   * 1. 记录 sectionLocator 定位到的 block 总数（预期数量）
+   * 2. 记录实际采集的 block 数量
+   * 3. 如果两者不一致，调用 page.pause() 暂停，方便检查问题
+   * 
+   * @default true
+   */
+  verifyBlockCompletion?: boolean;
+}
+
+/**
  * Block Chain - 用于链式调用 Block 处理模式
  */
 class BlockChain {
@@ -19,7 +36,8 @@ class BlockChain {
 
   constructor(
     private crawler: BlockCrawler,
-    private sectionLocator: string
+    private sectionLocator: string,
+    private options: BlockModeOptions
   ) {}
 
   /**
@@ -52,7 +70,8 @@ class BlockChain {
     await this.crawler.runBlockMode(
       this.sectionLocator,
       handler,
-      this.beforeHandler
+      this.beforeHandler,
+      this.options
     );
   }
 }
@@ -191,11 +210,12 @@ export class BlockCrawler {
    * Block 处理模式
    * 
    * @param sectionLocator Block 区域定位符
+   * @param options Block 模式配置选项
    * @returns BlockChain 支持链式调用
    * 
    * @example
    * await crawler
-   *   .blocks('[data-preview]')
+   *   .blocks('[data-preview]', { verifyBlockCompletion: false })  // 生产环境关闭验证
    *   .before(async (currentPage) => {
    *     await currentPage.getByRole('tab', { name: 'List view' }).click();
    *   })
@@ -203,8 +223,8 @@ export class BlockCrawler {
    *     console.log(`处理 Block: ${blockName}`);
    *   });
    */
-  blocks(sectionLocator: string): BlockChain {
-    return new BlockChain(this, sectionLocator);
+  blocks(sectionLocator: string, options: BlockModeOptions = {}): BlockChain {
+    return new BlockChain(this, sectionLocator, options);
   }
 
   /**
@@ -271,9 +291,10 @@ export class BlockCrawler {
   async runBlockMode(
     sectionLocator: string,
     handler: BlockHandler,
-    beforeHandler?: BeforeProcessBlocksHandler
+    beforeHandler?: BeforeProcessBlocksHandler,
+    options?: BlockModeOptions
   ): Promise<void> {
-    await this.run(sectionLocator, handler, null, beforeHandler, null);
+    await this.run(sectionLocator, handler, null, beforeHandler, null, options);
   }
 
   /**
@@ -319,7 +340,8 @@ export class BlockCrawler {
       blockName?: string;
       handler: TestHandler;
       beforeHandler?: BeforeProcessBlocksHandler;
-    } | null
+    } | null,
+    blockModeOptions?: BlockModeOptions
   ): Promise<void> {
     this.orchestrator = new CrawlerOrchestrator(this.config, this.taskProgress);
     
@@ -333,7 +355,8 @@ export class BlockCrawler {
         blockHandler,
         pageHandler,
         beforeProcessBlocks || null,
-        testMode
+        testMode,
+        blockModeOptions
       );
     } finally {
       // 清理信号处理器

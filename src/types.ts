@@ -188,27 +188,6 @@ export interface CrawlerConfig {
      */
     timing?: 'beforePageLoad' | 'afterPageLoad';
   };
-  
-  // ========== 调试配置 ==========
-  /**
-   * 验证 Block 采集完整性（调试功能）
-   * 
-   * 当开启时，在关闭页面前会验证：
-   * 1. 记录 sectionLocator 定位到的 block 总数（预期数量）
-   * 2. 记录实际采集的 block 数量
-   * 3. 如果两者不一致，调用 page.pause() 暂停，方便检查问题
-   * 
-   * 使用场景：在 --debug 模式下运行测试时开启，确保组件采集完整
-   * 
-   * @default false
-   * @example
-   * // 在调试时开启
-   * const crawler = new BlockCrawler(page, {
-   *   verifyBlockCompletion: true,
-   *   // ... 其他配置
-   * });
-   */
-  verifyBlockCompletion?: boolean;
 }
 
 /**

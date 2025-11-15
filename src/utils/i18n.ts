@@ -109,6 +109,8 @@ const messages = {
     'block.nameEmpty': '⚠️ block 名称为空，跳过',
     'block.processFailed': '❌ 处理 block 失败: {name}',
     'block.complexHeading': '❌ 检测到 heading 内部结构复杂（子元素 > 1）但未找到 link 元素\n\n请配置以下选项之一：\n   1. getBlockName: (block) => Promise<string | null>\n   2. blockNameLocator: string',
+    'block.verifyIncomplete': '\n⚠️  Block 采集不完整！\n   页面: {pagePath}\n   预期数量: {expectedCount}\n   实际处理: {processedCount}\n   差异: {diff}\n\n   已处理的 Block:\n{blockList}\n\n   ⏸️  页面即将暂停，请检查问题...\n',
+    'block.verifyComplete': '\n✅ Block 采集验证通过\n   页面: {pagePath}\n   预期数量: {expectedCount}\n   实际处理: {processedCount}\n',
     
     // 元信息
     'meta.saved': '✅ 元信息已保存到: {path}',
@@ -238,6 +240,8 @@ const messages = {
     'block.nameEmpty': '⚠️ Block name is empty, skipping',
     'block.processFailed': '❌ Failed to process block: {name}',
     'block.complexHeading': '❌ Detected complex heading structure (children > 1) but no link element found\n\nPlease configure one of the following:\n   1. getBlockName: (block) => Promise<string | null>\n   2. blockNameLocator: string',
+    'block.verifyIncomplete': '\n⚠️  Block collection incomplete!\n   Page: {pagePath}\n   Expected: {expectedCount}\n   Processed: {processedCount}\n   Difference: {diff}\n\n   Processed Blocks:\n{blockList}\n\n   ⏸️  Page will pause, please check the issue...\n',
+    'block.verifyComplete': '\n✅ Block collection verification passed\n   Page: {pagePath}\n   Expected: {expectedCount}\n   Processed: {processedCount}\n',
     
     // Meta information
     'meta.saved': '✅ Meta information saved to: {path}',

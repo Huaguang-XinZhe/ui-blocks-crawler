@@ -21,7 +21,8 @@ export class BlockProcessor {
     private blockHandler: BlockHandler,
     private taskProgress?: TaskProgress,
     private beforeProcessBlocks?: ((page: Page) => Promise<void>) | null,
-    private filenameMappingManager?: FilenameMappingManager
+    private filenameMappingManager?: FilenameMappingManager,
+    private verifyBlockCompletion: boolean = true
   ) {
     this.i18n = createI18n(config.locale);
     this.blockNameExtractor = new BlockNameExtractor(config);
@@ -78,8 +79,8 @@ export class BlockProcessor {
     }
 
     // 验证 Block 采集完整性（如果启用）
-    if (this.config.verifyBlockCompletion) {
-      await this.verifyBlockCompletion(
+    if (this.verifyBlockCompletion) {
+      await this.verifyCompletion(
         page,
         pagePath,
         expectedCount,
@@ -203,7 +204,7 @@ export class BlockProcessor {
    * 验证 Block 采集完整性
    * 如果预期数量与实际处理数量不一致，暂停并提示用户检查
    */
-  private async verifyBlockCompletion(
+  private async verifyCompletion(
     page: Page,
     pagePath: string,
     expectedCount: number,
@@ -212,24 +213,24 @@ export class BlockProcessor {
   ): Promise<void> {
     if (expectedCount !== processedCount) {
       console.error(
-        `\n⚠️  Block 采集不完整！\n` +
-        `   页面: ${pagePath}\n` +
-        `   预期数量: ${expectedCount}\n` +
-        `   实际处理: ${processedCount}\n` +
-        `   差异: ${expectedCount - processedCount}\n\n` +
-        `   已处理的 Block:\n` +
-        processedBlockNames.map((name, idx) => `     ${idx + 1}. ${name}`).join('\n') +
-        `\n\n   ⏸️  页面即将暂停，请检查问题...\n`
+        this.i18n.t('block.verifyIncomplete', {
+          pagePath,
+          expectedCount,
+          processedCount,
+          diff: expectedCount - processedCount,
+          blockList: processedBlockNames.map((name, idx) => `     ${idx + 1}. ${name}`).join('\n')
+        })
       );
       
       // 暂停页面，方便用户检查
       await page.pause();
     } else {
       console.log(
-        `\n✅ Block 采集验证通过\n` +
-        `   页面: ${pagePath}\n` +
-        `   预期数量: ${expectedCount}\n` +
-        `   实际处理: ${processedCount}\n`
+        this.i18n.t('block.verifyComplete', {
+          pagePath,
+          expectedCount,
+          processedCount
+        })
       );
     }
   }
