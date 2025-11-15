@@ -12,6 +12,8 @@ import { BlockNameExtractor } from "./BlockNameExtractor";
 import { createI18n, type I18n } from "../utils/i18n";
 import { createSafeOutput } from "../utils/safe-output";
 import { FilenameMappingManager } from "../utils/filename-mapping";
+import { createClickAndVerify, createClickCode } from "../utils/click-actions";
+import type { BeforeContext } from "../types";
 
 /**
  * 爬虫协调器
@@ -67,13 +69,13 @@ export class CrawlerOrchestrator {
     blockSectionLocator: string | null,
     blockHandler: ((context: any) => Promise<void>) | null,
     pageHandler: ((context: any) => Promise<void>) | null,
-    beforeProcessBlocks: ((page: Page) => Promise<void>) | null,
+    beforeProcessBlocks: ((context: BeforeContext) => Promise<void>) | null,
     testMode: {
       url: string;
       sectionLocator: string;
       blockName?: string;
       handler: (context: any) => Promise<void>;
-      beforeHandler?: (page: Page) => Promise<void>;
+      beforeHandler?: (context: BeforeContext) => Promise<void>;
     } | null = null,
     blockModeOptions?: { verifyBlockCompletion?: boolean }
   ): Promise<void> {
@@ -272,7 +274,7 @@ export class CrawlerOrchestrator {
     blockSectionLocator: string | null,
     blockHandler: ((context: any) => Promise<void>) | null,
     pageHandler: ((context: any) => Promise<void>) | null,
-    beforeProcessBlocks: ((page: Page) => Promise<void>) | null,
+    beforeProcessBlocks: ((context: BeforeContext) => Promise<void>) | null,
     blockModeOptions?: { verifyBlockCompletion?: boolean }
   ): Promise<void> {
     const allLinks = this.linkCollector.getAllLinks();
@@ -384,7 +386,7 @@ export class CrawlerOrchestrator {
     blockSectionLocator: string | null,
     blockHandler: ((context: any) => Promise<void>) | null,
     pageHandler: ((context: any) => Promise<void>) | null,
-    beforeProcessBlocks: ((page: Page) => Promise<void>) | null,
+    beforeProcessBlocks: ((context: BeforeContext) => Promise<void>) | null,
     blockModeOptions?: { verifyBlockCompletion?: boolean }
   ): Promise<void> {
     const domain = new URL(this.config.startUrl).hostname;
@@ -497,7 +499,7 @@ export class CrawlerOrchestrator {
       sectionIndex?: number;
       blockName?: string;
       handler: (context: any) => Promise<void>;
-      beforeHandler?: (page: Page) => Promise<void>;
+      beforeHandler?: (context: BeforeContext) => Promise<void>;
     }
   ): Promise<void> {
     try {
@@ -520,7 +522,12 @@ export class CrawlerOrchestrator {
       // 执行前置逻辑
       if (testMode.beforeHandler) {
         console.log(`\n${this.i18n.t("crawler.testBeforeHandler")}`);
-        await testMode.beforeHandler(page);
+        const clickAndVerify = createClickAndVerify();
+        const beforeContext: BeforeContext = {
+          currentPage: page,
+          clickAndVerify,
+        };
+        await testMode.beforeHandler(beforeContext);
       }
 
       // 获取所有匹配的 sections
@@ -593,6 +600,7 @@ export class CrawlerOrchestrator {
 
       // 执行测试逻辑
       console.log(`\n${this.i18n.t("crawler.testRunning")}`);
+      const clickAndVerify = createClickAndVerify();
       await testMode.handler({
         currentPage: page,
         section: targetSection,
@@ -605,6 +613,8 @@ export class CrawlerOrchestrator {
           undefined,
           blockName
         ),
+        clickAndVerify,
+        clickCode: createClickCode(targetSection, clickAndVerify),
       });
 
       // 保存文件名映射（测试模式）

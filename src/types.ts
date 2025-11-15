@@ -3,6 +3,56 @@ import type { Locale } from "./utils/i18n";
 import type { SafeOutput } from "./utils/safe-output";
 
 /**
+ * 点击并验证函数类型
+ * 用于验证点击效果，支持重试
+ * 
+ * @param locator 要点击的定位器
+ * @param verifyFn 验证函数（可选），返回 true 表示验证通过。如果不提供，将自动根据元素的 role 选择验证方式
+ * @param options 可选配置（timeout、retries）
+ * @throws 验证失败时抛出错误
+ * 
+ * **自动验证规则（当 verifyFn 不提供时）：**
+ * - `role="tab"` → 验证 `aria-selected="true"`
+ * - 其他 role → 验证元素可见性
+ * 
+ * @example
+ * // 使用自动验证（tab 元素会自动验证 aria-selected）
+ * await clickAndVerify(page.getByRole('tab', { name: 'Code' }));
+ * 
+ * @example
+ * // 自定义验证
+ * await clickAndVerify(
+ *   page.getByRole('button', { name: 'Open' }),
+ *   async () => (await page.getByText('Content').count()) > 0,
+ *   { timeout: 5000, retries: 3 }
+ * );
+ */
+export type ClickAndVerify = (
+  locator: Locator,
+  verifyFn?: () => Promise<boolean>,
+  options?: { timeout?: number; retries?: number }
+) => Promise<void>;
+
+/**
+ * 点击 Code 按钮函数类型
+ * 内部使用 clickAndVerify 实现
+ * 
+ * @param locator 可选的自定义定位器，默认为 getByRole('tab', { name: 'Code' })
+ * @param options 可选配置（timeout、retries）
+ * 
+ * @example
+ * // 使用默认定位器
+ * await clickCode();
+ * 
+ * // 使用自定义定位器
+ * await clickCode(block.getByRole('button', { name: 'Show Code' }));
+ */
+export type ClickCode = (
+  locator?: Locator,
+  options?: { timeout?: number; retries?: number }
+) => Promise<void>;
+
+/**
  * 爬虫配置接口
  */
 export interface CrawlerConfig {
@@ -260,6 +310,10 @@ export interface PageContext {
   outputDir: string;
   /** 安全输出函数（自动处理文件名 sanitize） */
   safeOutput: SafeOutput;
+  /** 点击并验证函数 */
+  clickAndVerify: ClickAndVerify;
+  /** 点击 Code 按钮函数 */
+  clickCode: ClickCode;
 }
 
 /**
@@ -278,6 +332,10 @@ export interface BlockContext {
   outputDir: string;
   /** 安全输出函数（自动处理文件名 sanitize，默认路径：${outputDir}/${blockPath}.tsx） */
   safeOutput: SafeOutput;
+  /** 点击并验证函数 */
+  clickAndVerify: ClickAndVerify;
+  /** 点击 Code 按钮函数 */
+  clickCode: ClickCode;
 }
 
 /**
@@ -291,18 +349,30 @@ export type PageHandler = (context: PageContext) => Promise<void>;
 export type BlockHandler = (context: BlockContext) => Promise<void>;
 
 /**
+ * Before 处理上下文（用于 before 函数）
+ */
+export interface BeforeContext {
+  /** 当前正在处理的页面（可能是 newPage，而不是原始测试 page） */
+  currentPage: Page;
+  /** 点击并验证函数 */
+  clickAndVerify: ClickAndVerify;
+}
+
+/**
  * Block 处理前置函数类型
  * 在匹配页面所有 Block 之前执行的前置逻辑（如点击按钮、toggle 切换等）
  * 
- * @param currentPage 当前正在处理的页面（可能是 newPage，而不是原始测试 page）
+ * @param context Before 处理上下文
  * 
  * @example
- * async (currentPage) => {
- *   await currentPage.getByRole('button', { name: 'Show All' }).click();
- *   await currentPage.waitForTimeout(500);
+ * async ({ currentPage, clickAndVerify }) => {
+ *   await clickAndVerify(
+ *     currentPage.getByRole('button', { name: 'Show All' }),
+ *     async () => (await currentPage.getByText('Content').count()) > 0
+ *   );
  * }
  */
-export type BeforeProcessBlocksHandler = (currentPage: Page) => Promise<void>;
+export type BeforeProcessBlocksHandler = (context: BeforeContext) => Promise<void>;
 
 /**
  * 测试模式上下文
@@ -318,6 +388,10 @@ export interface TestContext {
   outputDir: string;
   /** 安全输出函数（自动处理文件名 sanitize，默认路径：${outputDir}/test-${blockName}.tsx） */
   safeOutput: SafeOutput;
+  /** 点击并验证函数 */
+  clickAndVerify: ClickAndVerify;
+  /** 点击 Code 按钮函数 */
+  clickCode: ClickCode;
 }
 
 /**

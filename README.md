@@ -854,10 +854,7 @@ async function clickAndVerify(
   
   for (let i = 0; i < retries; i++) {
     await locator.click({ timeout });
-    await locator.page().waitForTimeout(300);
-    
     if (await verifyFn()) return; // 验证通过
-    if (i < retries - 1) await locator.page().waitForTimeout(500);
   }
   
   throw new Error('点击后验证失败');

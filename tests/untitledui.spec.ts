@@ -27,13 +27,17 @@ test("untitledui", async ({ page }) => {
 
   await crawler
     .blocks("[data-preview]")
-    .before(async (currentPage) => {
+    .before(async ({ currentPage, clickAndVerify }) => {
       // 前置逻辑示例：在匹配所有 Block 之前执行
-      await clickIfVisibleNow(currentPage.getByRole('tab', { name: 'List view' }));
+      const listViewTab = currentPage.getByRole('tab', { name: 'List view' });
+      // 使用 clickAndVerify 确保点击生效（tab 元素会自动验证 aria-selected）
+      if (await listViewTab.isVisible({ timeout: 0 })) {
+        await clickAndVerify(listViewTab);
+      }
     })
-    .each(async ({ block, safeOutput }) => {
-      // 点击 Code
-      await block.getByRole('tab', { name: 'Code' }).click();
+    .each(async ({ block, safeOutput, clickCode }) => {
+      // 使用 clickCode 点击 Code 按钮（内置验证）
+      await clickCode();
       // 获取内部 pre
       const code = await extractCodeFromDOM(block);
       // 输出到文件
@@ -46,16 +50,18 @@ test("untitledui", async ({ page }) => {
   //     "[data-preview]",
   //     1
   //   )
-  //   .before(async (currentPage) => {
+  //   .before(async ({ currentPage, clickAndVerify }) => {
   //     // 前置逻辑示例：在匹配所有 Block 之前执行
-  //     await clickIfVisibleNow(
-  //       currentPage.getByRole("tab", { name: "List view" })
-  //     );
+  //     const listViewTab = currentPage.getByRole("tab", { name: "List view" });
+  //     if (await listViewTab.isVisible({ timeout: 0 })) {
+  //       // tab 元素会自动验证 aria-selected，无需手动写验证函数
+  //       await clickAndVerify(listViewTab);
+  //     }
   //   })
-  //   .run(async ({ section, blockName, safeOutput }) => {
+  //   .run(async ({ section, blockName, safeOutput, clickCode }) => {
   //     console.log(`测试组件: ${blockName}`);
-  //     // 点击 Code
-  //     await section.getByRole("tab", { name: "Code" }).click();
+  //     // 使用 clickCode 点击 Code 按钮（内置验证）
+  //     await clickCode();
   //     // 获取内部 pre
   //     const code = await extractCodeFromDOM(section);
   //     // 使用 safeOutput 安全输出（自动处理文件名 sanitize）
@@ -66,18 +72,11 @@ test("untitledui", async ({ page }) => {
 // 从 DOM 中提取 Code
 async function extractCodeFromDOM(section: Locator): Promise<string> {
   const pre = section.locator("pre").last();
-  // 等待 import 文本出现
-  await pre
-    .getByText("import")
-    .first()
-    .waitFor({ state: "visible", timeout: 10000 }); // 最大等待 10s（以后都设置的大一些，如果超过这个时间那就一定是有问题了❗）
+  // // 等待 import 文本出现
+  // await pre
+  //   .getByText("import")
+  //   .first()
+  //   .waitFor({ state: "visible", timeout: 10000 }); // 最大等待 10s（以后都设置的大一些，如果超过这个时间那就一定是有问题了❗）
   const rawText = (await pre.textContent()) ?? "";
   return rawText.replace(/Show more/, "").trim();
-}
-
-// 如果元素存在且可见（立即判断），则点击
-async function clickIfVisibleNow(locator: Locator) {
-  if (await locator.isVisible({ timeout: 0 })) {
-    await locator.click();
-  }
 }

@@ -11,6 +11,7 @@ export type {
   PageContext,
   BlockContext,
   TestContext,
+  BeforeContext,
   PageHandler,
   BlockHandler,
   BeforeProcessBlocksHandler,
@@ -18,6 +19,8 @@ export type {
   CollectionLink,
   SiteMeta,
   FreeItem,
+  ClickAndVerify,
+  ClickCode,
 } from "./types";
 export type { Locale } from "./utils/i18n";
 export type { SafeOutput } from "./utils/safe-output";

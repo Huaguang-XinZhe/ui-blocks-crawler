@@ -1,11 +1,13 @@
 import type { Page, Locator } from "@playwright/test";
-import type { BlockHandler, BlockContext } from "../types";
+import type { BlockHandler, BlockContext, BeforeContext } from "../types";
 import type { InternalConfig } from "./ConfigManager";
 import type { TaskProgress } from "../utils/task-progress";
 import { createI18n, type I18n } from "../utils/i18n";
 import { BlockNameExtractor } from "./BlockNameExtractor";
 import { createSafeOutput } from "../utils/safe-output";
 import type { FilenameMappingManager } from "../utils/filename-mapping";
+import { createClickAndVerify, createClickCode } from "../utils/click-actions";
+import { isDebugMode } from "../utils/debug";
 
 /**
  * Block 处理器
@@ -20,7 +22,7 @@ export class BlockProcessor {
     private blockSectionLocator: string,
     private blockHandler: BlockHandler,
     private taskProgress?: TaskProgress,
-    private beforeProcessBlocks?: ((page: Page) => Promise<void>) | null,
+    private beforeProcessBlocks?: ((context: BeforeContext) => Promise<void>) | null,
     private filenameMappingManager?: FilenameMappingManager,
     private verifyBlockCompletion: boolean = true
   ) {
@@ -38,7 +40,12 @@ export class BlockProcessor {
   }> {
     // 执行前置逻辑（如果配置了）
     if (this.beforeProcessBlocks) {
-      await this.beforeProcessBlocks(page);
+      const clickAndVerify = createClickAndVerify();
+      const beforeContext: BeforeContext = {
+        currentPage: page,
+        clickAndVerify,
+      };
+      await this.beforeProcessBlocks(beforeContext);
     }
     
     // 获取所有 block 节点（作为预期数量）
@@ -156,6 +163,7 @@ export class BlockProcessor {
       return { success: true, isFree: false, blockName };
     }
 
+    const clickAndVerify = createClickAndVerify();
     const context: BlockContext = {
       currentPage: page,
       block,
@@ -163,6 +171,8 @@ export class BlockProcessor {
       blockName,
       outputDir: this.config.outputDir,
       safeOutput: createSafeOutput('block', this.config.outputDir, this.filenameMappingManager, blockPath),
+      clickAndVerify,
+      clickCode: createClickCode(block, clickAndVerify),
     };
 
     try {

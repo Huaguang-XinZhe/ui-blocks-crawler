@@ -5,6 +5,7 @@ import { createI18n, type I18n } from "../utils/i18n";
 import { createSafeOutput } from "../utils/safe-output";
 import type { FilenameMappingManager } from "../utils/filename-mapping";
 import { isDebugMode } from "../utils/debug";
+import { createClickAndVerify, createClickCode } from "../utils/click-actions";
 
 /**
  * Page 处理器
@@ -54,11 +55,14 @@ export class PageProcessor {
    * 注意：调用此方法前应该已经在 CrawlerOrchestrator 中检查过 Free 页面
    */
   async processPage(page: Page, currentPath: string): Promise<void> {
+    const clickAndVerify = createClickAndVerify();
     const context: PageContext = {
       currentPage: page,
       currentPath,
       outputDir: this.config.outputDir,
       safeOutput: createSafeOutput('page', this.config.outputDir, this.filenameMappingManager),
+      clickAndVerify,
+      clickCode: createClickCode(page, clickAndVerify),
     };
 
     try {
