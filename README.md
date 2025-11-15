@@ -251,6 +251,42 @@ await crawler.blocks("[data-preview]", { verifyBlockCompletion: false }).each(..
 | `enableProgressResume` | `boolean` | true | 是否启用进度恢复 |
 | `blockNameLocator` | `string` | `role=heading[level=1] >> role=link` | Block 名称定位符 |
 
+### 并发配置
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `useIndependentContext` | `boolean` | `false` | 使用独立的浏览器上下文 |
+| `maxConcurrency` | `number` | 5 | 最大并发页面数 |
+
+**useIndependentContext 功能说明：**
+
+当开启时，每个并发页面会创建独立的 `BrowserContext`，完全隔离各页面状态。
+
+**优点：**
+- ✅ 完全隔离，避免状态污染
+- ✅ 点击、输入等操作更稳定
+- ✅ 适合高并发场景
+
+**缺点：**
+- ⚠️ 内存占用略高
+- ⚠️ 无法共享 cookies/storage
+
+**使用场景：**
+- 并发爬取时遇到点击失效、状态混乱
+- 需要完全隔离的页面环境
+
+**使用示例：**
+
+```typescript
+// 并发场景开启（推荐）
+const crawler = new BlockCrawler(page, {
+  startUrl: "https://example.com/components",
+  useIndependentContext: true,  // 开启独立 context
+  maxConcurrency: 5,
+  // ... 其他配置
+});
+```
+
 ### 调试配置
 
 | 配置项 | 类型 | 默认值 | 说明 |
@@ -759,6 +795,115 @@ const crawlerB = new BlockCrawler({
 });
 // 进度: .crawler/site-b-com/progress.json
 // 输出: output/site-b-com/
+```
+
+## 💡 点击稳定性最佳实践
+
+在并发环境下，点击操作可能会因为各种原因失效。以下是一些建议：
+
+### 方案 1：使用独立 Context（推荐）
+
+```typescript
+const crawler = new BlockCrawler(page, {
+  startUrl: "https://example.com/components",
+  useIndependentContext: true,  // 🔥 开启独立 context
+  maxConcurrency: 5,
+});
+```
+
+### 方案 2：增强点击操作稳定性
+
+```typescript
+/**
+ * 稳定的点击操作
+ * 自动处理：可见性检查、重试、超时
+ */
+async function stableClick(locator: Locator, options?: {
+  timeout?: number;
+  retries?: number;
+}): Promise<void> {
+  const timeout = options?.timeout ?? 5000;
+  const retries = options?.retries ?? 3;
+  
+  for (let i = 0; i < retries; i++) {
+    try {
+      await locator.waitFor({ state: 'visible', timeout });
+      await locator.scrollIntoViewIfNeeded({ timeout });
+      await locator.click({ timeout, force: false });
+      await locator.page().waitForTimeout(300); // 点击后等待
+      return;
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      await locator.page().waitForTimeout(500);
+    }
+  }
+}
+```
+
+### 方案 3：条件点击
+
+```typescript
+/**
+ * 条件点击：只在元素可见时点击
+ */
+async function clickIfVisible(locator: Locator, timeout = 3000): Promise<boolean> {
+  try {
+    await locator.waitFor({ state: 'visible', timeout });
+    await locator.click({ timeout });
+    return true;
+  } catch {
+    return false; // 元素不可见，跳过
+  }
+}
+```
+
+### 方案 4：验证点击效果
+
+```typescript
+/**
+ * 验证点击效果
+ */
+async function clickAndVerify(
+  locator: Locator,
+  verifyFn: () => Promise<boolean>,
+  options?: { timeout?: number; retries?: number }
+): Promise<void> {
+  const timeout = options?.timeout ?? 5000;
+  const retries = options?.retries ?? 3;
+  
+  for (let i = 0; i < retries; i++) {
+    await locator.click({ timeout });
+    await locator.page().waitForTimeout(300);
+    
+    if (await verifyFn()) return; // 验证通过
+    if (i < retries - 1) await locator.page().waitForTimeout(500);
+  }
+  
+  throw new Error('点击后验证失败');
+}
+```
+
+### 总结
+
+| 方案 | 优点 | 适用场景 |
+|------|------|----------|
+| 独立 Context | 完全隔离，根本解决问题 | 并发场景（推荐） |
+| 稳定点击 | 自动重试，容错性强 | 所有场景 |
+| 条件点击 | 跳过不可见元素，避免错误 | 可选元素 |
+| 验证点击 | 确保点击生效 | 关键操作 |
+
+**建议组合使用：**
+```typescript
+const crawler = new BlockCrawler(page, {
+  useIndependentContext: true,  // 方案1：独立 context
+  pauseOnError: true,           // 遇到错误暂停检查
+});
+
+await crawler.blocks("[data-preview]").each(async ({ block, safeOutput }) => {
+  await stableClick(block.getByRole('tab', { name: 'Code' }));
+  const code = await extractCodeFromDOM(block);
+  await safeOutput(code);
+});
 ```
 
 ## 🛠️ 开发命令

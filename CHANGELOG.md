@@ -1,5 +1,17 @@
 # block-crawler
 
+## 0.12.2
+
+### Patch Changes
+
+- 起始页面处理完后也要关闭
+
+## 0.12.1
+
+### Patch Changes
+
+- 报错时不在控制台输出详细日志
+
 ## 0.12.0
 
 ### Minor Changes
