@@ -6,6 +6,7 @@ import type {
   BlockHandler,
   BeforeProcessBlocksHandler,
   TestHandler,
+  RebuildOptions,
 } from "./types";
 import { ConfigManager, type InternalConfig } from "./core/ConfigManager";
 import { CrawlerOrchestrator } from "./core/CrawlerOrchestrator";
@@ -33,6 +34,7 @@ export interface BlockModeOptions {
  */
 class BlockChain {
   private beforeHandler?: BeforeProcessBlocksHandler;
+  private rebuildOptions?: RebuildOptions;
 
   constructor(
     private crawler: BlockCrawler,
@@ -57,6 +59,38 @@ class BlockChain {
   }
 
   /**
+   * 从 outputDir 重建进度（仅在 progress.json 不存在时生效）
+   * 扫描已有的输出文件，跳过已完成的 block
+   * 
+   * @param options 重建配置
+   * @returns this 支持链式调用
+   * 
+   * @example
+   * // untitledui: block 是文件，只在内存中标记
+   * .rebuild({ blockType: 'file' })
+   * 
+   * @example
+   * // heroui: block 是目录，保存到 progress.json
+   * .rebuild({ blockType: 'directory', saveToProgress: true })
+   * 
+   * @example
+   * // 自定义检查逻辑
+   * .rebuild({
+   *   blockType: 'directory',
+   *   saveToProgress: true,
+   *   checkBlockComplete: async (blockPath, outputDir) => {
+   *     const dir = path.join(outputDir, blockPath);
+   *     const files = await fse.readdir(dir);
+   *     return files.some(f => f.endsWith('.tsx') && f.includes('index'));
+   *   }
+   * })
+   */
+  rebuild(options?: RebuildOptions): this {
+    this.rebuildOptions = options;
+    return this;
+  }
+
+  /**
    * 执行 Block 处理逻辑
    * 
    * @param handler Block 处理函数
@@ -71,7 +105,8 @@ class BlockChain {
       this.sectionLocator,
       handler,
       this.beforeHandler,
-      this.options
+      this.options,
+      this.rebuildOptions
     );
   }
 }
@@ -80,7 +115,29 @@ class BlockChain {
  * Page Chain - 用于链式调用 Page 处理模式
  */
 class PageChain {
+  private rebuildOptions?: RebuildOptions;
+
   constructor(private crawler: BlockCrawler) {}
+
+  /**
+   * 从 outputDir 重建进度（仅在 progress.json 不存在时生效）
+   * 扫描已有的输出文件，跳过已完成的 page
+   * 
+   * @param options 重建配置
+   * @returns this 支持链式调用
+   * 
+   * @example
+   * // 只在内存中标记
+   * .rebuild({ blockType: 'file' })
+   * 
+   * @example
+   * // 保存到 progress.json
+   * .rebuild({ blockType: 'file', saveToProgress: true })
+   */
+  rebuild(options?: RebuildOptions): this {
+    this.rebuildOptions = options;
+    return this;
+  }
 
   /**
    * 执行 Page 处理逻辑
@@ -93,7 +150,7 @@ class PageChain {
    * })
    */
   async each(handler: PageHandler): Promise<void> {
-    await this.crawler.runPageMode(handler);
+    await this.crawler.runPageMode(handler, this.rebuildOptions);
   }
 }
 
@@ -201,6 +258,7 @@ export class BlockCrawler {
       this.taskProgress = new TaskProgress(
         this.config.progressFile,
         this.config.outputDir,
+        this.config.stateDir,
         this.config.locale
       );
     }
@@ -292,15 +350,24 @@ export class BlockCrawler {
     sectionLocator: string,
     handler: BlockHandler,
     beforeHandler?: BeforeProcessBlocksHandler,
-    options?: BlockModeOptions
+    options?: BlockModeOptions,
+    rebuildOptions?: RebuildOptions
   ): Promise<void> {
+    // 如果提供了 rebuild 配置，执行手动重建
+    if (rebuildOptions && this.taskProgress) {
+      await this.taskProgress.manualRebuild(rebuildOptions);
+    }
     await this.run(sectionLocator, handler, null, beforeHandler, null, options);
   }
 
   /**
    * 运行 Page 模式（内部方法）
    */
-  async runPageMode(handler: PageHandler): Promise<void> {
+  async runPageMode(handler: PageHandler, rebuildOptions?: RebuildOptions): Promise<void> {
+    // 如果提供了 rebuild 配置，执行手动重建
+    if (rebuildOptions && this.taskProgress) {
+      await this.taskProgress.manualRebuild(rebuildOptions);
+    }
     await this.run(null, null, handler, undefined, null);
   }
 

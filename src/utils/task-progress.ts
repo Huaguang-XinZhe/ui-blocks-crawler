@@ -2,6 +2,8 @@ import fse from "fs-extra";
 import path from "path";
 import { createI18n, type I18n, type Locale } from "./i18n";
 import { atomicWriteJson } from "./atomic-write";
+import { FilenameMappingManager } from "./filename-mapping";
+import type { RebuildOptions } from "../types";
 
 /**
  * 任务进度管理器
@@ -11,17 +13,27 @@ import { atomicWriteJson } from "./atomic-write";
 export class TaskProgress {
   private progressFile: string;
   private outputDir: string;
+  private stateDir: string;
   private completedBlocks: Set<string>;
   private completedPages: Set<string>;
   private isDirty: boolean = false;
   private i18n: I18n;
+  private rebuildConfig?: RebuildOptions;
 
-  constructor(progressFile: string = "progress.json", outputDir: string = "output", locale?: Locale) {
+  constructor(
+    progressFile: string = "progress.json",
+    outputDir: string = "output",
+    stateDir: string = ".crawler",
+    locale?: Locale,
+    rebuildConfig?: RebuildOptions
+  ) {
     this.progressFile = progressFile;
     this.outputDir = outputDir;
+    this.stateDir = stateDir;
     this.completedBlocks = new Set();
     this.completedPages = new Set();
     this.i18n = createI18n(locale);
+    this.rebuildConfig = rebuildConfig;
   }
 
   /**
@@ -58,13 +70,17 @@ export class TaskProgress {
   }
 
   /**
-   * 重建进度：扫描 OUTPUT_DIR
-   * 逻辑：
-   * 1. 扫描所有 4 段的 block 目录（例如：components/application/authentication/Left Sign Up）
-   * 2. 对比 js 和 ts 目录的文件数，一致则认为 block 已完成
-   * 3. 如果某个页面（3段路径）下的所有 block 都完成，标记页面为已完成
+   * 重建进度：从 outputDir 扫描已有文件
+   * 
+   * 重建逻辑：
+   * 1. 扫描 outputDir，找到所有"页面目录"（根据实际目录结构动态判断）
+   * 2. 对于每个页面，扫描其下的 block（文件或目录，根据 blockType 配置）
+   * 3. 使用自定义或默认的检查函数判断 block 是否完成
+   * 4. 在内存中标记已完成的 blocks 和 pages
+   * 
+   * @param saveToFile 是否保存到 progress.json（默认 true，兼容旧逻辑）
    */
-  private async rebuildProgress(): Promise<void> {
+  private async rebuildProgress(saveToFile: boolean = true): Promise<void> {
     if (!(await fse.pathExists(this.outputDir))) {
       return;
     }
@@ -72,88 +88,215 @@ export class TaskProgress {
     const completedBlocks: string[] = [];
     const pageBlocksMap = new Map<string, { total: number; completed: number }>();
 
-    // 递归扫描，找到所有 4 段的路径
-    const scanDir = async (currentPath: string, depth: number = 0): Promise<void> => {
-      const fullPath = path.join(this.outputDir, currentPath);
-      
-      if (!(await fse.pathExists(fullPath))) {
-        return;
-      }
-
-      const entries = await fse.readdir(fullPath, { withFileTypes: true });
-
-      for (const entry of entries) {
-        if (!entry.isDirectory()) continue;
-
-        const newPath = currentPath ? `${currentPath}/${entry.name}` : entry.name;
-        const newDepth = depth + 1;
-
-        // 如果是第 4 段（block 目录），检查完成状态
-        if (newDepth === 4) {
-          // 提取页面路径（前3段）
-          const pathParts = newPath.split("/");
-          const pagePath = pathParts.slice(0, 3).join("/");
-          
-          // 初始化页面统计
-          if (!pageBlocksMap.has(pagePath)) {
-            pageBlocksMap.set(pagePath, { total: 0, completed: 0 });
-          }
-          const pageStats = pageBlocksMap.get(pagePath)!;
-          pageStats.total++;
-
-          const isComplete = await this.checkBlockComplete(newPath);
-          if (isComplete) {
-            completedBlocks.push(newPath);
-            pageStats.completed++;
-          }
-        } else if (newDepth < 4) {
-          // 继续递归
-          await scanDir(newPath, newDepth);
-        }
-      }
-    };
-
-    await scanDir("");
+    // 扫描 outputDir，找到所有内容
+    await this.scanOutputDir(this.outputDir, "", pageBlocksMap, completedBlocks);
     
     this.completedBlocks = new Set(completedBlocks);
     
     // 检查哪些页面已完全完成
     const completedPages: string[] = [];
+    
+    // 默认假设页面完整（适用于链式 rebuild()）
+    const assumePageComplete = true;
+    
     for (const [pagePath, stats] of pageBlocksMap.entries()) {
-      if (stats.total > 0 && stats.completed === stats.total) {
-        completedPages.push(pagePath);
+      if (assumePageComplete) {
+        // 只要页面有 block 就标记为已完成
+        if (stats.total > 0) {
+          completedPages.push(pagePath);
+        }
+      } else {
+        // 必须所有 block 都完整才标记为已完成
+        if (stats.total > 0 && stats.completed === stats.total) {
+          completedPages.push(pagePath);
+        }
       }
     }
     this.completedPages = new Set(completedPages);
     
-    // 保存重建的进度
-    if (completedBlocks.length > 0 || completedPages.length > 0) {
+    // 根据参数决定是否保存到文件
+    if (saveToFile && (completedBlocks.length > 0 || completedPages.length > 0)) {
       await this.saveProgress();
     }
   }
 
   /**
-   * 检查一个 block 是否完成
-   * 完成条件：js 目录和 ts 目录的文件数一致
+   * 手动触发重建进度（用于链式 rebuild() 调用）
+   * 
+   * @param options 重建配置
    */
-  private async checkBlockComplete(blockPath: string): Promise<boolean> {
-    const blockFullPath = path.join(this.outputDir, blockPath);
-    const jsDir = path.join(blockFullPath, "js");
-    const tsDir = path.join(blockFullPath, "ts");
-
-    // 两个目录都必须存在
-    if (!(await fse.pathExists(jsDir)) || !(await fse.pathExists(tsDir))) {
-      return false;
+  async manualRebuild(options?: RebuildOptions): Promise<void> {
+    // 如果 progress.json 已存在，不执行重建
+    if (await fse.pathExists(this.progressFile)) {
+      console.log(this.i18n.t('progress.found'));
+      return;
     }
 
-    try {
-      const jsFiles = (await fse.readdir(jsDir)).filter(f => !f.startsWith('.'));
-      const tsFiles = (await fse.readdir(tsDir)).filter(f => !f.startsWith('.'));
+    // 临时使用传入的配置
+    const originalConfig = this.rebuildConfig;
+    if (options) {
+      this.rebuildConfig = options;
+    }
 
-      // 文件数必须一致且大于 0
-      return jsFiles.length > 0 && jsFiles.length === tsFiles.length;
+    const saveToFile = options?.saveToProgress ?? false;
+    console.log(this.i18n.t('progress.scanning'));
+    await this.rebuildProgress(saveToFile);
+    console.log(
+      this.i18n.t('progress.rebuilt', { 
+        blocks: this.completedBlocks.size, 
+        pages: this.completedPages.size 
+      })
+    );
+
+    // 恢复原配置
+    this.rebuildConfig = originalConfig;
+  }
+
+  /**
+   * 扫描输出目录，识别页面和 block
+   * 
+   * 策略：
+   * - 如果目录下直接有 .tsx 文件，说明这是"页面目录"，文件就是 block（blockType='file'）
+   * - 如果目录下有子目录且子目录内有 .tsx 文件，说明这是"页面目录"，子目录就是 block（blockType='directory'）
+   * - 否则继续向下递归
+   */
+  private async scanOutputDir(
+    baseDir: string,
+    relativePath: string,
+    pageBlocksMap: Map<string, { total: number; completed: number }>,
+    completedBlocks: string[]
+  ): Promise<void> {
+    const fullPath = path.join(baseDir, relativePath);
+    
+    if (!(await fse.pathExists(fullPath))) {
+      return;
+    }
+
+    const entries = await fse.readdir(fullPath, { withFileTypes: true });
+    
+    // 检查当前目录的内容
+    const files = entries.filter(e => e.isFile());
+    const dirs = entries.filter(e => e.isDirectory());
+    const tsxFiles = files.filter(f => f.name.endsWith('.tsx'));
+    
+    const blockType = this.rebuildConfig?.blockType || 'file';
+    
+    // 判断是否是"页面目录"
+    let isPageDir = false;
+    
+    if (blockType === 'file') {
+      // 如果有 .tsx 文件，这就是页面目录
+      isPageDir = tsxFiles.length > 0;
+    } else {
+      // blockType === 'directory'
+      // 如果有子目录，并且至少一个子目录内有 .tsx 文件，这就是页面目录
+      for (const dir of dirs) {
+        const subDirPath = path.join(fullPath, dir.name);
+        const hasContent = await this.hasContentInDirectory(subDirPath);
+        if (hasContent) {
+          isPageDir = true;
+          break;
+        }
+      }
+    }
+    
+    if (isPageDir) {
+      // 这是一个页面目录，处理其下的 block
+      const pagePath = relativePath;
+      pageBlocksMap.set(pagePath, { total: 0, completed: 0 });
+      const pageStats = pageBlocksMap.get(pagePath)!;
+      
+      if (blockType === 'file') {
+        // block 是文件
+        for (const file of tsxFiles) {
+          const blockPath = path.join(relativePath, file.name).replace(/\\/g, '/');
+          pageStats.total++;
+          
+          const isComplete = await this.checkBlockComplete(blockPath);
+          if (isComplete) {
+            completedBlocks.push(blockPath);
+            pageStats.completed++;
+          }
+        }
+      } else {
+        // block 是目录
+        for (const dir of dirs) {
+          const blockPath = path.join(relativePath, dir.name).replace(/\\/g, '/');
+          pageStats.total++;
+          
+          const isComplete = await this.checkBlockComplete(blockPath);
+          if (isComplete) {
+            completedBlocks.push(blockPath);
+            pageStats.completed++;
+          }
+        }
+      }
+    } else {
+      // 不是页面目录，继续向下递归
+      for (const dir of dirs) {
+        const newRelativePath = path.join(relativePath, dir.name).replace(/\\/g, '/');
+        await this.scanOutputDir(baseDir, newRelativePath, pageBlocksMap, completedBlocks);
+      }
+    }
+  }
+
+  /**
+   * 检查目录下是否有内容（递归查找 .tsx 文件）
+   */
+  private async hasContentInDirectory(dirPath: string): Promise<boolean> {
+    try {
+      const entries = await fse.readdir(dirPath, { withFileTypes: true });
+      
+      // 检查当前层级
+      for (const entry of entries) {
+        if (entry.isFile() && entry.name.endsWith('.tsx')) {
+          return true;
+        }
+      }
+      
+      // 递归检查子目录
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const subPath = path.join(dirPath, entry.name);
+          if (await this.hasContentInDirectory(subPath)) {
+            return true;
+          }
+        }
+      }
+      
+      return false;
     } catch (error) {
       return false;
+    }
+  }
+
+  /**
+   * 检查一个 block 是否完成
+   * 
+   * 使用自定义检查函数（如果提供），否则使用默认逻辑：
+   * - blockType='file': 检查文件是否存在
+   * - blockType='directory': 检查目录下是否有 .tsx 文件
+   */
+  private async checkBlockComplete(blockPath: string): Promise<boolean> {
+    // 如果提供了自定义检查函数，使用它
+    if (this.rebuildConfig?.checkBlockComplete) {
+      return await this.rebuildConfig.checkBlockComplete(blockPath, this.outputDir);
+    }
+    
+    // 否则使用默认逻辑
+    const blockFullPath = path.join(this.outputDir, blockPath);
+    const blockType = this.rebuildConfig?.blockType || 'file';
+    
+    if (blockType === 'file') {
+      // block 是文件，检查文件是否存在
+      return await fse.pathExists(blockFullPath);
+    } else {
+      // block 是目录，检查目录下是否有 .tsx 文件
+      if (!(await fse.pathExists(blockFullPath))) {
+        return false;
+      }
+      
+      return await this.hasContentInDirectory(blockFullPath);
     }
   }
 

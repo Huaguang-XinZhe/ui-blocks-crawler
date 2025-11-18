@@ -299,6 +299,44 @@ export interface CrawlerConfig {
 }
 
 /**
+ * 进度重建配置
+ * 用于链式调用 rebuild() 方法
+ */
+export interface RebuildOptions {
+  /**
+   * Block 的存储类型
+   * - 'file': block 是文件，存在即完成（如 untitledui）
+   * - 'directory': block 是目录，存在即完成（如 heroui）
+   * @default 'file'
+   */
+  blockType?: 'file' | 'directory';
+  /**
+   * 是否将扫描结果保存到 progress.json
+   * - false（默认）：只在内存中标记，不保存文件
+   * - true：保存到 progress.json，下次启动可直接使用
+   * @default false
+   */
+  saveToProgress?: boolean;
+  /**
+   * 自定义检查 block 是否完成的函数
+   * 如果提供，将覆盖默认的"存在即完成"逻辑
+   * 
+   * @param blockPath block 的相对路径（相对于 outputDir）
+   * @param outputDir 输出目录的完整路径
+   * @returns 是否完成
+   * 
+   * @example
+   * // 检查目录下是否有特定文件
+   * async (blockPath, outputDir) => {
+   *   const dir = path.join(outputDir, blockPath);
+   *   const files = await fse.readdir(dir);
+   *   return files.includes('index.tsx');
+   * }
+   */
+  checkBlockComplete?: (blockPath: string, outputDir: string) => Promise<boolean>;
+}
+
+/**
  * 页面处理上下文
  */
 export interface PageContext {

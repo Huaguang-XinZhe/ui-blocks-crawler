@@ -104,12 +104,13 @@ function sanitizePathWithMapping(
   const filenameResult = sanitizeFilenameWithOriginal(originalFilename);
   const sanitizedFilename = filenameResult.sanitized;
   
+  // 记录文件名映射（只记录文件名，不记录完整路径）
+  if (mappingManager && filenameResult.changed) {
+    mappingManager.record(originalFilename, sanitizedFilename);
+  }
+  
   // 如果目录是根目录或当前目录，直接返回清理后的文件名
   if (dir === '.' || dir === path.sep) {
-    // 记录文件名映射（如果发生变化）
-    if (mappingManager && filenameResult.changed) {
-      mappingManager.record(originalFilename, sanitizedFilename);
-    }
     return {
       sanitizedPath: sanitizedFilename,
       originalFilename,
@@ -129,12 +130,6 @@ function sanitizePathWithMapping(
   } else {
     // 相对路径
     sanitizedPath = path.join(...sanitizedDirParts, sanitizedFilename);
-  }
-  
-  // 记录完整路径的映射（如果发生变化）
-  // 注意：这里记录的是完整路径的映射，而不仅仅是文件名
-  if (mappingManager && normalized !== sanitizedPath) {
-    mappingManager.record(normalized, sanitizedPath);
   }
   
   return {

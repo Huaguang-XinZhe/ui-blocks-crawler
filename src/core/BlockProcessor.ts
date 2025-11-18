@@ -96,8 +96,9 @@ export class BlockProcessor {
       );
     }
 
+    // 返回实际处理的数量（不包括跳过的）
     return {
-      totalCount: blocks.length,
+      totalCount: completedCount,
       freeBlocks,
     };
   }

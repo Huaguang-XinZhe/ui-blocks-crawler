@@ -470,7 +470,7 @@ export class CrawlerOrchestrator {
     } finally {
       // 所有的页面都关掉，包括第一个❗（因为就算全部关闭，访问新链接时，playwright 也会开起来）
       console.log(
-        `\n${this.i18n.t("crawler.closePage", { path: relativeLink })}`
+        `${this.i18n.t("crawler.closePage", { path: relativeLink })}`
       );
       await newPage.close();
       

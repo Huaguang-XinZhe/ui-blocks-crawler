@@ -1,5 +1,270 @@
 # block-crawler
 
+## 0.17.0
+
+### Minor Changes
+
+- 添加链式 `rebuild()` 方法，支持从 outputDir 扫描重建进度
+
+  **核心功能：**
+
+  1. **链式 `rebuild()` 方法**
+
+     - 可在 `blocks()` 和 `pages()` 后调用
+     - 扫描 outputDir 已有文件，在内存中标记为完成
+     - 仅在 progress.json 不存在时生效
+     - 默认不保存到 progress.json（可配置）
+
+  2. **灵活的配置选项**
+
+     - `blockType`: 指定 block 类型（'file' 或 'directory'）
+     - `saveToProgress`: 是否保存到 progress.json（默认 false）
+     - `checkBlockComplete`: 自定义检查函数
+
+  3. **智能识别策略**
+     - 动态识别"页面目录"（不依赖固定路径段数）
+     - 根据 `blockType` 识别 block（文件或目录）
+     - 默认"存在即完成"逻辑
+
+  **使用示例：**
+
+  ```typescript
+  // untitledui: block 是文件，只在内存中标记
+  await crawler
+    .blocks("[data-preview]")
+    .rebuild({ blockType: "file" })
+    .before(async ({ currentPage, clickAndVerify }) => {
+      await clickAndVerify(currentPage.getByRole("tab", { name: "List view" }));
+    })
+    .each(async ({ block, safeOutput }) => {
+      const code = await block.locator("pre").textContent();
+      await safeOutput(code ?? "");
+    });
+
+  // heroui: block 是目录，保存到 progress.json
+  await crawler
+    .blocks("[data-preview]")
+    .rebuild({ blockType: "directory", saveToProgress: true })
+    .each(async ({ block, safeOutput }) => {
+      // ...
+    });
+
+  // 自定义检查逻辑
+  await crawler
+    .blocks("[data-preview]")
+    .rebuild({
+      blockType: "directory",
+      saveToProgress: true,
+      checkBlockComplete: async (blockPath, outputDir) => {
+        const dir = path.join(outputDir, blockPath);
+        const files = await fse.readdir(dir);
+        return files.some((f) => f.endsWith(".tsx") && f.includes("index"));
+      },
+    })
+    .each(async ({ block, safeOutput }) => {
+      // ...
+    });
+
+  // pages 模式也支持
+  await crawler
+    .pages()
+    .rebuild({ blockType: "file" })
+    .each(async ({ currentPage, currentPath }) => {
+      // ...
+    });
+  ```
+
+  **配置说明：**
+
+  ```typescript
+  interface RebuildOptions {
+    /**
+     * Block 的存储类型
+     * - 'file': block 是文件，存在即完成（如 untitledui）
+     * - 'directory': block 是目录，存在即完成（如 heroui）
+     * @default 'file'
+     */
+    blockType?: "file" | "directory";
+
+    /**
+     * 是否将扫描结果保存到 progress.json
+     * - false（默认）：只在内存中标记，不保存文件
+     * - true：保存到 progress.json，下次启动可直接使用
+     * @default false
+     */
+    saveToProgress?: boolean;
+
+    /**
+     * 自定义检查 block 是否完成的函数
+     * 如果提供，将覆盖默认的"存在即完成"逻辑
+     */
+    checkBlockComplete?: (
+      blockPath: string,
+      outputDir: string
+    ) => Promise<boolean>;
+  }
+  ```
+
+  **重建逻辑：**
+
+  1. 扫描 outputDir，动态识别"页面目录"
+
+     - 如果目录下有 .tsx 文件 → 页面目录（blockType='file'）
+     - 如果子目录内有 .tsx 文件 → 页面目录（blockType='directory'）
+
+  2. 对于每个页面，扫描其下的 block
+
+     - blockType='file'：扫描 .tsx 文件
+     - blockType='directory'：扫描子目录
+
+  3. 检查 block 是否完成
+
+     - 默认：存在即完成
+     - 自定义：使用 `checkBlockComplete` 函数
+
+  4. 在内存中标记已完成的 blocks 和 pages
+
+     - 页面假设完整（只要有 block 就标记为完成）
+
+  5. 可选保存到 progress.json
+     - `saveToProgress=false`（默认）：不保存
+     - `saveToProgress=true`：保存到文件
+
+  **优势：**
+
+  - ✅ 不依赖固定路径结构，自动适应不同网站
+  - ✅ 支持两种 block 类型（文件/目录）
+  - ✅ 灵活的检查逻辑（默认或自定义）
+  - ✅ 可选持久化（内存或文件）
+  - ✅ 链式调用，语法简洁
+
+  **破坏性变更：**
+
+  - `TaskProgress` 构造函数签名变更：
+    - 移除 `assumePageComplete` 参数
+    - 新增可选的 `rebuildConfig` 参数（但仅在内部使用）
+  - 移除了全局配置中的 `assumePageComplete` 选项（现在通过 `rebuild()` 方法配置）
+
+  **迁移指南：**
+
+  旧代码（使用全局配置）：
+
+  ```typescript
+  const crawler = new BlockCrawler(page, {
+    startUrl: "...",
+    assumePageComplete: true,
+  });
+  ```
+
+  新代码（使用 rebuild() 方法）：
+
+  ```typescript
+  const crawler = new BlockCrawler(page, {
+    startUrl: "...",
+  });
+
+  await crawler
+    .blocks("[data-preview]")
+    .rebuild({ blockType: "file" }) // 明确配置重建行为
+    .each(async ({ block, safeOutput }) => {
+      // ...
+    });
+  ```
+
+## 0.16.0
+
+### Minor Changes
+
+- 重构进度恢复机制，优化文件名映射和进度重建逻辑
+
+  **重大改进：**
+
+  1. **文件名映射简化**
+
+     - `filename-mapping.json` 现在只记录文件名，不记录完整路径
+     - 示例：`"Step 1_ Forgot password.tsx": "Step 1: Forgot password.tsx"`（之前是完整路径）
+     - 更简洁，更易维护
+
+  2. **进度重建机制重构**
+
+     - 移除了旧的基于 js/ts 目录文件数对比的重建逻辑
+     - 新逻辑：检查 block 目录下是否存在 `.tsx` 文件
+     - 支持使用 `filename-mapping.json` 恢复原始文件名
+     - 更加灵活和准确
+
+  3. **新增 `assumePageComplete` 配置**
+
+     - 用于控制进度重建时的页面完整性假设
+     - `true`（默认）：只要页面目录存在就标记为已完成，跳过大部分链接（提高恢复速度）
+     - `false`：需要检查页面内所有 block 是否完整，逐个验证（确保完整性）
+     - 仅在从 outputDir 重建进度时生效（progress.json 不存在或被删除）
+
+  4. **进度恢复逻辑总结**
+
+     - **进度来源**：
+       - 优先：`progress.json`（如果存在且 `enableProgressResume=true`）
+       - 备用：从 `outputDir` 扫描重建
+     - **重建策略**：
+       - `assumePageComplete=true`：快速恢复，假设已存在的页面完整
+       - `assumePageComplete=false`：完整验证，确保数据准确
+     - **推荐配置**：默认使用 `true` 提高恢复速度，如果怀疑数据不完整再设为 `false`
+
+  5. **actualTotalCount 优化**
+     - 只累加实际处理的页面/block 数量
+     - 跳过的页面（已完成、Free 页面）不计入
+     - 更准确反映实际工作量
+
+  **使用示例：**
+
+  ```typescript
+  const crawler = new BlockCrawler({
+    startUrl: "https://example.com",
+    enableProgressResume: true,
+    assumePageComplete: true, // 默认值，快速恢复
+  });
+
+  // 如果需要完整性检查
+  const strictCrawler = new BlockCrawler({
+    startUrl: "https://example.com",
+    enableProgressResume: true,
+    assumePageComplete: false, // 完整验证每个页面
+  });
+  ```
+
+  **配置说明：**
+
+  ```typescript
+  interface CrawlerConfig {
+    /**
+     * 重建进度时是否假设页面已完整
+     * 仅在从 outputDir 重建进度时生效（progress.json 不存在或 enableProgressResume=false）
+     *
+     * - true（默认）：只要页面目录存在就标记为已完成，可以跳过大部分链接（不打开页面）
+     * - false：需要检查页面内所有 block 是否完整，会逐个打开页面验证
+     *
+     * 推荐默认为 true，以提高恢复速度。如果怀疑数据不完整，可设为 false 进行完整性检查。
+     */
+    assumePageComplete?: boolean;
+  }
+  ```
+
+  **破坏性变更：**
+
+  - `TaskProgress` 构造函数签名变更：
+    - 旧：`constructor(progressFile, outputDir, locale)`
+    - 新：`constructor(progressFile, outputDir, stateDir, locale, assumePageComplete)`
+  - `filename-mapping.json` 格式变更：只存储文件名，不存储完整路径
+
+  **迁移指南：**
+
+  如果你有旧的 `filename-mapping.json`，建议删除后重新生成：
+
+  ```bash
+  rm .crawler/*/filename-mapping.json
+  ```
+
+  下次运行时会自动生成新格式的映射文件。
+
 ## 0.15.0
 
 ### Minor Changes
