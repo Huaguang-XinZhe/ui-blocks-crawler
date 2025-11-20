@@ -113,15 +113,34 @@ export class BlockCrawler {
 	/**
 	 * 配置认证处理器（自动管理登录状态）
 	 *
+	 * 支持三种用法：
+	 * 1. 传入登录 URL 字符串（自动处理）
+	 * 2. 传入配置对象（自动处理 + 可选 redirectUrl）
+	 * 3. 传入自定义处理函数（完全控制）
+	 *
 	 * 如果 `.crawler/域名/auth.json` 不存在，会执行登录并保存状态；
 	 * 如果存在，会自动复用已有的认证状态。
 	 *
-	 * **重要：** 登录处理函数必须等待登录完成（如等待跳转），
-	 * 否则 cookies 可能还未设置就保存了空状态。
+	 * **自动登录要求：**
+	 * - 登录页必须恰好有 2 个 textbox（email + password）
+	 * - 必须有 1 个包含 "sign in" 的 button
+	 * - 凭据配置在 `.env` 文件中（格式：`{DOMAIN}_EMAIL` 和 `{DOMAIN}_PASSWORD`）
 	 *
-	 * @param handler 登录处理函数
+	 * **自定义登录要求：**
+	 * - 登录处理函数必须等待登录完成（如等待跳转），否则 cookies 可能还未设置就保存了空状态
+	 *
 	 * @example
 	 * ```typescript
+	 * // 用法 1: 只传登录 URL（最简单）
+	 * .auth("https://example.com/login")
+	 *
+	 * // 用法 2: 配置对象（指定跳转 URL）
+	 * .auth({
+	 *   loginUrl: "https://example.com/login",
+	 *   redirectUrl: "https://example.com/*"
+	 * })
+	 *
+	 * // 用法 3: 自定义处理（复杂场景）
 	 * .auth(async (page) => {
 	 *   await page.goto('https://example.com/login');
 	 *   await page.fill('#username', 'user');
@@ -132,8 +151,34 @@ export class BlockCrawler {
 	 * })
 	 * ```
 	 */
-	auth(handler: (page: Page) => Promise<void>): this {
-		this.authHandler = handler;
+	auth(loginUrl: string): this;
+	auth(options: { loginUrl: string; redirectUrl?: string }): this;
+	auth(handler: (page: Page) => Promise<void>): this;
+	auth(
+		handlerOrUrlOrOptions:
+			| string
+			| { loginUrl: string; redirectUrl?: string }
+			| ((page: Page) => Promise<void>),
+	): this {
+		// 判断参数类型
+		if (typeof handlerOrUrlOrOptions === "function") {
+			// 用法 3: 自定义处理函数
+			this.authHandler = handlerOrUrlOrOptions;
+		} else if (typeof handlerOrUrlOrOptions === "string") {
+			// 用法 1: 只传登录 URL
+			const { createAutoAuthHandler } = require("../auth/AutoAuthHandler");
+			this.authHandler = createAutoAuthHandler(
+				{ loginUrl: handlerOrUrlOrOptions },
+				this.config.locale,
+			);
+		} else {
+			// 用法 2: 配置对象
+			const { createAutoAuthHandler } = require("../auth/AutoAuthHandler");
+			this.authHandler = createAutoAuthHandler(
+				handlerOrUrlOrOptions,
+				this.config.locale,
+			);
+		}
 		return this;
 	}
 

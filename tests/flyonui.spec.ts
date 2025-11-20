@@ -9,19 +9,9 @@ test("flyonui", async ({ page }) => {
 	});
 
 	await crawler
-		.auth(async (page) => {
-			// 登录逻辑（只在 auth.json 不存在时执行）
-			await page.goto("https://flyonui.com/auth/login");
-			const emailInput = page.getByRole("textbox", { name: "Email address*" });
-			await emailInput.fill("jhawden@e-connect.lu");
-			const passwordInput = page.getByRole("textbox", { name: "Password*" });
-			await passwordInput.fill("XO1UEf!=xs4o");
-			const signInButton = page.getByRole("button", {
-				name: "Sign In to FlyonUI",
-			});
-			await signInButton.click();
-			// 等待登录完成（跳转到首页或其他页面）
-			await page.waitForURL("https://flyonui.com/*");
+		.auth({
+			loginUrl: "https://flyonui.com/auth/login",
+			redirectUrl: "https://flyonui.com/*",
 		})
 		// .collect()
 		// .tabSections("//main/section")

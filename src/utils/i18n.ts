@@ -73,10 +73,22 @@ const messages = {
 		// 配置相关
 		"config.parseUrlFailed": "⚠️ 解析 startUrl 失败，使用默认域名",
 
-		// 认证相关
-		"auth.reuseExisting": "检测到认证文件，自动复用",
-		"auth.performLogin": "未检测到认证文件，开始执行登录",
-		"auth.saved": "认证状态已保存",
+	// 认证相关
+	"auth.reuseExisting": "检测到认证文件，自动复用",
+	"auth.performLogin": "未检测到认证文件，开始执行登录",
+	"auth.saved": "认证状态已保存",
+	"auth.autoDetecting": "🔍 正在自动检测登录表单...",
+	"auth.autoDetectingForm": "🔍 检测表单元素...",
+	"auth.autoFillCredentials": "✍️  自动填写登录凭据...",
+	"auth.autoSubmitting": "📤 自动提交登录表单...",
+	"auth.autoWaitingRedirect": "⏳ 等待登录完成...",
+	"auth.autoLoginSuccess": "✅ 自动登录成功",
+	"auth.errors.noCredentials": "未找到环境变量 {domain}_EMAIL 和 {domain}_PASSWORD\n请在 .env 文件中配置登录凭据",
+	"auth.errors.invalidForm": "登录表单不符合自动处理条件，请使用自定义 handler",
+	"auth.errors.invalidUrl": "无效的 URL",
+	"auth.errors.textboxCount": "期望 2 个文本框，实际找到 {count} 个",
+	"auth.errors.cannotIdentifyInputs": "无法识别 email 或 password 输入框",
+	"auth.errors.buttonCount": "期望 1 个 Sign In 按钮，实际找到 {count} 个",
 
 		// Tab 处理
 		"tab.gettingSections": "📑 正在获取所有 Tab Sections（跳过 tab 点击）...",
@@ -257,10 +269,22 @@ const messages = {
 		// Configuration
 		"config.parseUrlFailed": "⚠️ Failed to parse startUrl, using default domain",
 
-		// Authentication
-		"auth.reuseExisting": "Auth file detected, reusing automatically",
-		"auth.performLogin": "No auth file detected, performing login",
-		"auth.saved": "Authentication state saved",
+	// Authentication
+	"auth.reuseExisting": "Auth file detected, reusing automatically",
+	"auth.performLogin": "No auth file detected, performing login",
+	"auth.saved": "Authentication state saved",
+	"auth.autoDetecting": "🔍 Auto-detecting login form...",
+	"auth.autoDetectingForm": "🔍 Detecting form elements...",
+	"auth.autoFillCredentials": "✍️  Auto-filling credentials...",
+	"auth.autoSubmitting": "📤 Auto-submitting login form...",
+	"auth.autoWaitingRedirect": "⏳ Waiting for login completion...",
+	"auth.autoLoginSuccess": "✅ Auto-login successful",
+	"auth.errors.noCredentials": "Environment variables {domain}_EMAIL and {domain}_PASSWORD not found\nPlease configure login credentials in .env file",
+	"auth.errors.invalidForm": "Login form does not meet auto-handling criteria, please use custom handler",
+	"auth.errors.invalidUrl": "Invalid URL",
+	"auth.errors.textboxCount": "Expected 2 textboxes, found {count}",
+	"auth.errors.cannotIdentifyInputs": "Cannot identify email or password input fields",
+	"auth.errors.buttonCount": "Expected 1 Sign In button, found {count}",
 
 		// Tab processing
 		"tab.gettingSections": "📑 Getting all Tab Sections (skip tab clicking)...",
