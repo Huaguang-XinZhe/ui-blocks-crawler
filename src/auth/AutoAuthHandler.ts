@@ -78,8 +78,32 @@ export class AutoAuthHandler {
 
 			// 动态加载 dotenv（避免顶层静态 import 导致的打包问题）
 			try {
+				const path = await import("node:path");
+				const fs = await import("node:fs");
 				const { config } = await import("dotenv");
-				config();
+				
+				// 从当前工作目录向上查找 .env 文件
+				let currentDir = process.cwd();
+				let envPath: string | null = null;
+				
+				// 最多向上查找 5 级目录
+				for (let i = 0; i < 5; i++) {
+					const testPath = path.resolve(currentDir, ".env");
+					if (fs.existsSync(testPath)) {
+						envPath = testPath;
+						break;
+					}
+					const parentDir = path.dirname(currentDir);
+					if (parentDir === currentDir) break; // 已到根目录
+					currentDir = parentDir;
+				}
+				
+				if (envPath) {
+					config({ path: envPath });
+				} else {
+					// 尝试默认路径
+					config();
+				}
 			} catch (error) {
 				// dotenv 可能不存在或加载失败，继续执行（可能已经有环境变量）
 			}
