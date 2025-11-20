@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import type {
-	ExtractFunction,
+	CountExtractFunction,
 	LinkCollectorConfig,
 	LocatorOrCustom,
 	LocatorsOrCustom,
@@ -25,7 +25,7 @@ export interface CollectionConfig {
 	};
 	countConfig?: {
 		locator: LocatorOrCustom<Locator>;
-		extract?: ExtractFunction;
+		extract?: CountExtractFunction;
 	};
 }
 

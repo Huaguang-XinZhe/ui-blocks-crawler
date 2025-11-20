@@ -1,5 +1,40 @@
 # block-crawler
 
+## 0.19.0
+
+### Minor Changes
+
+- 重构 API：将 startUrl 移到全局配置，移除 startUrl() 和 wait() 方法，新增 collect() 方法
+
+  **Breaking Changes:**
+
+  - 移除 `.startUrl()` 方法：现在需要在构造函数中配置 `startUrl`
+  - 移除 `.wait()` 方法：使用 `.collect(waitUntil)` 替代
+  - 移除自动查找 collect.json 的逻辑：现在必须配置 `startUrl`
+
+  **新增功能:**
+
+  - 新增 `.collect(waitUntil?, timeout?)` 方法用于配置收集阶段等待选项
+  - `startUrl` 现在作为全局配置项在构造函数中传入
+
+  **迁移指南:**
+
+  ```typescript
+  // 旧写法
+  const crawler = new BlockCrawler(page);
+  await crawler
+    .startUrl("https://example.com")
+    .wait("networkidle")
+    .tabSections("section")
+    .run();
+
+  // 新写法
+  const crawler = new BlockCrawler(page, {
+    startUrl: "https://example.com",
+  });
+  await crawler.collect("networkidle").tabSections("section").run();
+  ```
+
 ## 0.18.0
 
 ### Minor Changes

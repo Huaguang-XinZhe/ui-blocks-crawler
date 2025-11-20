@@ -35,7 +35,7 @@ export type LocatorsOrCustom<T = Locator> =
 /**
  * 提取函数（用于 count）
  */
-export type ExtractFunction<T = string | null> = (text: T) => number;
+export type CountExtractFunction<T = string | null> = (text: T) => number;
 
 /**
  * 名称提取函数（用于 name）
@@ -72,7 +72,7 @@ export interface ExtractionConfig {
 	/** 数量提取配置 */
 	count?: {
 		locator: LocatorOrCustom<Locator>;
-		extract?: ExtractFunction;
+		extract?: CountExtractFunction;
 	};
 }
 

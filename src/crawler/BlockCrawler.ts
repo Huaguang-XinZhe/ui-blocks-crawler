@@ -1,7 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import type {
 	CollectResult,
-	ExtractFunction,
+	CountExtractFunction,
 	LocatorOrCustom,
 	LocatorsOrCustom,
 	NameExtractFunction,
@@ -31,8 +31,11 @@ import type {
  *
  * @example
  * // 完整流程：收集 + 处理
+ * const crawler = new BlockCrawler(page, {
+ *   startUrl: 'https://example.com'
+ * });
  * await crawler
- *   .startUrl('https://example.com')
+ *   .collect('networkidle')
  *   .tabSections('section')
  *   .name('h3')
  *   .count('p', (text) => parseInt(text))
@@ -43,19 +46,18 @@ import type {
  *
  * // 只收集（注释掉 open 和处理器）
  * await crawler
- *   .startUrl('https://example.com')
+ *   .collect()
  *   .tabSections('section')
  *   .name('h3')
  *   .run();
  *
  * // 只处理（使用已有的 collect.json，注释掉 tabSections）
  * await crawler
- *   .startUrl('https://example.com')
  *   .open('networkidle')
  *   .page(async ({ page }) => { ... })
  *   .run();
  *
- * // 自动查找 collect.json（完全注释掉 startUrl）
+ * // 自动查找 collect.json
  * await crawler
  *   .open('networkidle')
  *   .page(async ({ page }) => { ... })
@@ -97,26 +99,24 @@ export class BlockCrawler {
 	) {
 		this.config = createInternalConfig(config || {});
 		this.i18n = createI18n(this.config.locale);
+		// 将全局配置的 startUrl 设置到收集配置
+		if (config?.startUrl) {
+			this.collectionConfig.startUrl = config.startUrl;
+		}
 	}
 
 	// ==================== 配置阶段 API ====================
 
 	/**
-	 * 配置起始 URL
+	 * 开始收集阶段配置，设置等待选项
+	 * @param waitUntil 页面等待状态
+	 * @param timeout 超时时间（可选）
 	 */
-	startUrl(url: string): this {
-		this.collectionConfig.startUrl = url;
-		return this;
-	}
-
-	/**
-	 * 设置收集阶段的等待选项
-	 */
-	wait(
-		until?: "load" | "domcontentloaded" | "networkidle" | "commit",
+	collect(
+		waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit",
 		timeout?: number,
 	): this {
-		this.collectionConfig.collectWaitUntil = until;
+		this.collectionConfig.collectWaitUntil = waitUntil;
 		this.collectionConfig.collectWaitTimeout = timeout;
 		return this;
 	}
@@ -156,7 +156,10 @@ export class BlockCrawler {
 	/**
 	 * 设置数量统计配置
 	 */
-	count(locator: LocatorOrCustom<Locator>, extract?: ExtractFunction): this {
+	count(
+		locator: LocatorOrCustom<Locator>,
+		extract?: CountExtractFunction,
+	): this {
 		this.collectionConfig.countConfig = { locator, extract };
 		return this;
 	}

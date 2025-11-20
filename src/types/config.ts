@@ -7,6 +7,8 @@ import type { ProgressConfig } from "./progress";
  * 爬虫配置接口
  */
 export interface CrawlerConfig {
+	/** 起始 URL（收集阶段的入口地址） */
+	startUrl?: string;
 	/** 语言设置，支持 'zh' (中文) 和 'en' (英文)，默认为 'zh' */
 	locale?: Locale;
 	/** TabList 的 aria-label，用于定位分类标签，如果不传则获取第一个 tablist */
