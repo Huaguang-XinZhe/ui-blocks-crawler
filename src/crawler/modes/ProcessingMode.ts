@@ -56,6 +56,7 @@ export class ProcessingMode {
 					waitUntil: processingConfig.waitUntil,
 					beforeOpenScripts: processingConfig.beforeOpenScripts,
 					afterOpenScripts: processingConfig.afterOpenScripts,
+					autoScroll: processingConfig.autoScroll,
 				},
 			);
 		} finally {

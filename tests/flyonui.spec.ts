@@ -1,5 +1,5 @@
 import { BlockCrawler } from "@huaguang/block-crawler";
-import { Page, test } from "@playwright/test";
+import { test } from "@playwright/test";
 
 test("flyonui", async ({ page }) => {
 	test.setTimeout(60 * 1000); // 1 分钟
@@ -15,8 +15,11 @@ test("flyonui", async ({ page }) => {
 		// .name("h3")
 		// .count("p")
 		.open()
-		.page(async ({ currentPage }) => {
-			await autoScroll(currentPage);
+		.page({
+			handler: async ({ currentPage }) => {
+				// 自定义页面处理逻辑（可选）
+			},
+			autoScroll: true, // 启用自动滚动（默认 step=1000, interval=500）
 		})
 		.skipFree("FREE") // 跳过 free 页面
 		.block(
@@ -28,27 +31,3 @@ test("flyonui", async ({ page }) => {
 		.skipFree("FREE") // 跳过 free block
 		.run();
 });
-
-async function autoScroll(page: Page, step = 1000, interval = 500) {
-	// page.evaluate 在浏览器上下文中执行，需要传递参数
-	await page.evaluate(
-		async ({ step, interval }) => {
-			await new Promise<void>((resolve) => {
-				let totalHeight = 0;
-				const distance = step;
-
-				const timer = setInterval(() => {
-					const scrollHeight = document.body.scrollHeight;
-					window.scrollBy(0, distance);
-					totalHeight += distance;
-
-					if (totalHeight >= scrollHeight) {
-						clearInterval(timer);
-						resolve();
-					}
-				}, interval);
-			});
-		},
-		{ step, interval },
-	);
-}

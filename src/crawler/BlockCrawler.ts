@@ -10,7 +10,12 @@ import {
 	createInternalConfig,
 	type InternalConfig,
 } from "../config/ConfigManager";
-import type { BlockHandler, CrawlerConfig, PageHandler } from "../types";
+import type {
+	BlockHandler,
+	CrawlerConfig,
+	PageConfig,
+	PageHandler,
+} from "../types";
 import { createI18n, type I18n } from "../utils/i18n";
 import { CollectionMode } from "./modes/CollectionMode";
 import { ProcessingMode } from "./modes/ProcessingMode";
@@ -256,9 +261,40 @@ export class BlockCrawler {
 
 	/**
 	 * 设置页面级处理器（在整个页面执行）
+	 *
+	 * @example
+	 * ```typescript
+	 * // 用法 1: 简单形式
+	 * .page(async ({ currentPage }) => {
+	 *   // 自定义页面处理逻辑
+	 * })
+	 *
+	 * // 用法 2: 配置对象形式（启用自动滚动）
+	 * .page({
+	 *   handler: async ({ currentPage }) => {
+	 *     // 自定义页面处理逻辑
+	 *   },
+	 *   autoScroll: true  // 启用自动滚动（默认 step=1000, interval=500）
+	 * })
+	 *
+	 * // 用法 3: 自定义滚动参数
+	 * .page({
+	 *   handler: async ({ currentPage }) => {
+	 *     // 自定义页面处理逻辑
+	 *   },
+	 *   autoScroll: { step: 500, interval: 300 }
+	 * })
+	 * ```
 	 */
-	page(handler: PageHandler): this {
-		this.processingConfig.pageHandler = handler;
+	page(handlerOrConfig: PageHandler | PageConfig): this {
+		if (typeof handlerOrConfig === "function") {
+			// 简单形式：只传 handler
+			this.processingConfig.pageHandler = handlerOrConfig;
+		} else {
+			// 配置对象形式
+			this.processingConfig.pageHandler = handlerOrConfig.handler;
+			this.processingConfig.autoScroll = handlerOrConfig.autoScroll;
+		}
 		this.processingConfig.skipFreeMode = "page";
 		return this;
 	}

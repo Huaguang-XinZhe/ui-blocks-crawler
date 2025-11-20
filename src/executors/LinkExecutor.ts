@@ -30,6 +30,7 @@ export class LinkExecutor {
 			beforeOpenScripts?: string[];
 			afterOpenScripts?: string[];
 			verifyBlockCompletion?: boolean;
+			autoScroll?: boolean | { step?: number; interval?: number };
 		},
 	): Promise<void> {
 		const domain = new URL(this.context.baseUrl).hostname;
@@ -82,6 +83,11 @@ export class LinkExecutor {
 				}
 			}
 
+			// 自动滚动页面（如果配置了）
+			if (options.autoScroll) {
+				await this.autoScrollPage(newPage, options.autoScroll);
+			}
+
 			// 先执行页面级处理器（如果配置了）
 			if (options.pageHandler) {
 				await this.processPage(newPage, relativeLink, options.pageHandler);
@@ -117,6 +123,42 @@ export class LinkExecutor {
 		// 复用同一个 context（在同一浏览器窗口中打开新 tab）
 		// 认证状态已经通过 auth() 在第一个页面中设置，后续页面自动继承
 		return await page.context().newPage();
+	}
+
+	/**
+	 * 自动滚动页面
+	 */
+	private async autoScrollPage(
+		page: Page,
+		config: boolean | { step?: number; interval?: number },
+	): Promise<void> {
+		const step = typeof config === "boolean" ? 1000 : config.step ?? 1000;
+		const interval =
+			typeof config === "boolean" ? 500 : config.interval ?? 500;
+
+		console.log(`  ${this.context.i18n.t("page.autoScrolling")}`);
+
+		// page.evaluate 在浏览器上下文中执行，需要传递参数
+		await page.evaluate(
+			async ({ step, interval }) => {
+				await new Promise<void>((resolve) => {
+					let totalHeight = 0;
+					const distance = step;
+
+					const timer = setInterval(() => {
+						const scrollHeight = document.body.scrollHeight;
+						window.scrollBy(0, distance);
+						totalHeight += distance;
+
+						if (totalHeight >= scrollHeight) {
+							clearInterval(timer);
+							resolve();
+						}
+					}, interval);
+				});
+			},
+			{ step, interval },
+		);
 	}
 
 	/**

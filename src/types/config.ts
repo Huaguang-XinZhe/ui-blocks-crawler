@@ -124,7 +124,6 @@ export interface CrawlerConfig {
 		timeout?: number;
 	};
 
-
 	// ========== 脚本注入配置 ==========
 	/**
 	 * 脚本注入配置

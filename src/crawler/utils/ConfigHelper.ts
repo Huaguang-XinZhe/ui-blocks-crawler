@@ -41,6 +41,8 @@ export interface ProcessingConfig {
 	blockHandler?: any;
 	skipFreeText?: string;
 	skipFreeMode?: "page" | "block";
+	// 页面级自动滚动配置
+	autoScroll?: boolean | { step?: number; interval?: number };
 	// Block 相关配置
 	getBlockName?: (
 		block: import("@playwright/test").Locator,

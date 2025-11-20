@@ -9,6 +9,7 @@ export type {
 	BeforeContext,
 	BlockContext,
 	BlockHandler,
+	PageConfig,
 	PageContext,
 	PageHandler,
 } from "./handlers";

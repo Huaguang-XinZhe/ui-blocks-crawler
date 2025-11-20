@@ -152,10 +152,10 @@ export class BlockProcessor {
 
 	/**
 	 * 处理单个 Block
-	 * 执行顺序（优化性能）：
-	 * 1. 如果配置了 skipFree，先检查是否为 Free（快速跳过）
-	 * 2. 获取 blockName
-	 * 3. 检查是否已完成
+	 * 执行顺序：
+	 * 1. 获取 blockName
+	 * 2. 检查是否已完成（避免不必要的 DOM 查询）
+	 * 3. 检查是否为 Free（需要 DOM 查询）
 	 * 4. 执行自定义处理逻辑
 	 */
 	private async processSingleBlock(
@@ -163,23 +163,7 @@ export class BlockProcessor {
 		block: Locator,
 		urlPath: string,
 	): Promise<{ success: boolean; isFree: boolean; blockName?: string }> {
-		// 1. 如果配置了 skipFree，先检查是否为 Free（快速检查，让 Free block 快速跳过）
-		if (this.extendedConfig.skipFree) {
-			const isFree = await this.isBlockFree(block);
-			if (isFree) {
-				// Free block：获取名称仅用于日志记录
-				const blockName = await this.getBlockName(block);
-				if (blockName) {
-					console.log(this.i18n.t("block.skipFree", { name: blockName }));
-					return { success: true, isFree: true, blockName };
-				}
-				// 无法获取名称，但仍然跳过
-				console.log(this.i18n.t("block.skipFree", { name: "[未知]" }));
-				return { success: true, isFree: true };
-			}
-		}
-
-		// 2. 非 Free block：获取名称用于后续处理
+		// 1. 获取 block 名称
 		const blockName = await this.getBlockName(block);
 
 		if (!blockName) {
@@ -191,10 +175,18 @@ export class BlockProcessor {
 		const normalizedUrlPath = this.normalizePagePath(urlPath);
 		const blockPath = `${normalizedUrlPath}/${blockName}`;
 
-		// 3. 检查是否已完成
+		// 2. 检查是否已完成（优先检查，避免不必要的 DOM 查询）
 		if (this.taskProgress?.isBlockComplete(blockPath)) {
 			console.log(this.i18n.t("block.skip", { name: blockName }));
 			return { success: true, isFree: false, blockName };
+		}
+
+		// 3. 检查是否为 Free Block（需要 DOM 查询，所以放在完成状态检查之后）
+		const isFree = await this.isBlockFree(block);
+		if (isFree) {
+			console.log(this.i18n.t("block.skipFree", { name: blockName }));
+			// 如果是 Free Block，直接跳过处理
+			return { success: true, isFree: true, blockName };
 		}
 
 		const clickAndVerify = createClickAndVerify(this.config.locale);

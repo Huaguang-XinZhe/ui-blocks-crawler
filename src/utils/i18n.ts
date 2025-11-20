@@ -134,6 +134,7 @@ const messages = {
 		"page.processing": "🔄 [{current}/{total}] 正在处理: {path}",
 		"page.skip": "⏭️  跳过已完成的页面: {path}",
 		"page.skipFree": "🆓 跳过 Free 页面: {path}",
+		"page.autoScrolling": "📜 自动滚动页面...",
 		"page.freeError":
 			'❌ Free 页面标记匹配错误：\n   期望找到 1 个匹配项，实际找到 {count} 个\n   匹配文本: "{text}"\n\n请检查：\n   1. 文本是否唯一（建议使用更精确的文本）\n   2. 或使用自定义函数配置更精确的判断逻辑',
 		"page.processFailed": "❌ 处理页面失败: {path}",
@@ -332,6 +333,7 @@ const messages = {
 		"page.processing": "🔄 [{current}/{total}] Processing: {path}",
 		"page.skip": "⏭️  Skipping completed page: {path}",
 		"page.skipFree": "🆓 Skipping free page: {path}",
+		"page.autoScrolling": "📜 Auto-scrolling page...",
 		"page.freeError":
 			'❌ Free page marker matching error:\n   Expected 1 match, found {count}\n   Matching text: "{text}"\n\nPlease check:\n   1. Is the text unique (use more specific text)\n   2. Or use custom function for more precise logic',
 		"page.processFailed": "❌ Failed to process page: {path}",

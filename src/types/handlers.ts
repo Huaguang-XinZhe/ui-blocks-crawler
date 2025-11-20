@@ -59,6 +59,16 @@ export interface BeforeContext {
 export type PageHandler = (context: PageContext) => Promise<void>;
 
 /**
+ * 页面处理配置对象类型
+ */
+export interface PageConfig {
+	/** 页面处理器函数 */
+	handler: PageHandler;
+	/** 自动滚动配置（默认关闭） */
+	autoScroll?: boolean | { step?: number; interval?: number };
+}
+
+/**
  * Block 处理器函数类型
  */
 export type BlockHandler = (context: BlockContext) => Promise<void>;

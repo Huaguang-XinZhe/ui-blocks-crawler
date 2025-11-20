@@ -66,6 +66,7 @@ export class ExecutionOrchestrator {
 			beforeOpenScripts?: string[];
 			afterOpenScripts?: string[];
 			verifyBlockCompletion?: boolean;
+			autoScroll?: boolean | { step?: number; interval?: number };
 		},
 	): Promise<void> {
 		console.log(`\n${this.context.i18n.t("crawler.taskStart")}`);
@@ -115,6 +116,7 @@ export class ExecutionOrchestrator {
 				beforeOpenScripts: options?.beforeOpenScripts || [],
 				afterOpenScripts: options?.afterOpenScripts || [],
 				verifyBlockCompletion: options?.verifyBlockCompletion ?? true,
+				autoScroll: options?.autoScroll,
 			});
 
 			console.log(`\n${this.context.i18n.t("crawler.allComplete")}\n`);
