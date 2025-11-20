@@ -20,22 +20,24 @@ test("flyonui", async ({ page }) => {
 				name: "Sign In to FlyonUI",
 			});
 			await signInButton.click();
+			// 等待登录完成（跳转到首页或其他页面）
+			await page.waitForURL("https://flyonui.com/*");
 		})
-		.collect()
-		.tabSections("//main/section")
-		.name("h3")
-		.count("p")
-		// .open()
-		// .page(async ({ currentPage }) => {
-		// 	await autoScroll(currentPage);
-		// })
-		// .block(
-		// 	'//main/div/div[3]/div/div/div[contains(@class, "flex")]',
-		// 	async ({ blockName }) => {
-		// 		console.log(blockName);
-		// 	},
-		// )
-		// .skipFree("FREE")
+		// .collect()
+		// .tabSections("//main/section")
+		// .name("h3")
+		// .count("p")
+		.open()
+		.page(async ({ currentPage }) => {
+			await autoScroll(currentPage);
+		})
+		.block(
+			'//main/div/div[3]/div/div/div[contains(@class, "flex")]',
+			async ({ blockName }) => {
+				console.log(blockName);
+			},
+		)
+		.skipFree("FREE")
 		.run();
 });
 

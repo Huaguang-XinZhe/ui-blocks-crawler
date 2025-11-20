@@ -32,6 +32,7 @@ test("untitledui", async ({ page }) => {
 	//     await page.fill("#username", "user");
 	//     await page.fill("#password", "pass");
 	//     await page.click("button[type=submit]");
+	//     // 重要：必须等待登录完成，否则 cookies 可能还未设置
 	//     await page.waitForURL("**/dashboard");
 	//   })
 

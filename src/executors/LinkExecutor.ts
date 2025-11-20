@@ -35,11 +35,8 @@ export class LinkExecutor {
 		const domain = new URL(this.context.baseUrl).hostname;
 		const url = `https://${domain}${relativeLink}`;
 
-		// 创建页面（如果配置了 storageState 会创建新 context）
-		const { page: newPage, shouldCloseContext } = await this.createPage(
-			page,
-			isFirst,
-		);
+		// 创建页面（第一次使用传入的页面，后续创建新 tab）
+		const newPage = await this.createPage(page, isFirst);
 
 		try {
 			// 注入 beforeOpen 脚本
@@ -101,41 +98,20 @@ export class LinkExecutor {
 				`${this.context.i18n.t("crawler.closePage", { path: relativeLink })}`,
 			);
 			await newPage.close();
-
-			// 如果创建了新 context，也需要关闭
-			if (shouldCloseContext) {
-				await newPage.context().close();
-			}
 		}
 	}
 
 	/**
 	 * 创建页面实例
 	 */
-	private async createPage(
-		page: Page,
-		isFirst: boolean,
-	): Promise<{ page: Page; shouldCloseContext: boolean }> {
+	private async createPage(page: Page, isFirst: boolean): Promise<Page> {
 		if (isFirst) {
-			return { page, shouldCloseContext: false };
+			return page;
 		}
 
-		// 如果配置了 storageState，使用带认证状态的新 context
-		if (this.context.storageState) {
-			const browser = page.context().browser();
-			if (!browser) {
-				throw new Error("无法获取浏览器实例");
-			}
-			const context = await browser.newContext({
-				storageState: this.context.storageState,
-			});
-			const newPage = await context.newPage();
-			return { page: newPage, shouldCloseContext: true };
-		}
-
-		// 共享 context
-		const newPage = await page.context().newPage();
-		return { page: newPage, shouldCloseContext: false };
+		// 复用同一个 context（在同一浏览器窗口中打开新 tab）
+		// 认证状态已经通过 auth() 在第一个页面中设置，后续页面自动继承
+		return await page.context().newPage();
 	}
 
 	/**

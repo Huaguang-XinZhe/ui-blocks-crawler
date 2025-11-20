@@ -116,6 +116,9 @@ export class BlockCrawler {
 	 * 如果 `.crawler/域名/auth.json` 不存在，会执行登录并保存状态；
 	 * 如果存在，会自动复用已有的认证状态。
 	 *
+	 * **重要：** 登录处理函数必须等待登录完成（如等待跳转），
+	 * 否则 cookies 可能还未设置就保存了空状态。
+	 *
 	 * @param handler 登录处理函数
 	 * @example
 	 * ```typescript
@@ -124,6 +127,7 @@ export class BlockCrawler {
 	 *   await page.fill('#username', 'user');
 	 *   await page.fill('#password', 'pass');
 	 *   await page.click('button[type=submit]');
+	 *   // 必须等待登录完成！
 	 *   await page.waitForURL('**' + '/dashboard');
 	 * })
 	 * ```
@@ -292,7 +296,6 @@ export class BlockCrawler {
 		}
 
 		// 步骤 0: 处理认证（如果配置了 authHandler）
-		let storageState: string | undefined;
 		if (this.authHandler && this.collectionConfig.startUrl) {
 			const { generatePathsForUrl } = await import("../config/ConfigManager");
 			const paths = generatePathsForUrl(
@@ -307,7 +310,7 @@ export class BlockCrawler {
 				this.authHandler,
 				this.config.locale,
 			);
-			storageState = await authManager.ensureAuth();
+			await authManager.ensureAuth();
 		}
 
 		// 步骤 1: 执行收集阶段或加载数据
@@ -335,7 +338,6 @@ export class BlockCrawler {
 			await this.getProcessingMode().execute(
 				collectResult,
 				this.processingConfig,
-				storageState,
 			);
 		}
 	}

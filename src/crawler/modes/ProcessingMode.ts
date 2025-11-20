@@ -35,14 +35,9 @@ export class ProcessingMode {
 	async execute(
 		collectResult: CollectResult,
 		processingConfig: ProcessingConfig,
-		storageState?: string,
 	): Promise<void> {
 		// 初始化执行器
-		await this.initializeOrchestrator(
-			collectResult,
-			processingConfig,
-			storageState,
-		);
+		await this.initializeOrchestrator(collectResult, processingConfig);
 
 		this.setupSignalHandlers();
 
@@ -74,7 +69,6 @@ export class ProcessingMode {
 	private async initializeOrchestrator(
 		collectResult: CollectResult,
 		processingConfig: ProcessingConfig,
-		storageState?: string,
 	): Promise<void> {
 		const startUrl = collectResult.startUrl;
 		const paths = generatePathsForUrl(this.config, startUrl);
@@ -107,7 +101,6 @@ export class ProcessingMode {
 			paths.freeFile,
 			this.taskProgress,
 			extendedConfig,
-			storageState,
 		);
 	}
 
