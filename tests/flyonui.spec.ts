@@ -9,10 +9,7 @@ test("flyonui", async ({ page }) => {
 	});
 
 	await crawler
-		.auth({
-			loginUrl: "https://flyonui.com/auth/login",
-			redirectUrl: "https://flyonui.com/*",
-		})
+		.auth("https://flyonui.com/auth/login")
 		// .collect()
 		// .tabSections("//main/section")
 		// .name("h3")
@@ -21,13 +18,14 @@ test("flyonui", async ({ page }) => {
 		.page(async ({ currentPage }) => {
 			await autoScroll(currentPage);
 		})
+		// .skipFree("FREE") // 跳过 free 页面
 		.block(
 			'//main/div/div[3]/div/div/div[contains(@class, "flex")]',
 			async ({ blockName }) => {
 				console.log(blockName);
 			},
 		)
-		.skipFree("FREE")
+		.skipFree("FREE") // 跳过 free block
 		.run();
 });
 

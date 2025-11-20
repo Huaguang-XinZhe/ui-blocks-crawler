@@ -152,13 +152,34 @@ export class BlockProcessor {
 
 	/**
 	 * 处理单个 Block
+	 * 执行顺序（优化性能）：
+	 * 1. 如果配置了 skipFree，先检查是否为 Free（快速跳过）
+	 * 2. 获取 blockName
+	 * 3. 检查是否已完成
+	 * 4. 执行自定义处理逻辑
 	 */
 	private async processSingleBlock(
 		page: Page,
 		block: Locator,
 		urlPath: string,
 	): Promise<{ success: boolean; isFree: boolean; blockName?: string }> {
-		// 获取 block 名称
+		// 1. 如果配置了 skipFree，先检查是否为 Free（快速检查，让 Free block 快速跳过）
+		if (this.extendedConfig.skipFree) {
+			const isFree = await this.isBlockFree(block);
+			if (isFree) {
+				// Free block：获取名称仅用于日志记录
+				const blockName = await this.getBlockName(block);
+				if (blockName) {
+					console.log(this.i18n.t("block.skipFree", { name: blockName }));
+					return { success: true, isFree: true, blockName };
+				}
+				// 无法获取名称，但仍然跳过
+				console.log(this.i18n.t("block.skipFree", { name: "[未知]" }));
+				return { success: true, isFree: true };
+			}
+		}
+
+		// 2. 非 Free block：获取名称用于后续处理
 		const blockName = await this.getBlockName(block);
 
 		if (!blockName) {
@@ -166,19 +187,11 @@ export class BlockProcessor {
 			return { success: false, isFree: false };
 		}
 
-		// 检查是否为 Free Block
-		const isFree = await this.isBlockFree(block);
-		if (isFree) {
-			console.log(this.i18n.t("block.skipFree", { name: blockName }));
-			// 如果是 Free Block，直接跳过处理
-			return { success: true, isFree: true, blockName };
-		}
-
 		// 构建 blockPath
 		const normalizedUrlPath = this.normalizePagePath(urlPath);
 		const blockPath = `${normalizedUrlPath}/${blockName}`;
 
-		// 检查是否已完成
+		// 3. 检查是否已完成
 		if (this.taskProgress?.isBlockComplete(blockPath)) {
 			console.log(this.i18n.t("block.skip", { name: blockName }));
 			return { success: true, isFree: false, blockName };

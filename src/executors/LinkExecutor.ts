@@ -63,24 +63,31 @@ export class LinkExecutor {
 				);
 			}
 
-			// 检查页面是否为 Free
-			const isPageFree = await PageProcessor.checkPageFree(
-				newPage,
-				this.context.config,
-				this.context.extendedConfig.skipFree,
-			);
-			if (isPageFree) {
-				console.log(
-					this.context.i18n.t("page.skipFree", { path: relativeLink }),
+			// 检查页面是否为 Free（仅在配置了 skipFree 时）
+			if (this.context.extendedConfig.skipFree) {
+				const isPageFree = await PageProcessor.checkPageFree(
+					newPage,
+					this.context.config,
+					this.context.extendedConfig.skipFree,
 				);
-				this.context.freeRecorder.addFreePage(relativeLink);
-				this.context.taskProgress?.markPageComplete(
-					this.normalizePagePath(relativeLink),
-				);
-				return;
+				if (isPageFree) {
+					console.log(
+						this.context.i18n.t("page.skipFree", { path: relativeLink }),
+					);
+					this.context.freeRecorder.addFreePage(relativeLink);
+					this.context.taskProgress?.markPageComplete(
+						this.normalizePagePath(relativeLink),
+					);
+					return;
+				}
 			}
 
-			// 根据模式决定处理方式
+			// 先执行页面级处理器（如果配置了）
+			if (options.pageHandler) {
+				await this.processPage(newPage, relativeLink, options.pageHandler);
+			}
+
+			// 再执行 Block 级处理器（如果配置了）
 			if (options.blockSectionLocator && options.blockHandler) {
 				await this.processBlocks(
 					newPage,
@@ -90,8 +97,6 @@ export class LinkExecutor {
 					options.beforeProcessBlocks,
 					options.verifyBlockCompletion ?? true,
 				);
-			} else if (options.pageHandler) {
-				await this.processPage(newPage, relativeLink, options.pageHandler);
 			}
 		} finally {
 			console.log(
