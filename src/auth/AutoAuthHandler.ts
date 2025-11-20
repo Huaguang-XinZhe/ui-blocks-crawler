@@ -81,11 +81,11 @@ export class AutoAuthHandler {
 				const path = await import("node:path");
 				const fs = await import("node:fs");
 				const { config } = await import("dotenv");
-				
+
 				// 从当前工作目录向上查找 .env 文件
 				let currentDir = process.cwd();
 				let envPath: string | null = null;
-				
+
 				// 最多向上查找 5 级目录
 				for (let i = 0; i < 5; i++) {
 					const testPath = path.resolve(currentDir, ".env");
@@ -97,7 +97,7 @@ export class AutoAuthHandler {
 					if (parentDir === currentDir) break; // 已到根目录
 					currentDir = parentDir;
 				}
-				
+
 				if (envPath) {
 					config({ path: envPath });
 				} else {
