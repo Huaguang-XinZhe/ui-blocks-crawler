@@ -2,8 +2,8 @@ import type { Page } from "@playwright/test";
 import type { CollectResult } from "../../collectors/types";
 import type { InternalConfig } from "../../config/ConfigManager";
 import { generatePathsForUrl } from "../../config/ConfigManager";
-import { ExecutionOrchestrator } from "../../executors/ExecutionOrchestrator";
 import type { ExtendedExecutionConfig } from "../../executors/ExecutionContext";
+import { ExecutionOrchestrator } from "../../executors/ExecutionOrchestrator";
 import { TaskProgress } from "../../state/TaskProgress";
 import { createI18n, type I18n } from "../../utils/i18n";
 import type { ProcessingConfig } from "../utils/ConfigHelper";
@@ -35,13 +35,13 @@ export class ProcessingMode {
 	async execute(
 		collectResult: CollectResult,
 		processingConfig: ProcessingConfig,
-		authHandler?: (page: Page) => Promise<void>,
+		storageState?: string,
 	): Promise<void> {
 		// 初始化执行器
 		await this.initializeOrchestrator(
 			collectResult,
 			processingConfig,
-			authHandler,
+			storageState,
 		);
 
 		this.setupSignalHandlers();
@@ -74,23 +74,10 @@ export class ProcessingMode {
 	private async initializeOrchestrator(
 		collectResult: CollectResult,
 		processingConfig: ProcessingConfig,
-		authHandler?: (page: Page) => Promise<void>,
+		storageState?: string,
 	): Promise<void> {
 		const startUrl = collectResult.startUrl;
 		const paths = generatePathsForUrl(this.config, startUrl);
-
-		// 处理认证
-		let storageState: string | undefined;
-		if (authHandler) {
-			const { AuthManager } = await import("../../auth/AuthManager");
-			const authManager = new AuthManager(
-				this.page,
-				paths.stateDir,
-				authHandler,
-				this.config.locale,
-			);
-			storageState = await authManager.ensureAuth();
-		}
 
 		this.taskProgress = new TaskProgress(
 			paths.progressFile,
@@ -149,4 +136,3 @@ export class ProcessingMode {
 		}
 	}
 }
-

@@ -291,6 +291,25 @@ export class BlockCrawler {
 			throw new Error("处理模式必须调用 open() 方法");
 		}
 
+		// 步骤 0: 处理认证（如果配置了 authHandler）
+		let storageState: string | undefined;
+		if (this.authHandler && this.collectionConfig.startUrl) {
+			const { generatePathsForUrl } = await import("../config/ConfigManager");
+			const paths = generatePathsForUrl(
+				this.config,
+				this.collectionConfig.startUrl,
+			);
+
+			const { AuthManager } = await import("../auth/AuthManager");
+			const authManager = new AuthManager(
+				this._page,
+				paths.stateDir,
+				this.authHandler,
+				this.config.locale,
+			);
+			storageState = await authManager.ensureAuth();
+		}
+
 		// 步骤 1: 执行收集阶段或加载数据
 		let collectResult: CollectResult | undefined;
 		if (
@@ -316,7 +335,7 @@ export class BlockCrawler {
 			await this.getProcessingMode().execute(
 				collectResult,
 				this.processingConfig,
-				this.authHandler,
+				storageState,
 			);
 		}
 	}

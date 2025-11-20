@@ -9,21 +9,33 @@ test("flyonui", async ({ page }) => {
 	});
 
 	await crawler
-		// .collect()
-		// .tabSections("//main/section")
-		// .name("h3")
-		// .count("p")
-		.open()
-		.page(async ({ currentPage }) => {
-			await autoScroll(currentPage);
+		.auth(async (page) => {
+			// 登录逻辑（只在 auth.json 不存在时执行）
+			await page.goto("https://flyonui.com/auth/login");
+			const emailInput = page.getByRole("textbox", { name: "Email address*" });
+			await emailInput.fill("jhawden@e-connect.lu");
+			const passwordInput = page.getByRole("textbox", { name: "Password*" });
+			await passwordInput.fill("XO1UEf!=xs4o");
+			const signInButton = page.getByRole("button", {
+				name: "Sign In to FlyonUI",
+			});
+			await signInButton.click();
 		})
-		.block(
-			'//main/div/div[3]/div/div/div[contains(@class, "flex")]',
-			async ({ blockName }) => {
-				console.log(blockName);
-			},
-		)
-		.skipFree("FREE")
+		.collect()
+		.tabSections("//main/section")
+		.name("h3")
+		.count("p")
+		// .open()
+		// .page(async ({ currentPage }) => {
+		// 	await autoScroll(currentPage);
+		// })
+		// .block(
+		// 	'//main/div/div[3]/div/div/div[contains(@class, "flex")]',
+		// 	async ({ blockName }) => {
+		// 		console.log(blockName);
+		// 	},
+		// )
+		// .skipFree("FREE")
 		.run();
 });
 
