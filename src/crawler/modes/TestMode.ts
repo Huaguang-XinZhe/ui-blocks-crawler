@@ -70,14 +70,19 @@ export class TestMode {
 			);
 
 			// 检查是否为 Free Page（仅在 skipFreeMode 为 "page" 时）
-			if (processingConfig.skipFreeMode === "page" && processingConfig.skipFreeText) {
+			if (
+				processingConfig.skipFreeMode === "page" &&
+				processingConfig.skipFreeText
+			) {
 				const isFree = await PageProcessor.checkPageFree(
 					this.page,
 					this.config,
 					processingConfig.skipFreeText,
 				);
 				if (isFree) {
-					console.log(this.i18n.t("page.skipFree", { path: processingConfig.testUrl }));
+					console.log(
+						this.i18n.t("page.skipFree", { path: processingConfig.testUrl }),
+					);
 					await mappingManager.save();
 					return; // 跳过整个页面
 				}
@@ -114,7 +119,10 @@ export class TestMode {
 				extendedConfig,
 			);
 
-			await blockProcessor.processBlocksInPage(this.page, processingConfig.testUrl);
+			await blockProcessor.processBlocksInPage(
+				this.page,
+				processingConfig.testUrl,
+			);
 		}
 
 		// 保存 filename mapping
@@ -145,14 +153,13 @@ export class TestMode {
 		const result = await autoScrollToBottom(this.page, scrollConfig);
 		if (result.success) {
 			console.log(
-				this.i18n.t("page.autoScrollComplete", { duration: result.duration }),
+				`${this.i18n.t("page.autoScrollComplete", { duration: result.duration })}\n`,
 			);
 		} else {
 			console.log(
 				this.i18n.t("page.autoScrollError") +
-					` (${result.duration}s)${result.error ? `: ${result.error}` : ""}`,
+					` (${result.duration}s)${result.error ? `: ${result.error}` : ""}\n`,
 			);
 		}
 	}
-
 }

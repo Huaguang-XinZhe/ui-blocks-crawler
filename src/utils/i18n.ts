@@ -149,11 +149,12 @@ const messages = {
 		"page.processFailed": "❌ 处理页面失败: {path}",
 
 		// Block 处理
-		"block.found": "📦 找到 {count} 个 Block",
-		"block.processing": "🔄 [{current}/{total}] 正在处理 Block: {name}",
-		"block.skip": "⏭️ 跳过已完成的 Block: {name}",
-		"block.skipFree": "🆓 跳过 Free Block: {name}",
-		"block.saved": "✅ Block 已保存: {path}",
+	"block.found": "📦 找到 {count} 个 Block",
+	"block.processing": "🔄 [{current}/{total}] 正在处理 Block: {name}",
+	"block.skip": "⏭️ 跳过已完成的 Block: {name}",
+	"block.skipFree": "🆓 跳过 Free Block: {name}",
+	"block.skipFreeCount": "已跳过 {count} 个 Free Block：",
+	"block.saved": "✅ Block 已保存: {path}",
 		"block.freeError":
 			'❌ Free Block 标记匹配错误：\n   期望找到 1 个匹配项，实际找到 {count} 个\n   匹配文本: "{text}"\n\n请检查：\n   1. 文本是否唯一（建议使用更精确的文本）\n   2. 或使用自定义函数配置更精确的判断逻辑',
 		"block.getNameCustom": "🔧 使用自定义 getBlockName 函数",
@@ -355,11 +356,12 @@ const messages = {
 		"page.processFailed": "❌ Failed to process page: {path}",
 
 		// Block processing
-		"block.found": "📦 Found {count} blocks",
-		"block.processing": "🔄 [{current}/{total}] Processing block: {name}",
-		"block.skip": "⏭️  Skipping completed block: {name}",
-		"block.skipFree": "🆓 Skipping free block: {name}",
-		"block.saved": "✅ Block saved: {path}",
+	"block.found": "📦 Found {count} blocks",
+	"block.processing": "🔄 [{current}/{total}] Processing block: {name}",
+	"block.skip": "⏭️  Skipping completed block: {name}",
+	"block.skipFree": "🆓 Skipping free block: {name}",
+	"block.skipFreeCount": "Skipped {count} free block(s):",
+	"block.saved": "✅ Block saved: {path}",
 		"block.freeError":
 			'❌ Free block marker matching error:\n   Expected 1 match, found {count}\n   Matching text: "{text}"\n\nPlease check:\n   1. Is the text unique (use more specific text)\n   2. Or use custom function for more precise logic',
 		"block.getNameCustom": "🔧 Using custom getBlockName function",

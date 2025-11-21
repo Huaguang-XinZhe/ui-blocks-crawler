@@ -6,6 +6,7 @@ import type { TaskProgress } from "../state/TaskProgress";
 import type { BeforeContext, BlockContext, BlockHandler } from "../types";
 import { createClickAndVerify, createClickCode } from "../utils/click-actions";
 import { isDebugMode } from "../utils/debug";
+import { checkBlockFree as checkBlockFreeUtil } from "../utils/free-checker";
 import { createI18n, type I18n } from "../utils/i18n";
 import {
 	ContextLogger,
@@ -13,7 +14,6 @@ import {
 } from "../utils/logger";
 import { createSafeOutput } from "../utils/safe-output";
 import { BlockNameExtractor } from "./BlockNameExtractor";
-import { FreeChecker } from "./FreeChecker";
 
 /**
  * Block 处理器
@@ -100,39 +100,53 @@ export class BlockProcessor {
 			this.taskProgress?.markPageComplete(normalizedPath);
 		}
 
-		// 验证 Block 采集完整性（如果启用）
-		if (this.verifyBlockCompletion) {
-			const isComplete = await this.verifyCompletion(
-				page,
-				pagePath,
-				expectedCount,
-				processedCount,
-				processedBlockNames,
+	// 验证 Block 采集完整性（如果启用）
+	if (this.verifyBlockCompletion) {
+		const isComplete = await this.verifyCompletion(
+			page,
+			pagePath,
+			expectedCount,
+			processedCount,
+			processedBlockNames,
+		);
+
+		// 只在验证通过时输出简洁的确认信息
+		if (isComplete) {
+			this.logger.log(
+				this.i18n.t("block.verifyComplete", { count: processedCount }),
 			);
-
-			// 只在验证通过时输出简洁的确认信息
-			if (isComplete) {
-				this.logger.log(
-					this.i18n.t("block.verifyComplete", { count: processedCount }),
-				);
-			}
 		}
-
-		// 返回实际处理的数量（不包括跳过的）
-		return {
-			totalCount: completedCount,
-			freeBlocks,
-		};
 	}
+
+	// 输出跳过的 Free Blocks 统计
+	if (freeBlocks.length > 0) {
+		this.logger.log(
+			`\n⏭️  ${this.i18n.t("block.skipFreeCount", { count: freeBlocks.length })}`,
+		);
+		freeBlocks.forEach((name, idx) => {
+			this.logger.log(`   ${idx + 1}. ${name}`);
+		});
+	}
+
+	// 返回实际处理的数量（不包括跳过的）
+	return {
+		totalCount: completedCount,
+		freeBlocks,
+	};
+}
 
 	/**
 	 * 检查单个 Block 是否为 Free
 	 */
 	private async isBlockFree(block: Locator): Promise<boolean> {
-		return await FreeChecker.checkBlock(
+		// 在 block 处理器中，skipFree 只会是 string 或接收 Locator 的函数
+		return await checkBlockFreeUtil(
 			block,
 			this.config,
-			this.extendedConfig.skipFree,
+			this.extendedConfig.skipFree as
+				| string
+				| ((locator: Locator) => Promise<boolean>)
+				| undefined,
 		);
 	}
 

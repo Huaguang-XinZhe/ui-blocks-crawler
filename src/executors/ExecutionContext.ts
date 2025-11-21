@@ -16,7 +16,11 @@ export interface ExtendedExecutionConfig {
 	blockNameLocator?: string;
 	getAllBlocks?: (page: Page) => Promise<Locator[]>;
 	scriptInjection?: boolean | { enabled: boolean; scripts?: string[] };
-	skipFree?: string | ((page: Page) => Promise<boolean>);
+	// skipFree 支持 Page 级别和 Block 级别
+	skipFree?:
+		| string
+		| ((page: Page) => Promise<boolean>)
+		| ((locator: Locator) => Promise<boolean>);
 }
 
 /**

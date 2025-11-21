@@ -4,9 +4,9 @@ import type { FilenameMappingManager } from "../state/FilenameMapping";
 import type { PageContext, PageHandler } from "../types";
 import { createClickAndVerify, createClickCode } from "../utils/click-actions";
 import { isDebugMode } from "../utils/debug";
+import { checkPageFree as checkPageFreeUtil } from "../utils/free-checker";
 import { createI18n, type I18n } from "../utils/i18n";
 import { createSafeOutput } from "../utils/safe-output";
-import { FreeChecker } from "./FreeChecker";
 
 /**
  * Page 处理器
@@ -32,7 +32,7 @@ export class PageProcessor {
 		config: InternalConfig,
 		skipFree?: string | ((page: Page) => Promise<boolean>),
 	): Promise<boolean> {
-		return await FreeChecker.checkPage(page, config, skipFree);
+		return await checkPageFreeUtil(page, config, skipFree);
 	}
 
 	/**
