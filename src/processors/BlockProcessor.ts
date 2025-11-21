@@ -141,13 +141,6 @@ export class BlockProcessor {
 	 * 检查单个 Block 是否为 Free
 	 */
 	private async isBlockFree(block: Locator): Promise<boolean> {
-		// 🔍 调试日志
-		console.log("🔍 isBlockFree 调用:", {
-			hasSkipFree: !!this.extendedConfig.skipFree,
-			skipFreeValue: this.extendedConfig.skipFree,
-			extendedConfig: this.extendedConfig,
-		});
-
 		// 在 block 处理器中，skipFree 只会是 string 或接收 Locator 的函数
 		return await checkBlockFreeUtil(
 			block,
