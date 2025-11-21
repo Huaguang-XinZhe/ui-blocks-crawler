@@ -1,6 +1,9 @@
-import type { Locator, Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import type { InternalConfig } from "../../config/ConfigManager";
-import type { BlockHandler, PageHandler } from "../../types";
+import type { ExtendedExecutionConfig } from "../../executors/ExecutionContext";
+import { BlockProcessor } from "../../processors/BlockProcessor";
+import { PageProcessor } from "../../processors/PageProcessor";
+import { FilenameMappingManager } from "../../state/FilenameMapping";
 import { createI18n, type I18n } from "../../utils/i18n";
 import type { ProcessingConfig } from "../utils/ConfigHelper";
 
@@ -9,7 +12,7 @@ import type { ProcessingConfig } from "../utils/ConfigHelper";
  *
  * 职责：
  * - 导航到测试页面
- * - 执行 page/block handler（不进行并发处理）
+ * - 完全复用 PageProcessor 和 BlockProcessor 的逻辑（不进行并发处理）
  */
 export class TestMode {
 	private i18n: I18n;
@@ -48,28 +51,74 @@ export class TestMode {
 			await this.performAutoScroll(processingConfig.autoScroll);
 		}
 
+		// 初始化 filename mapping（用于 safe output）
+		const outputDir = this.config.outputBaseDir + "/test";
+		const mappingManager = new FilenameMappingManager(
+			this.config.stateBaseDir,
+			this.config.locale,
+		);
+		await mappingManager.initialize();
+
 		// 执行 page handler（如果配置了）
 		if (processingConfig.pageHandler) {
-			await this.executePageHandler(
-				processingConfig.testUrl,
+			// 使用真实的 PageProcessor
+			const pageProcessor = new PageProcessor(
+				this.config,
+				outputDir,
 				processingConfig.pageHandler,
+				mappingManager,
 			);
+
+			// 检查是否为 Free Page（仅在 skipFreeMode 为 "page" 时）
+			if (processingConfig.skipFreeMode === "page" && processingConfig.skipFreeText) {
+				const isFree = await PageProcessor.checkPageFree(
+					this.page,
+					this.config,
+					processingConfig.skipFreeText,
+				);
+				if (isFree) {
+					console.log(this.i18n.t("page.skipFree", { path: processingConfig.testUrl }));
+					await mappingManager.save();
+					return; // 跳过整个页面
+				}
+			}
+
+			await pageProcessor.processPage(this.page, processingConfig.testUrl);
 		}
 
-	// 执行 block handler（如果配置了）
-	if (processingConfig.blockHandler && processingConfig.blockLocator) {
-		// 只在 skipFreeMode 为 "block" 时传递 skipFreeText
-		const skipFreeText =
-			processingConfig.skipFreeMode === "block"
-				? processingConfig.skipFreeText
-				: undefined;
+		// 执行 block handler（如果配置了）
+		if (processingConfig.blockHandler && processingConfig.blockLocator) {
+			// 准备 ExtendedExecutionConfig
+			const extendedConfig: ExtendedExecutionConfig = {
+				getBlockName: processingConfig.getBlockName,
+				blockNameLocator: processingConfig.blockNameLocator,
+				getAllBlocks: processingConfig.getAllBlocks,
+				scriptInjection: processingConfig.scriptInjection,
+				// 只在 skipFreeMode 为 "block" 时传递 skipFree
+				skipFree:
+					processingConfig.skipFreeMode === "block"
+						? processingConfig.skipFreeText
+						: undefined,
+			};
 
-		await this.executeBlockHandler(
-			processingConfig.blockLocator,
-			processingConfig.blockHandler,
-			skipFreeText,
-		);
-	}
+			// 使用真实的 BlockProcessor
+			const blockProcessor = new BlockProcessor(
+				this.config,
+				outputDir,
+				processingConfig.blockLocator,
+				processingConfig.blockHandler,
+				undefined, // taskProgress (测试模式不需要)
+				undefined, // beforeProcessBlocks
+				mappingManager,
+				false, // verifyBlockCompletion (测试模式不需要验证)
+				extendedConfig,
+			);
+
+			await blockProcessor.processBlocksInPage(this.page, processingConfig.testUrl);
+		}
+
+		// 保存 filename mapping
+		await mappingManager.save();
 	}
 
 	/**
@@ -106,150 +155,4 @@ export class TestMode {
 		}
 	}
 
-	/**
-	 * 执行 Page Handler
-	 */
-	private async executePageHandler(
-		url: string,
-		pageHandler: PageHandler,
-	): Promise<void> {
-		const { createClickAndVerify, createClickCode } = await import(
-			"../../utils/click-actions"
-		);
-		const { createSafeOutput } = await import("../../utils/safe-output");
-		const { FilenameMappingManager } = await import(
-			"../../state/FilenameMapping"
-		);
-
-		const outputDir = this.config.outputBaseDir + "/test";
-		const mappingManager = new FilenameMappingManager(
-			this.config.stateBaseDir,
-			this.config.locale,
-		);
-		await mappingManager.initialize();
-
-		await pageHandler({
-			currentPage: this.page,
-			currentPath: url,
-			outputDir,
-			safeOutput: createSafeOutput("test", outputDir, mappingManager),
-			clickAndVerify: createClickAndVerify(this.config.locale),
-			clickCode: createClickCode(
-				this.page,
-				createClickAndVerify(this.config.locale),
-			),
-		});
-
-		await mappingManager.save();
-	}
-
-	/**
-	 * 执行 Block Handler
-	 */
-	private async executeBlockHandler(
-		blockLocator: string,
-		blockHandler: BlockHandler,
-		skipFreeText?: string,
-	): Promise<void> {
-		const { createClickAndVerify, createClickCode } = await import(
-			"../../utils/click-actions"
-		);
-		const { createSafeOutput } = await import("../../utils/safe-output");
-		const { FilenameMappingManager } = await import(
-			"../../state/FilenameMapping"
-		);
-		const { BlockNameExtractor } = await import(
-			"../../processors/BlockNameExtractor"
-		);
-
-		const outputDir = this.config.outputBaseDir + "/test";
-		const mappingManager = new FilenameMappingManager(
-			this.config.stateBaseDir,
-			this.config.locale,
-		);
-		await mappingManager.initialize();
-
-		// 获取所有 blocks
-		const locators = await this.page.locator(blockLocator).all();
-		console.log(
-			`\n${this.i18n.t("crawler.testFoundBlocks", { count: locators.length })}`,
-		);
-
-		// 需要一个临时配置对象来创建 BlockNameExtractor
-		// 因为 BlockNameExtractor 需要 blockNameLocator 等配置
-		const tempConfig = {
-			...this.config,
-			blockNameLocator: "role=heading[level=1] >> role=link",
-		} as any;
-
-		const nameExtractor = new BlockNameExtractor(tempConfig);
-
-		for (let i = 0; i < locators.length; i++) {
-			const locatorItem = locators[i];
-			const blockName =
-				(await nameExtractor.extract(locatorItem)) || `test-block-${i}`;
-			const blockPath = `test/${blockName}`;
-
-			console.log(
-				`\n${this.i18n.t("crawler.testProcessingBlock", {
-					current: i + 1,
-					total: locators.length,
-					name: blockName,
-				})}`,
-			);
-
-			// 检查是否为 Free Block（如果配置了 skipFree）
-			if (skipFreeText) {
-				const isFree = await this.isBlockFree(locatorItem, skipFreeText);
-				if (isFree) {
-					console.log(this.i18n.t("block.skipFree", { name: blockName }));
-					continue; // 跳过这个 block
-				}
-			}
-
-			await blockHandler({
-				currentPage: this.page,
-				block: locatorItem,
-				blockPath,
-				blockName,
-				outputDir,
-				safeOutput: createSafeOutput(
-					"test",
-					outputDir,
-					mappingManager,
-					undefined,
-					blockName,
-				),
-				clickAndVerify: createClickAndVerify(this.config.locale),
-				clickCode: createClickCode(
-					locatorItem,
-					createClickAndVerify(this.config.locale),
-				),
-			});
-		}
-
-		await mappingManager.save();
-	}
-
-	/**
-	 * 检查单个 Block 是否为 Free
-	 */
-	private async isBlockFree(
-		block: import("@playwright/test").Locator,
-		skipFreeText: string,
-	): Promise<boolean> {
-		const count = await block.getByText(skipFreeText, { exact: true }).count();
-
-		if (count === 0) {
-			return false;
-		}
-
-		if (count !== 1) {
-			throw new Error(
-				this.i18n.t("block.freeError", { count, text: skipFreeText }),
-			);
-		}
-
-		return true;
-	}
 }

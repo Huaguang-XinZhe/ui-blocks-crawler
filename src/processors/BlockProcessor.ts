@@ -13,6 +13,7 @@ import {
 } from "../utils/logger";
 import { createSafeOutput } from "../utils/safe-output";
 import { BlockNameExtractor } from "./BlockNameExtractor";
+import { FreeChecker } from "./FreeChecker";
 
 /**
  * Block 处理器
@@ -128,39 +129,11 @@ export class BlockProcessor {
 	 * 检查单个 Block 是否为 Free
 	 */
 	private async isBlockFree(block: Locator): Promise<boolean> {
-		const skipFree = this.extendedConfig.skipFree;
-		if (!skipFree) {
-			return false;
-		}
-
-		// 字符串配置：使用 getByText 精确匹配
-		if (typeof skipFree === "string") {
-			const count = await block.getByText(skipFree, { exact: true }).count();
-
-			if (count === 0) {
-				return false;
-			}
-
-			if (count !== 1) {
-				throw new Error(
-					this.i18n.t("block.freeError", { count, text: skipFree }),
-				);
-			}
-
-			return true;
-		}
-
-		// 函数配置：使用自定义判断逻辑（注意：函数接收的是 Page，但这里我们需要 Block）
-		// 为了兼容性，我们创建一个临时的 Page 上下文
-		// 但实际上，如果 skipFree 是函数，它应该接收 Locator 而不是 Page
-		// 这里我们假设函数可以处理 Locator
-		if (typeof skipFree === "function") {
-			// 注意：这里需要类型转换，因为 skipFree 函数期望 Page，但我们传入的是 Locator
-			// 实际上，如果用户配置了函数，他们应该知道如何处理
-			return await (skipFree as any)(block);
-		}
-
-		return false;
+		return await FreeChecker.checkBlock(
+			block,
+			this.config,
+			this.extendedConfig.skipFree,
+		);
 	}
 
 	/**

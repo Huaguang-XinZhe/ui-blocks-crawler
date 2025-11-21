@@ -6,6 +6,7 @@ import { createClickAndVerify, createClickCode } from "../utils/click-actions";
 import { isDebugMode } from "../utils/debug";
 import { createI18n, type I18n } from "../utils/i18n";
 import { createSafeOutput } from "../utils/safe-output";
+import { FreeChecker } from "./FreeChecker";
 
 /**
  * Page 处理器
@@ -31,28 +32,7 @@ export class PageProcessor {
 		config: InternalConfig,
 		skipFree?: string | ((page: Page) => Promise<boolean>),
 	): Promise<boolean> {
-		if (!skipFree) {
-			return false;
-		}
-
-		// 字符串配置：使用 getByText 精确匹配
-		if (typeof skipFree === "string") {
-			const count = await page.getByText(skipFree, { exact: true }).count();
-
-			if (count === 0) {
-				return false;
-			}
-
-			if (count !== 1) {
-				const i18n = createI18n(config.locale);
-				throw new Error(i18n.t("page.freeError", { count, text: skipFree }));
-			}
-
-			return true;
-		}
-
-		// 函数配置：使用自定义判断逻辑
-		return await skipFree(page);
+		return await FreeChecker.checkPage(page, config, skipFree);
 	}
 
 	/**
