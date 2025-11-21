@@ -29,6 +29,6 @@ test("flyonui", async ({ page }) => {
 			},
 		)
 		// 测试默认匹配（忽略大小写的 "free"）
-		.skipFree() // 等同于 .skipFree("FREE")，因为 DOM 中是 "FREE"
+		.skipFree()
 		.run();
 });
