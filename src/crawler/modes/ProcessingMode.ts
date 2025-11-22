@@ -122,26 +122,29 @@ export class ProcessingMode {
 	 * 设置信号处理器
 	 */
 	private setupSignalHandlers(): void {
-		const handler: NodeJS.SignalsListener = async (signal) => {
+		const handler = (signal: NodeJS.Signals) => {
 			// 设置终止标志
 			ProcessingMode.isTerminating = true;
 
 			console.log(`\n${this.i18n.t("common.signalReceived", { signal })}\n`);
 
-			try {
-				// 保存所有状态（进度、Free 记录、文件名映射）
-				if (this.orchestrator) {
-					await this.orchestrator.cleanup();
+			// 使用立即执行的异步函数确保 cleanup 完成后再退出
+			(async () => {
+				try {
+					// 保存所有状态（进度、Free 记录、文件名映射）
+					if (this.orchestrator) {
+						await this.orchestrator.cleanup();
+					}
+				} catch (error) {
+					console.error(
+						this.i18n.t("progress.saveFailed", {
+							error: error instanceof Error ? error.message : String(error),
+						}),
+					);
+				} finally {
+					process.exit(0);
 				}
-			} catch (error) {
-				console.error(
-					this.i18n.t("progress.saveFailed", {
-						error: error instanceof Error ? error.message : String(error),
-					}),
-				);
-			}
-
-			process.exit(0);
+			})();
 		};
 
 		process.on("SIGINT", handler);
