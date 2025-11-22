@@ -1,5 +1,15 @@
 # block-crawler
 
+## 0.25.14
+
+### Patch Changes
+
+- fix: 修复统计信息显示和未使用变量
+
+  - 在成功统计后显示详细的完成数量分解（之前完成 + 本次完成）
+  - 移除未使用的 normalizedPath 变量
+  - 修复 completedPages 数据一致性问题（删除混入的 block 路径）
+
 ## 0.25.13
 
 ### Patch Changes

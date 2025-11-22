@@ -105,9 +105,7 @@ export class ConcurrentExecutor {
 		await Promise.allSettled(
 			pendingLinks.map((linkObj: CollectionLink, index: number) =>
 				this.context.limit(async () => {
-					const normalizedPath = linkObj.link.startsWith("/")
-						? linkObj.link.slice(1)
-						: linkObj.link;
+					// normalizedPath 变量未使用，因为已经在前面过滤掉已完成的了
 
 					// 创建页面上下文日志记录器（排除 baseUrlPath）
 					const displayPath =
@@ -215,7 +213,7 @@ export class ConcurrentExecutor {
 	): void {
 		console.log(`\n${this.context.i18n.t("crawler.statistics")}`);
 		console.log(
-			`   ${this.context.i18n.t("crawler.success", { count: completed, total })}`,
+			`   ${this.context.i18n.t("crawler.success", { count: completed, total })}  （${this.previousCompletedPages}个之前完成 + ${this.completed}个本次完成）`,
 		);
 		console.log(
 			`   ${this.context.i18n.t("crawler.failed", { count: failed, total })}`,
