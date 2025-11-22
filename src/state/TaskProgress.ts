@@ -204,10 +204,12 @@ export class TaskProgress {
 			}
 		}
 
+		let skippedCount = 0;
 		for (const pagePath of pageLinks) {
 			const fullPagePath = path.join(this.outputDir, pagePath);
 
 			if (!(await fse.pathExists(fullPagePath))) {
+				skippedCount++;
 				continue;
 			}
 
@@ -256,6 +258,12 @@ export class TaskProgress {
 					}
 				}
 			}
+		}
+
+		if (skippedCount > 0) {
+			console.log(
+				`⚠️  跳过了 ${skippedCount} 个不存在的页面目录（共 ${pageLinks.length} 个）`,
+			);
 		}
 
 		console.log(
@@ -330,6 +338,8 @@ export class TaskProgress {
 			".js",
 			".vue",
 			".svelte",
+			".html", // 添加 HTML
+			".css", // 添加 CSS
 		];
 		return componentExtensions.some((ext) => filename.endsWith(ext));
 	}

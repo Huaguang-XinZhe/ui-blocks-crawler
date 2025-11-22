@@ -213,7 +213,7 @@ export class ConcurrentExecutor {
 	): void {
 		console.log(`\n${this.context.i18n.t("crawler.statistics")}`);
 		console.log(
-			`   ${this.context.i18n.t("crawler.success", { count: completed, total })}  （${this.previousCompletedPages}个之前完成 + ${this.completed}个本次完成）`,
+			`   ${this.context.i18n.t("crawler.success", { count: completed, total })}`,
 		);
 		console.log(
 			`   ${this.context.i18n.t("crawler.failed", { count: failed, total })}`,
