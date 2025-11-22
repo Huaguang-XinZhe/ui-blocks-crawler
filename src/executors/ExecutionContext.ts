@@ -27,6 +27,13 @@ export interface ExtendedExecutionConfig {
 		| string
 		| ((page: Page) => Promise<boolean>)
 		| ((locator: Locator) => Promise<boolean>);
+	/**
+	 * skipFreeMode 标识在哪个级别跳过：
+	 *   - "page": 页面级别（在 LinkExecutor 中检查）
+	 *   - "block": Block 级别（在 BlockProcessor 中检查）
+	 *   - undefined: 未启用
+	 */
+	skipFreeMode?: "page" | "block";
 }
 
 /**

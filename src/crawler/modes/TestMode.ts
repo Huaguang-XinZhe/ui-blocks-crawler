@@ -98,10 +98,13 @@ export class TestMode {
 				getBlockName: processingConfig.getBlockName,
 				blockNameLocator: processingConfig.blockNameLocator,
 				getAllBlocks: processingConfig.getAllBlocks,
-				scriptInjection: processingConfig.scriptInjection,
-				// skipFree 根据 skipFreeMode 传递：page 模式传给 PageProcessor，block 模式传给 BlockProcessor
-				skipFree:
-					processingConfig.skipFreeMode === "block"
+			scriptInjection: processingConfig.scriptInjection,
+			skipFreeMode: processingConfig.skipFreeMode,
+			// skipFree 根据 skipFreeMode 传递
+			skipFree:
+				processingConfig.skipFreeMode === "block"
+					? processingConfig.skipFreeText
+					: processingConfig.skipFreeMode === "page"
 						? processingConfig.skipFreeText
 						: undefined,
 			};
