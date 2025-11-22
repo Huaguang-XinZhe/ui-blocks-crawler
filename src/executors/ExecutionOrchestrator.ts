@@ -114,7 +114,7 @@ export class ExecutionOrchestrator {
 			}),
 		);
 		console.log(
-			this.context.i18n.t("crawler.outputDir", { dir: this.context.outputDir }),
+			this.context.i18n.t("crawler.outputDir", { dir: this.context.outputDir.replace(/\\/g, '/') }),
 		);
 
 		const mode = blockSectionLocator

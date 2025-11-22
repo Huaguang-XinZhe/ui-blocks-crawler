@@ -1,6 +1,7 @@
 import path from "node:path";
 import fse from "fs-extra";
 import { atomicWriteJson, atomicWriteJsonSync } from "../utils/atomic-write";
+import type { I18n } from "../utils/i18n";
 
 /**
  * 组件数不一致记录项
@@ -36,7 +37,10 @@ export class MismatchRecorder {
 	private mismatches: Map<string, MismatchItem> = new Map();
 	private mismatchFile: string;
 
-	constructor(stateDir: string) {
+	constructor(
+		stateDir: string,
+		private i18n?: I18n,
+	) {
 		this.mismatchFile = path.join(stateDir, "mismatch.json");
 		this.load();
 	}
@@ -97,6 +101,15 @@ export class MismatchRecorder {
 			a.pagePath.localeCompare(b.pagePath),
 		);
 
+		// 如果没有 mismatch 记录，只打印日志，不写入文件
+		if (mismatches.length === 0) {
+			const message = this.i18n
+				? this.i18n.t("mismatch.noRecords")
+				: "✅ 无组件数不一致记录";
+			console.log(message);
+			return;
+		}
+
 		const record: MismatchRecord = {
 			lastUpdate: new Date().toLocaleString("zh-CN", {
 				timeZone: "Asia/Shanghai",
@@ -117,6 +130,15 @@ export class MismatchRecorder {
 		const mismatches = Array.from(this.mismatches.values()).sort((a, b) =>
 			a.pagePath.localeCompare(b.pagePath),
 		);
+
+		// 如果没有 mismatch 记录，只打印日志，不写入文件
+		if (mismatches.length === 0) {
+			const message = this.i18n
+				? this.i18n.t("mismatch.noRecords")
+				: "✅ 无组件数不一致记录";
+			console.log(message);
+			return;
+		}
 
 		const record: MismatchRecord = {
 			lastUpdate: new Date().toLocaleString("zh-CN", {

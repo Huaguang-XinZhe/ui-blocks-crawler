@@ -183,6 +183,9 @@ const messages = {
 		"block.verifyComplete": "✅ Block 采集验证通过 (共 {count} 个)",
 		"block.processedList": "已处理的 Block:",
 
+		// Mismatch 记录
+		"mismatch.noRecords": "✅ 无组件数不一致记录",
+
 		// 错误处理
 		"error.pauseOnErrorDebug":
 			"\n🛑 检测到错误，页面已暂停方便检查\n   类型: {type}\n   位置: {name}{path}\n   错误: {error}\n\n   💡 提示: 检查完成后，可以在全局配置中关闭 pauseOnError 以继续运行\n",
@@ -413,6 +416,9 @@ const messages = {
 			"\n⚠️  Block collection incomplete!\n   Page: {pagePath}\n   Expected: {expectedCount}\n   Processed: {processedCount}\n   Difference: {diff}\n\n   Processed Blocks:\n{blockList}\n\n   💡 Tip: Run with --debug flag to automatically pause the page for inspection\n",
 		"block.verifyComplete":
 			"\n✅ Block collection verification passed\n   Page: {pagePath}\n   Expected: {expectedCount}\n   Processed: {processedCount}\n",
+
+		// Mismatch records
+		"mismatch.noRecords": "✅ No block count mismatch records",
 
 		// Error handling
 		"error.pauseOnErrorDebug":
