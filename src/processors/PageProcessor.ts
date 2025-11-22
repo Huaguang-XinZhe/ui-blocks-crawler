@@ -29,14 +29,14 @@ export class PageProcessor {
 	 *
 	 * @param skipFree 跳过配置：
 	 *   - undefined: 未启用跳过
-	 *   - null: 使用默认匹配 /free/i（忽略大小写）
+	 *   - "default": 使用默认匹配 /free/i（忽略大小写）
 	 *   - string: 精确匹配指定文本
 	 *   - function: 自定义判断逻辑
 	 */
 	static async checkPageFree(
 		page: Page,
 		config: InternalConfig,
-		skipFree?: string | null | ((page: Page) => Promise<boolean>),
+		skipFree?: string | ((page: Page) => Promise<boolean>),
 	): Promise<boolean> {
 		return await checkPageFreeUtil(page, config, skipFree);
 	}

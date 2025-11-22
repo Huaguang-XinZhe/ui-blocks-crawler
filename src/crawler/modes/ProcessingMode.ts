@@ -96,9 +96,11 @@ export class ProcessingMode {
 			blockNameLocator: processingConfig.blockNameLocator,
 			getAllBlocks: processingConfig.getAllBlocks,
 			scriptInjection: processingConfig.scriptInjection,
-			skipFree: processingConfig.skipFreeText
-				? processingConfig.skipFreeText
-				: undefined,
+			// skipFree 根据 skipFreeMode 传递：page 模式传给 PageProcessor，block 模式传给 BlockProcessor
+			skipFree:
+				processingConfig.skipFreeMode === "block"
+					? processingConfig.skipFreeText
+					: undefined,
 		};
 
 		this.orchestrator = new ExecutionOrchestrator(

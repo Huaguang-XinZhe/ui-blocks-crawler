@@ -141,18 +141,17 @@ export class BlockProcessor {
 	 * @remarks
 	 * skipFree 支持：
 	 *   - undefined: 未启用跳过
-	 *   - null: 使用默认匹配 /free/i（忽略大小写）
+	 *   - "default": 使用默认匹配 /free/i（忽略大小写）
 	 *   - string: 精确匹配指定文本
 	 *   - function: 自定义判断逻辑
 	 */
 	private async isBlockFree(block: Locator): Promise<boolean> {
-		// 在 block 处理器中，skipFree 只会是 string | null 或接收 Locator 的函数
+		// 在 block 处理器中，skipFree 只会是 string 或接收 Locator 的函数
 		return await checkBlockFreeUtil(
 			block,
 			this.config,
 			this.extendedConfig.skipFree as
 				| string
-				| null
 				| ((locator: Locator) => Promise<boolean>)
 				| undefined,
 		);

@@ -99,7 +99,7 @@ export class TestMode {
 				blockNameLocator: processingConfig.blockNameLocator,
 				getAllBlocks: processingConfig.getAllBlocks,
 				scriptInjection: processingConfig.scriptInjection,
-				// 只在 skipFreeMode 为 "block" 时传递 skipFree
+				// skipFree 根据 skipFreeMode 传递：page 模式传给 PageProcessor，block 模式传给 BlockProcessor
 				skipFree:
 					processingConfig.skipFreeMode === "block"
 						? processingConfig.skipFreeText

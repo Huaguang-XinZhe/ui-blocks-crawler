@@ -19,13 +19,12 @@ export interface ExtendedExecutionConfig {
 	/**
 	 * skipFree 支持 Page 级别和 Block 级别：
 	 *   - undefined: 未启用跳过
-	 *   - null: 使用默认匹配 /free/i（忽略大小写）
+	 *   - "default": 使用默认匹配 /free/i（忽略大小写）
 	 *   - string: 精确匹配指定文本
 	 *   - function: 自定义判断逻辑
 	 */
 	skipFree?:
 		| string
-		| null
 		| ((page: Page) => Promise<boolean>)
 		| ((locator: Locator) => Promise<boolean>);
 }

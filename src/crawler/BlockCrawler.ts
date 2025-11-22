@@ -20,10 +20,7 @@ import { createI18n, type I18n } from "../utils/i18n";
 import { CollectionMode } from "./modes/CollectionMode";
 import { ProcessingMode } from "./modes/ProcessingMode";
 import { TestMode } from "./modes/TestMode";
-import type {
-	CollectionConfig,
-	ProcessingConfig,
-} from "./utils/ConfigHelper";
+import type { CollectionConfig, ProcessingConfig } from "./utils/ConfigHelper";
 
 /**
  * Block 爬虫 (Facade Pattern)
@@ -85,7 +82,6 @@ export class BlockCrawler {
 		beforeOpenScripts: [],
 		afterOpenScripts: [],
 	};
-
 
 	// 认证配置
 	private authHandler?: (page: Page) => Promise<void>;
@@ -247,12 +243,14 @@ export class BlockCrawler {
 
 	/**
 	 * 打开页面并等待（必须调用）
-	 * 
+	 *
 	 * 支持两种用法：
 	 * 1. 正常模式：.open() 或 .open("load")
 	 * 2. 测试模式：.open("https://...") 或 .open("https://...", "load")
 	 */
-	open(waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit"): this;
+	open(
+		waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit",
+	): this;
 	open(
 		testUrl: string,
 		waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit",
@@ -262,7 +260,7 @@ export class BlockCrawler {
 		waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit",
 	): this {
 		this.isOpenCalled = true;
-		
+
 		// 判断第一个参数是 URL 还是 waitUntil
 		if (urlOrWaitUntil && urlOrWaitUntil.startsWith("http")) {
 			// 测试模式：第一个参数是 testUrl
@@ -277,7 +275,7 @@ export class BlockCrawler {
 				| "commit"
 				| undefined;
 		}
-		
+
 		return this;
 	}
 
@@ -351,8 +349,8 @@ export class BlockCrawler {
 		if (!this.processingConfig.skipFreeMode) {
 			throw new Error("skipFree() 必须在 page() 或 block() 之后调用");
 		}
-		// 如果没有传入 text，使用默认值（后续在 free-checker 中处理）
-		this.processingConfig.skipFreeText = text === undefined ? null : text;
+		// 如果没有传入 text，使用 "default" 表示默认匹配
+		this.processingConfig.skipFreeText = text === undefined ? "default" : text;
 		return this;
 	}
 
@@ -365,7 +363,6 @@ export class BlockCrawler {
 		this.processingConfig.skipFreeMode = "block";
 		return this;
 	}
-
 
 	// ==================== 执行阶段 ====================
 

@@ -17,7 +17,7 @@ import { createI18n } from "./i18n";
  * @param config 配置
  * @param skipFree 跳过配置：
  *   - undefined: 未启用跳过
- *   - null: 使用默认匹配 /free/i（忽略大小写）
+ *   - "default": 使用默认匹配 /free/i（忽略大小写）
  *   - string: 精确匹配指定文本
  *   - function: 自定义判断逻辑
  * @param errorMessageKey 错误消息的 i18n key
@@ -25,15 +25,15 @@ import { createI18n } from "./i18n";
 async function checkFreeGeneric<T extends Page | Locator>(
 	target: T,
 	config: InternalConfig,
-	skipFree: string | null | ((target: T) => Promise<boolean>) | undefined,
+	skipFree: string | ((target: T) => Promise<boolean>) | undefined,
 	errorMessageKey: "page.freeError" | "block.freeError",
 ): Promise<boolean> {
 	if (skipFree === undefined) {
 		return false;
 	}
 
-	// null 表示使用默认匹配：/free/i（忽略大小写）
-	if (skipFree === null) {
+	// "default" 表示使用默认匹配：/free/i（忽略大小写）
+	if (skipFree === "default") {
 		const count = await target.getByText(/free/i).count();
 
 		if (count === 0) {
@@ -76,7 +76,7 @@ async function checkFreeGeneric<T extends Page | Locator>(
 export async function checkPageFree(
 	page: Page,
 	config: InternalConfig,
-	skipFree?: string | null | ((page: Page) => Promise<boolean>),
+	skipFree?: string | ((page: Page) => Promise<boolean>),
 ): Promise<boolean> {
 	return await checkFreeGeneric(page, config, skipFree, "page.freeError");
 }
@@ -87,7 +87,7 @@ export async function checkPageFree(
 export async function checkBlockFree(
 	block: Locator,
 	config: InternalConfig,
-	skipFree?: string | null | ((locator: Locator) => Promise<boolean>),
+	skipFree?: string | ((locator: Locator) => Promise<boolean>),
 ): Promise<boolean> {
 	return await checkFreeGeneric(block, config, skipFree, "block.freeError");
 }
