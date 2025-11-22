@@ -98,15 +98,15 @@ export class TestMode {
 				getBlockName: processingConfig.getBlockName,
 				blockNameLocator: processingConfig.blockNameLocator,
 				getAllBlocks: processingConfig.getAllBlocks,
-			scriptInjection: processingConfig.scriptInjection,
-			skipFreeMode: processingConfig.skipFreeMode,
-			// skipFree 根据 skipFreeMode 传递
-			skipFree:
-				processingConfig.skipFreeMode === "block"
-					? processingConfig.skipFreeText
-					: processingConfig.skipFreeMode === "page"
+				scriptInjection: processingConfig.scriptInjection,
+				skipFreeMode: processingConfig.skipFreeMode,
+				// skipFree 根据 skipFreeMode 传递
+				skipFree:
+					processingConfig.skipFreeMode === "block"
 						? processingConfig.skipFreeText
-						: undefined,
+						: processingConfig.skipFreeMode === "page"
+							? processingConfig.skipFreeText
+							: undefined,
 			};
 
 			// 使用真实的 BlockProcessor

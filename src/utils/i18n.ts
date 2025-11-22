@@ -71,6 +71,7 @@ const messages = {
 		"progress.notFound": "📝 未找到进度文件，开始全新爬取",
 		"progress.saved":
 			"💾 进度已保存 (已完成 Block: {blocks}, 已完成 Page: {pages})",
+		"progress.saveFailed": "⚠️ 保存进度失败: {error}",
 		"progress.scanning": "🔍 扫描已完成的输出文件，重建进度...",
 		"progress.rebuilt": "♻️  进度已重建: Block {blocks} 个, Page {pages} 个",
 		"progress.loadFailed": "⚠️ 加载进度文件失败，将重建进度",
@@ -166,12 +167,14 @@ const messages = {
 			"❌ 检测到 heading 内部结构复杂（子元素 > 1）但未找到 link 元素\n\n请配置以下选项之一：\n   1. getBlockName: (block) => Promise<string | null>\n   2. blockNameLocator: string",
 		"block.verifyIncomplete": "⚠️ Block 采集不完整",
 		"block.verifyComplete": "✅ Block 采集验证通过 (共 {count} 个)",
+		"block.processedList": "已处理的 Block:",
 
 		// 错误处理
 		"error.pauseOnErrorDebug":
 			"\n🛑 检测到错误，页面已暂停方便检查\n   类型: {type}\n   位置: {name}{path}\n   错误: {error}\n\n   💡 提示: 检查完成后，可以在全局配置中关闭 pauseOnError 以继续运行\n",
 		"error.pauseOnErrorNonDebug":
 			"\n❌ 检测到错误\n   类型: {type}\n   位置: {name}{path}\n   错误: {error}\n\n   💡 提示:\n   - 使用 --debug 模式运行可以自动暂停页面进行检查\n   - 或在全局配置中关闭 pauseOnError 以跳过错误继续运行\n",
+		"error.pauseBeforeDebug": "\n⏸️  页面即将暂停，请检查问题...\n",
 
 		// 点击操作
 		"click.retrying": "🔄 点击重试 ({current}/{total}): {error}",
@@ -274,6 +277,7 @@ const messages = {
 		"progress.notFound": "📝 No progress file found, starting fresh crawl",
 		"progress.saved":
 			"💾 Progress saved (Completed blocks: {blocks}, Completed pages: {pages})",
+		"progress.saveFailed": "⚠️  Failed to save progress: {error}",
 		"progress.scanning":
 			"🔍 Scanning completed output files, rebuilding progress...",
 		"progress.rebuilt": "♻️  Progress rebuilt: {blocks} blocks, {pages} pages",
@@ -375,6 +379,7 @@ const messages = {
 			"❌ Detected complex heading structure (children > 1) but no link element found\n\nPlease configure one of the following:\n   1. getBlockName: (block) => Promise<string | null>\n   2. blockNameLocator: string",
 		"block.verifyIncompleteDebug":
 			"\n⚠️  Block collection incomplete!\n   Page: {pagePath}\n   Expected: {expectedCount}\n   Processed: {processedCount}\n   Difference: {diff}\n\n   Processed Blocks:\n{blockList}\n\n   ⏸️  Page will pause, please check the issue...\n",
+		"block.processedList": "Processed Blocks:",
 		"block.verifyIncompleteNonDebug":
 			"\n⚠️  Block collection incomplete!\n   Page: {pagePath}\n   Expected: {expectedCount}\n   Processed: {processedCount}\n   Difference: {diff}\n\n   Processed Blocks:\n{blockList}\n\n   💡 Tip: Run with --debug flag to automatically pause the page for inspection\n",
 		"block.verifyComplete":
@@ -385,6 +390,7 @@ const messages = {
 			"\n🛑 Error detected, page paused for inspection\n   Type: {type}\n   Location: {name}{path}\n   Error: {error}\n\n   💡 Tip: After inspection, you can disable pauseOnError in config to continue\n",
 		"error.pauseOnErrorNonDebug":
 			"\n❌ Error detected\n   Type: {type}\n   Location: {name}{path}\n   Error: {error}\n\n   💡 Tips:\n   - Run with --debug flag to automatically pause the page for inspection\n   - Or disable pauseOnError in config to skip errors and continue\n",
+		"error.pauseBeforeDebug": "\n⏸️  Page will pause, please check the issue...\n",
 
 		// Click actions
 		"click.retrying": "🔄 Click retry ({current}/{total}): {error}",

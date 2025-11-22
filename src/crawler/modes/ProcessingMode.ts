@@ -140,7 +140,11 @@ export class ProcessingMode {
 					);
 				}
 			} catch (error) {
-				console.error("⚠️ 保存进度失败:", error);
+				console.error(
+					this.i18n.t("progress.saveFailed", {
+						error: error instanceof Error ? error.message : String(error),
+					}),
+				);
 			}
 
 			process.exit(0);

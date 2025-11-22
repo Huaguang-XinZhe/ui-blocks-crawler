@@ -317,7 +317,7 @@ export class BlockProcessor {
 			// 根据日志级别输出详细信息
 			const logLevel = this.config.logLevel;
 			if (logLevel === "debug") {
-				console.log("\n已处理的 Block:");
+				console.log(`\n${this.i18n.t("block.processedList")}`);
 				processedBlockNames.forEach((name, idx) => {
 					console.log(`  ${idx + 1}. ${name}`);
 				});
@@ -325,7 +325,7 @@ export class BlockProcessor {
 
 			// 只在 debug 环境下暂停
 			if (debugMode) {
-				console.log("\n⏸️  页面即将暂停，请检查问题...\n");
+				console.log(this.i18n.t("error.pauseBeforeDebug"));
 				await page.pause();
 			} else if (logLevel !== "silent") {
 				console.log(
