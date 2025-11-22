@@ -79,27 +79,27 @@ export class LinkExecutor {
 				);
 			}
 
-		// 检查页面是否为 Free（仅在 skipFreeMode 为 "page" 时）
-		if (
-			this.context.extendedConfig.skipFreeMode === "page" &&
-			this.context.extendedConfig.skipFree
-		) {
-			const isPageFree = await PageProcessor.checkPageFree(
-				newPage,
-				this.context.config,
-				this.context.extendedConfig.skipFree,
-			);
-			if (isPageFree) {
-				logger.log(
-					this.context.i18n.t("page.skipFree", { path: relativeLink }),
+			// 检查页面是否为 Free（仅在 skipFreeMode 为 "page" 时）
+			if (
+				this.context.extendedConfig.skipFreeMode === "page" &&
+				this.context.extendedConfig.skipFree
+			) {
+				const isPageFree = await PageProcessor.checkPageFree(
+					newPage,
+					this.context.config,
+					this.context.extendedConfig.skipFree,
 				);
-				this.context.freeRecorder.addFreePage(relativeLink);
-				this.context.taskProgress?.markPageComplete(
-					this.normalizePagePath(relativeLink),
-				);
-				return;
+				if (isPageFree) {
+					logger.log(
+						this.context.i18n.t("page.skipFree", { path: relativeLink }),
+					);
+					this.context.freeRecorder.addFreePage(relativeLink);
+					this.context.taskProgress?.markPageComplete(
+						this.normalizePagePath(relativeLink),
+					);
+					return;
+				}
 			}
-		}
 
 			// 自动滚动页面（如果配置了）
 			if (options.autoScroll) {
@@ -111,19 +111,19 @@ export class LinkExecutor {
 				await this.processPage(newPage, relativeLink, options.pageHandler);
 			}
 
-		// 再执行 Block 级处理器（如果配置了）
-		if (options.blockSectionLocator && options.blockHandler) {
-			await this.processBlocks(
-				newPage,
-				relativeLink,
-				options.blockSectionLocator,
-				options.blockHandler,
-				options.beforeProcessBlocks,
-				options.verifyBlockCompletion ?? true,
-				options.expectedBlockCount, // 传递预期组件数
-				logger,
-			);
-		}
+			// 再执行 Block 级处理器（如果配置了）
+			if (options.blockSectionLocator && options.blockHandler) {
+				await this.processBlocks(
+					newPage,
+					relativeLink,
+					options.blockSectionLocator,
+					options.blockHandler,
+					options.beforeProcessBlocks,
+					options.verifyBlockCompletion ?? true,
+					options.expectedBlockCount, // 传递预期组件数
+					logger,
+				);
+			}
 		} finally {
 			logger.log(
 				this.context.i18n.t("crawler.closePage", { path: relativeLink }),
