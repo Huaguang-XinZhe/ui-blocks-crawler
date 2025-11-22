@@ -36,8 +36,8 @@ export class MismatchRecorder {
 	private mismatches: Map<string, MismatchItem> = new Map();
 	private mismatchFile: string;
 
-	constructor(stateDir: string, domain: string) {
-		this.mismatchFile = path.join(stateDir, domain, "mismatch.json");
+	constructor(stateDir: string) {
+		this.mismatchFile = path.join(stateDir, "mismatch.json");
 		this.load();
 	}
 

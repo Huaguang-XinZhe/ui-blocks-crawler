@@ -67,7 +67,7 @@ export class ExecutionContext {
 	) {
 		this.extendedConfig = extendedConfig;
 		this.freeRecorder = new FreeRecorder(freeFile);
-		this.mismatchRecorder = new MismatchRecorder(stateDir, domain);
+		this.mismatchRecorder = new MismatchRecorder(stateDir);
 		this.scriptInjector = new ScriptInjector(
 			config,
 			stateDir,
