@@ -2,6 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 import type { InternalConfig } from "../config/ConfigManager";
 import type { ExtendedExecutionConfig } from "../executors/ExecutionContext";
 import type { FilenameMappingManager } from "../state/FilenameMapping";
+import type { FreeRecorder } from "../state/FreeRecorder";
 import type { TaskProgress } from "../state/TaskProgress";
 import type { BeforeContext, BlockContext, BlockHandler } from "../types";
 import { createClickAndVerify, createClickCode } from "../utils/click-actions";
@@ -36,6 +37,7 @@ export class BlockProcessor {
 		private filenameMappingManager?: FilenameMappingManager,
 		private verifyBlockCompletion: boolean = true,
 		private extendedConfig: ExtendedExecutionConfig = {},
+		private freeRecorder?: FreeRecorder,
 		logger?: IContextLogger,
 	) {
 		this.i18n = createI18n(config.locale);
@@ -186,6 +188,10 @@ export class BlockProcessor {
 		const isFree = await this.isBlockFree(block);
 		if (isFree) {
 			this.logger.log(this.i18n.t("block.skipFree", { name: blockName }));
+			// 如果是 Free Block，立即记录到 freeRecorder
+			if (this.freeRecorder && blockName) {
+				this.freeRecorder.addFreeBlock(blockName);
+			}
 			// 如果是 Free Block，直接跳过处理
 			return { success: true, isFree: true, blockName };
 		}

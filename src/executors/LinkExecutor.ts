@@ -225,15 +225,11 @@ export class LinkExecutor {
 			this.context.filenameMappingManager,
 			verifyBlockCompletion,
 			this.context.extendedConfig,
+			this.context.freeRecorder,
 			logger,
 		);
 
-		const result = await blockProcessor.processBlocksInPage(page, relativeLink);
-
-		// 记录 free blocks
-		result.freeBlocks.forEach((blockName) => {
-			this.context.freeRecorder.addFreeBlock(blockName);
-		});
+		await blockProcessor.processBlocksInPage(page, relativeLink);
 	}
 
 	/**
