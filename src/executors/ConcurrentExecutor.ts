@@ -177,10 +177,8 @@ export class ConcurrentExecutor {
 			),
 		);
 
-		// 获取总的已完成数量（包括跳过的）
-		const totalCompleted = this.completed + this.previousCompletedPages;
-
-		this.printStatistics(totalCompleted, this.failed, this.total);
+		// 打印统计信息（只显示本次处理的数量）
+		this.printStatistics(this.completed, this.failed, this.total);
 	}
 
 	/**
