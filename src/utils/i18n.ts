@@ -75,6 +75,12 @@ const messages = {
 		"progress.scanning": "🔍 扫描已完成的输出文件，重建进度...",
 		"progress.rebuilt": "♻️  进度已重建: Block {blocks} 个, Page {pages} 个",
 		"progress.loadFailed": "⚠️ 加载进度文件失败，将重建进度",
+		"progress.collectLoaded": "✅ 从 collect.json 加载了 {count} 个页面链接",
+		"progress.scanningPages":
+			"🔍 开始扫描 {count} 个页面，初始 blockType: {type}",
+		"progress.detectedBlockType": "✅ 自动检测到 blockType: {type}",
+		"progress.scanComplete":
+			"✅ 扫描完成: {pages} 个页面, {blocks} 个已完成 block",
 
 		// 配置相关
 		"config.parseUrlFailed": "⚠️ 解析 startUrl 失败，使用默认域名",
@@ -283,6 +289,12 @@ const messages = {
 		"progress.rebuilt": "♻️  Progress rebuilt: {blocks} blocks, {pages} pages",
 		"progress.loadFailed":
 			"⚠️ Failed to load progress file, will rebuild progress",
+		"progress.collectLoaded": "✅ Loaded {count} page links from collect.json",
+		"progress.scanningPages":
+			"🔍 Scanning {count} pages, initial blockType: {type}",
+		"progress.detectedBlockType": "✅ Auto-detected blockType: {type}",
+		"progress.scanComplete":
+			"✅ Scan complete: {pages} pages, {blocks} completed blocks",
 
 		// Configuration
 		"config.parseUrlFailed": "⚠️ Failed to parse startUrl, using default domain",

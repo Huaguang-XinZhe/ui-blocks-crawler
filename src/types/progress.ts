@@ -22,14 +22,6 @@ export interface ProgressConfig {
  */
 export interface ProgressRebuildConfig {
 	/**
-	 * Block 类型
-	 * - 'file': block 是文件（如 untitledui）
-	 * - 'directory': block 是目录（如 heroui）
-	 *
-	 * @default 'file'
-	 */
-	blockType?: "file" | "directory";
-	/**
 	 * 是否保存重建结果到 progress.json
 	 *
 	 * @default true
@@ -39,8 +31,9 @@ export interface ProgressRebuildConfig {
 	 * 自定义检查 block 是否完成的函数
 	 *
 	 * 如果不提供，将使用默认逻辑：
-	 * - blockType='file': 检查文件是否存在
-	 * - blockType='directory': 检查目录是否存在
+	 * - 自动检测 block 类型（file 或 directory）
+	 * - file 模式：检查文件是否存在
+	 * - directory 模式：检查目录是否存在
 	 *
 	 * @param blockPath block 的路径（相对于 page 目录）
 	 * @param outputDir 输出目录的绝对路径

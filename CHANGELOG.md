@@ -1,5 +1,49 @@
 # block-crawler
 
+## 0.26.0
+
+### Minor Changes
+
+- feat: 自动检测 block 类型，移除 blockType 配置
+
+  **Breaking Changes:**
+
+  - 移除 `ProgressRebuildConfig.blockType` 配置项
+  - 进度重建时自动检测 block 类型（file 或 directory）
+
+  **改进:**
+
+  - 从 collect.json 加载页面列表后，自动检测前几个页面的结构
+  - 如果页面目录下直接有组件文件，判定为 file 模式
+  - 如果页面目录下有子目录且子目录内有组件文件，判定为 directory 模式
+  - fallback 的 scanOutputDir 也改为动态检测，无需配置
+
+  **国际化:**
+
+  - 添加 `progress.collectLoaded`、`progress.detectedBlockType`、`progress.scanComplete` 等新 i18n 键
+  - 移除硬编码的日志消息
+
+  **Migration:**
+
+  ```typescript
+  // 旧配置（不再需要）
+  progress: {
+    rebuild: {
+      blockType: "directory", // ❌ 已移除
+    }
+  }
+
+  // 新配置（自动检测）
+  progress: {
+    rebuild: {
+      // blockType 无需配置，自动检测
+      checkBlockComplete: async (blockPath, outputDir) => {
+        // 可选：自定义检查逻辑
+      }
+    }
+  }
+  ```
+
 ## 0.25.17
 
 ### Patch Changes

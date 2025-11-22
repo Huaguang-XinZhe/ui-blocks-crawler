@@ -19,7 +19,7 @@ test("untitledui", async ({ page }) => {
 		// progress: {
 		//   enable: true,
 		//   rebuild: {
-		//     blockType: "file", // untitledui 的 block 是文件
+		//     // blockType 已移除，框架会自动检测（file 或 directory）
 		//     saveToProgress: true,
 		//   },
 		// },

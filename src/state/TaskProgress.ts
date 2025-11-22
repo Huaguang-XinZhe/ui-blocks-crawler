@@ -36,7 +36,6 @@ export class TaskProgress {
 		this.progressConfig = {
 			enable: progressConfig?.enable ?? true,
 			rebuild: {
-				blockType: progressConfig?.rebuild?.blockType ?? "file",
 				saveToProgress: progressConfig?.rebuild?.saveToProgress ?? true,
 				checkBlockComplete: progressConfig?.rebuild?.checkBlockComplete,
 			},
@@ -95,11 +94,12 @@ export class TaskProgress {
 	 *
 	 * 重建逻辑：
 	 * 1. 优先从 collect.json 读取页面列表（如果存在）
-	 * 2. 对于每个页面，扫描其下的 block（文件或目录，根据 blockType 配置）
-	 * 3. 使用自定义或默认的检查函数判断 block 是否完成
-	 * 4. 如果没有 collect.json，则回退到扫描 outputDir 动态判断
-	 * 5. 在内存中标记已完成的 blocks 和 pages
-	 * 6. 根据 saveToProgress 配置决定是否保存到 progress.json
+	 * 2. 自动检测 block 类型（file 或 directory）
+	 * 3. 对于每个页面，扫描其下的 block（文件或目录）
+	 * 4. 使用自定义或默认的检查函数判断 block 是否完成
+	 * 5. 如果没有 collect.json，则回退到扫描 outputDir 动态判断
+	 * 6. 在内存中标记已完成的 blocks 和 pages
+	 * 7. 根据 saveToProgress 配置决定是否保存到 progress.json
 	 */
 	private async rebuildProgress(): Promise<void> {
 		if (!(await fse.pathExists(this.outputDir))) {
@@ -161,13 +161,11 @@ export class TaskProgress {
 	private async loadPageLinksFromCollect(): Promise<string[]> {
 		try {
 			if (!(await fse.pathExists(this.collectFile))) {
-				console.log(`⚠️  collect.json 不存在: ${this.collectFile}`);
 				return [];
 			}
 
 			const data = await fse.readJson(this.collectFile);
 			if (!data.collections || !Array.isArray(data.collections)) {
-				console.log("⚠️  collect.json 格式不正确");
 				return [];
 			}
 
@@ -177,10 +175,11 @@ export class TaskProgress {
 				return link.startsWith("/") ? link.slice(1) : link;
 			});
 
-			console.log(`✅ 从 collect.json 加载了 ${links.length} 个页面链接`);
+			console.log(
+				this.i18n.t("progress.collectLoaded", { count: links.length }),
+			);
 			return links;
-		} catch (error) {
-			console.log(`❌ 读取 collect.json 失败: ${error}`);
+		} catch {
 			return [];
 		}
 	}
@@ -193,17 +192,15 @@ export class TaskProgress {
 		pageBlocksMap: Map<string, { total: number; completed: number }>,
 		completedBlocks: string[],
 	): Promise<void> {
-		let blockType = this.progressConfig.rebuild.blockType;
-		console.log(
-			`🔍 开始扫描 ${pageLinks.length} 个页面，初始 blockType: ${blockType}`,
-		);
-
-		// 自动检测 blockType（如果第一个页面有内容）
+		// 自动检测 blockType
+		let blockType: "file" | "directory" = "file"; // 默认值
 		if (pageLinks.length > 0) {
 			const detectedType = await this.detectBlockType(pageLinks);
 			if (detectedType) {
 				blockType = detectedType;
-				console.log(`✅ 自动检测到 blockType: ${blockType}`);
+				console.log(
+					this.i18n.t("progress.detectedBlockType", { type: blockType }),
+				);
 			}
 		}
 
@@ -232,7 +229,10 @@ export class TaskProgress {
 					const blockPath = path.join(pagePath, file.name).replace(/\\/g, "/");
 					pageStats.total++;
 
-					const isComplete = await this.checkBlockComplete(blockPath);
+					const isComplete = await this.checkBlockComplete(
+						blockPath,
+						blockType,
+					);
 					if (isComplete) {
 						completedBlocks.push(blockPath);
 						pageStats.completed++;
@@ -246,7 +246,10 @@ export class TaskProgress {
 					const blockPath = path.join(pagePath, dir.name).replace(/\\/g, "/");
 					pageStats.total++;
 
-					const isComplete = await this.checkBlockComplete(blockPath);
+					const isComplete = await this.checkBlockComplete(
+						blockPath,
+						blockType,
+					);
 					if (isComplete) {
 						completedBlocks.push(blockPath);
 						pageStats.completed++;
@@ -256,7 +259,10 @@ export class TaskProgress {
 		}
 
 		console.log(
-			`✅ 扫描完成: ${pageBlocksMap.size} 个页面, ${completedBlocks.length} 个已完成 block`,
+			this.i18n.t("progress.scanComplete", {
+				pages: pageBlocksMap.size,
+				blocks: completedBlocks.length,
+			}),
 		);
 	}
 
@@ -329,11 +335,11 @@ export class TaskProgress {
 	}
 
 	/**
-	 * 扫描输出目录，识别页面和 block
+	 * 扫描输出目录，识别页面和 block（fallback 方法）
 	 *
 	 * 策略：
-	 * - 如果目录下直接有组件文件，说明这是"页面目录"，文件就是 block（blockType='file'）
-	 * - 如果目录下有子目录且子目录内有组件文件，说明这是"页面目录"，子目录就是 block（blockType='directory'）
+	 * - 如果目录下直接有组件文件，说明这是"页面目录"，文件就是 block
+	 * - 如果目录下有子目录且子目录内有组件文件，说明这是"页面目录"，子目录就是 block
 	 * - 否则继续向下递归
 	 */
 	private async scanOutputDir(
@@ -355,28 +361,28 @@ export class TaskProgress {
 		const dirs = entries.filter((e) => e.isDirectory());
 		const componentFiles = files.filter((f) => this.isComponentFile(f.name));
 
-		const blockType = this.progressConfig.rebuild.blockType;
-
-		// 判断是否是"页面目录"
+		// 动态判断 blockType 和是否是页面目录
 		let isPageDir = false;
+		let blockType: "file" | "directory" | null = null;
 
-		if (blockType === "file") {
-			// 如果有组件文件，这就是页面目录
-			isPageDir = componentFiles.length > 0;
+		if (componentFiles.length > 0) {
+			// 有组件文件，这就是页面目录，block 是文件
+			isPageDir = true;
+			blockType = "file";
 		} else {
-			// blockType === 'directory'
-			// 如果有子目录，并且至少一个子目录内有组件文件，这就是页面目录
+			// 检查是否有子目录包含组件文件
 			for (const dir of dirs) {
 				const subDirPath = path.join(fullPath, dir.name);
 				const hasContent = await this.hasContentInDirectory(subDirPath);
 				if (hasContent) {
 					isPageDir = true;
+					blockType = "directory";
 					break;
 				}
 			}
 		}
 
-		if (isPageDir) {
+		if (isPageDir && blockType) {
 			// 这是一个页面目录，处理其下的 block
 			const pagePath = relativePath;
 			const pageStats = { total: 0, completed: 0 };
@@ -390,7 +396,10 @@ export class TaskProgress {
 						.replace(/\\/g, "/");
 					pageStats.total++;
 
-					const isComplete = await this.checkBlockComplete(blockPath);
+					const isComplete = await this.checkBlockComplete(
+						blockPath,
+						blockType,
+					);
 					if (isComplete) {
 						completedBlocks.push(blockPath);
 						pageStats.completed++;
@@ -404,7 +413,10 @@ export class TaskProgress {
 						.replace(/\\/g, "/");
 					pageStats.total++;
 
-					const isComplete = await this.checkBlockComplete(blockPath);
+					const isComplete = await this.checkBlockComplete(
+						blockPath,
+						blockType,
+					);
 					if (isComplete) {
 						completedBlocks.push(blockPath);
 						pageStats.completed++;
@@ -461,13 +473,19 @@ export class TaskProgress {
 	}
 
 	/**
-	 * 检查一个 block 是否完成
+	 * 检查 block 是否已完成
 	 *
 	 * 使用自定义检查函数（如果提供），否则使用默认逻辑：
-	 * - blockType='file': 检查文件是否存在
-	 * - blockType='directory': 检查目录下是否有组件文件
+	 * - file 模式：检查文件是否存在
+	 * - directory 模式：检查目录下是否有组件文件
+	 *
+	 * @param blockPath block 路径（相对于 outputDir）
+	 * @param blockType block 类型（file 或 directory）
 	 */
-	private async checkBlockComplete(blockPath: string): Promise<boolean> {
+	private async checkBlockComplete(
+		blockPath: string,
+		blockType: "file" | "directory",
+	): Promise<boolean> {
 		// 如果提供了自定义检查函数，使用它
 		if (this.progressConfig.rebuild.checkBlockComplete) {
 			return await this.progressConfig.rebuild.checkBlockComplete(
@@ -478,7 +496,6 @@ export class TaskProgress {
 
 		// 否则使用默认逻辑
 		const blockFullPath = path.join(this.outputDir, blockPath);
-		const blockType = this.progressConfig.rebuild.blockType;
 
 		if (blockType === "file") {
 			// block 是文件，检查文件是否存在
