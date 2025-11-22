@@ -86,97 +86,129 @@ export function createSafeOutput(
 		tabName?: string,
 		filePath?: string,
 	): Promise<void> => {
-		let finalPath: string;
-		let originalFilename: string | undefined;
-		let sanitizedFilename: string | undefined;
-
+		// 如果用户提供了路径，直接使用
 		if (filePath) {
-			// 用户提供了路径，需要 sanitize
 			const result = sanitizePathWithMapping(filePath, mappingManager);
-			// 用户提供的路径是相对于 outputDir 的
-			finalPath = path.join(outputDir, result.sanitizedPath);
-			originalFilename = result.originalFilename;
-			sanitizedFilename = result.sanitizedFilename;
-		} else {
-			// 使用默认路径
-			switch (mode) {
-				case "block":
-					if (!blockPath) {
-						throw new Error(
-							"Block 模式下必须提供 blockPath 或显式传入 filePath",
-						);
-					}
-					// blockPath 可能包含路径分隔符，需要 sanitize 整个路径
-					{
-						const tabResult = resolveTabName(tabName);
-						if (tabResult.isFilename) {
-							// 如果是文件名，直接使用 blockPath/tabName（文件名不需要 sanitize）
-							const originalBlockPath = `${blockPath}/${tabResult.filename}`;
-							const result = sanitizePathWithMapping(
-								originalBlockPath,
-								mappingManager,
-								true, // skipFilenameSanitize
-							);
-							finalPath = path.join(outputDir, result.sanitizedPath);
-							originalFilename = result.originalFilename;
-							sanitizedFilename = result.sanitizedFilename;
-						} else {
-							// 如果是语言名，需要拼接扩展名
-							const originalBlockPath = `${blockPath}${tabResult.extension}`;
-							const result = sanitizePathWithMapping(
-								originalBlockPath,
-								mappingManager,
-							);
-							finalPath = path.join(outputDir, result.sanitizedPath);
-							originalFilename = result.originalFilename;
-							sanitizedFilename = result.sanitizedFilename;
-						}
-					}
-					break;
-				case "test":
-					if (!blockName) {
-						throw new Error(
-							"Test 模式下必须提供 blockName 或显式传入 filePath",
-						);
-					}
-					// blockName 需要 sanitize
-					{
-						const tabResult = resolveTabName(tabName);
-						if (tabResult.isFilename) {
-							// 如果是文件名，使用 test-blockName/tabName
-							const originalTestFilename = `test-${blockName}/${tabResult.filename}`;
-							const result = sanitizePathWithMapping(
-								originalTestFilename,
-								mappingManager,
-								true, // skipFilenameSanitize
-							);
-							finalPath = path.join(outputDir, result.sanitizedPath);
-							originalFilename = result.originalFilename;
-							sanitizedFilename = result.sanitizedFilename;
-						} else {
-							// 如果是语言名，使用 test-blockName.extension
-							const originalTestFilename = `test-${blockName}${tabResult.extension}`;
-							const testResult =
-								sanitizeFilenameWithOriginal(originalTestFilename);
-							sanitizedFilename = testResult.sanitized;
-							originalFilename = testResult.original;
-							if (mappingManager && testResult.changed) {
-								mappingManager.record(originalFilename, sanitizedFilename);
-							}
-							finalPath = path.join(outputDir, sanitizedFilename);
-						}
-					}
-					break;
-				case "page":
-					throw new Error("Page 模式下必须显式传入 filePath");
-				default:
-					throw new Error(`未知模式: ${mode}`);
-			}
+			const finalPath = path.join(outputDir, result.sanitizedPath);
+			await fse.outputFile(finalPath, data);
+			return;
 		}
+
+		// 根据模式生成默认路径
+		const finalPath = resolveFinalPath(
+			mode,
+			outputDir,
+			tabName,
+			mappingManager,
+			blockPath,
+			blockName,
+		);
 
 		// 写入文件
 		await fse.outputFile(finalPath, data);
 	};
+}
+
+/**
+ * 根据模式解析最终文件路径
+ */
+function resolveFinalPath(
+	mode: "block" | "test" | "page",
+	outputDir: string,
+	tabName: string | undefined,
+	mappingManager: FilenameMappingManager | undefined,
+	blockPath: string | undefined,
+	blockName: string | undefined,
+): string {
+	if (mode === "page") {
+		throw new Error("Page 模式下必须显式传入 filePath");
+	}
+
+	if (mode === "block") {
+		if (!blockPath) {
+			throw new Error("Block 模式下必须提供 blockPath 或显式传入 filePath");
+		}
+		return resolveBlockPath(outputDir, blockPath, tabName, mappingManager);
+	}
+
+	if (mode === "test") {
+		if (!blockName) {
+			throw new Error("Test 模式下必须提供 blockName 或显式传入 filePath");
+		}
+		return resolveTestPath(outputDir, blockName, tabName, mappingManager);
+	}
+
+	throw new Error(`未知模式: ${mode}`);
+}
+
+/**
+ * 解析 Block 模式的路径
+ */
+function resolveBlockPath(
+	outputDir: string,
+	blockPath: string,
+	tabName: string | undefined,
+	mappingManager: FilenameMappingManager | undefined,
+): string {
+	const tabResult = resolveTabName(tabName);
+
+	if (tabResult.isFilename) {
+		// 文件名模式：blockPath/filename（文件名不需要 sanitize）
+		const originalPath = `${blockPath}/${tabResult.filename}`;
+		const result = sanitizePathWithMapping(
+			originalPath,
+			mappingManager,
+			true, // skipFilenameSanitize
+		);
+		return path.join(outputDir, result.sanitizedPath);
+	}
+
+	// 如果传了 tabName（语言名）：blockPath/index.extension
+	if (tabName) {
+		const originalPath = `${blockPath}/index${tabResult.extension}`;
+		const result = sanitizePathWithMapping(originalPath, mappingManager);
+		return path.join(outputDir, result.sanitizedPath);
+	}
+
+	// 默认模式（不传 tabName）：blockPath.extension
+	const originalPath = `${blockPath}${tabResult.extension}`;
+	const result = sanitizePathWithMapping(originalPath, mappingManager);
+	return path.join(outputDir, result.sanitizedPath);
+}
+
+/**
+ * 解析 Test 模式的路径
+ */
+function resolveTestPath(
+	outputDir: string,
+	blockName: string,
+	tabName: string | undefined,
+	mappingManager: FilenameMappingManager | undefined,
+): string {
+	const tabResult = resolveTabName(tabName);
+
+	if (tabResult.isFilename) {
+		// 文件名模式：test-blockName/filename
+		const originalPath = `test-${blockName}/${tabResult.filename}`;
+		const result = sanitizePathWithMapping(
+			originalPath,
+			mappingManager,
+			true, // skipFilenameSanitize
+		);
+		return path.join(outputDir, result.sanitizedPath);
+	}
+
+	// 如果传了 tabName（语言名）：test-blockName/index.extension
+	if (tabName) {
+		const originalPath = `test-${blockName}/index${tabResult.extension}`;
+		const result = sanitizePathWithMapping(originalPath, mappingManager);
+		return path.join(outputDir, result.sanitizedPath);
+	}
+
+	// 默认模式（不传 tabName）：test-blockName.extension
+	const originalPath = `test-${blockName}${tabResult.extension}`;
+	const result = sanitizePathWithMapping(originalPath, mappingManager);
+	return path.join(outputDir, result.sanitizedPath);
 }
 
 /**

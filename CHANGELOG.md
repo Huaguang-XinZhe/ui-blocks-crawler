@@ -1,5 +1,50 @@
 # block-crawler
 
+## 0.25.1
+
+### Patch Changes
+
+- **功能优化：safeOutput 支持可选的 tabName 参数**
+
+  **参数签名：**
+
+  ```typescript
+  safeOutput(data: string, tabName?: string, filePath?: string): Promise<void>
+  ```
+
+  **路径规则：**
+
+  - **文件名模式**：如果 `tabName` 包含点号（`.`），视为完整文件名
+    - 输出路径：`blockPath/filename`（如 `portfolio/App.tsx`）
+    - 文件名不进行 sanitize
+  - **语言名模式**：如果传入 `tabName` 且不包含点号，作为编程语言名
+    - 输出路径：`blockPath/index.extension`（如 `portfolio/index.html`）
+    - 支持的语言：TS/TSX、JS/JSX、HTML、CSS、SCSS、SASS、LESS、JSON、Vue、Svelte、MD
+  - **默认模式**：不传 `tabName`
+    - 输出路径：`blockPath.tsx`（如 `portfolio.tsx`）
+
+  **使用示例：**
+
+  ```typescript
+  // 使用文件名
+  await safeOutput(code, "App.tsx");
+  // 输出到: blockPath/App.tsx
+
+  // 使用语言名
+  await safeOutput(code, "HTML");
+  // 输出到: blockPath/index.html
+
+  // 不传 tabName（使用默认）
+  await safeOutput(code);
+  // 输出到: blockPath.tsx
+  ```
+
+  **代码优化：**
+
+  - 扁平化 `createSafeOutput` 函数，提取辅助函数减少嵌套深度
+  - 新增 `resolveFinalPath`、`resolveBlockPath`、`resolveTestPath` 辅助函数
+  - 提升代码可读性和可维护性
+
 ## 0.25.0
 
 ### Minor Changes
