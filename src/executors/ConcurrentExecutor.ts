@@ -115,21 +115,24 @@ export class ConcurrentExecutor {
 							: linkObj.link;
 					const logger = createLogger(displayPath);
 
-					try {
-						await this.linkExecutor.execute(
-							page,
-							linkObj.link,
-							index === 0,
-							options,
-						);
-						this.completed++;
-						const progress = `${this.completed + this.failed}/${this.total}`;
-						logger.log(
-							this.context.i18n.t("crawler.linkComplete", {
-								progress,
-							}),
-						);
-					} catch (error) {
+				try {
+					await this.linkExecutor.execute(
+						page,
+						linkObj.link,
+						index === 0,
+						{
+							...options,
+							expectedBlockCount: linkObj.blockCount, // 传递预期组件数
+						},
+					);
+					this.completed++;
+					const progress = `${this.completed + this.failed}/${this.total}`;
+					logger.log(
+						this.context.i18n.t("crawler.linkComplete", {
+							progress,
+						}),
+					);
+				} catch (error) {
 						// 检查是否是用户主动停止（Ctrl+C）
 						const errorMessage =
 							error instanceof Error ? error.message : String(error);
@@ -178,8 +181,7 @@ export class ConcurrentExecutor {
 	 * 打印当前统计信息（用于中断时）
 	 */
 	printCurrentStatistics(): void {
-		const totalCompleted = this.completed + this.previousCompletedPages;
-		this.printStatistics(totalCompleted, this.failed, this.total);
+		this.printStatistics(this.completed, this.failed, this.total);
 	}
 
 	/**

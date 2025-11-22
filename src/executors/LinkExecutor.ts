@@ -37,6 +37,7 @@ export class LinkExecutor {
 			afterOpenScripts?: string[];
 			verifyBlockCompletion?: boolean;
 			autoScroll?: boolean | AutoScrollConfig;
+			expectedBlockCount?: number; // 新增：预期的组件数
 		},
 	): Promise<void> {
 		const domain = new URL(this.context.baseUrl).hostname;
@@ -110,18 +111,19 @@ export class LinkExecutor {
 				await this.processPage(newPage, relativeLink, options.pageHandler);
 			}
 
-			// 再执行 Block 级处理器（如果配置了）
-			if (options.blockSectionLocator && options.blockHandler) {
-				await this.processBlocks(
-					newPage,
-					relativeLink,
-					options.blockSectionLocator,
-					options.blockHandler,
-					options.beforeProcessBlocks,
-					options.verifyBlockCompletion ?? true,
-					logger,
-				);
-			}
+		// 再执行 Block 级处理器（如果配置了）
+		if (options.blockSectionLocator && options.blockHandler) {
+			await this.processBlocks(
+				newPage,
+				relativeLink,
+				options.blockSectionLocator,
+				options.blockHandler,
+				options.beforeProcessBlocks,
+				options.verifyBlockCompletion ?? true,
+				options.expectedBlockCount, // 传递预期组件数
+				logger,
+			);
+		}
 		} finally {
 			logger.log(
 				this.context.i18n.t("crawler.closePage", { path: relativeLink }),
@@ -213,6 +215,7 @@ export class LinkExecutor {
 		blockHandler: BlockHandler,
 		beforeProcessBlocks: ((context: BeforeContext) => Promise<void>) | null,
 		verifyBlockCompletion: boolean,
+		expectedBlockCount: number | undefined,
 		logger: ContextLogger,
 	): Promise<void> {
 		const blockProcessor = new BlockProcessor(
@@ -226,6 +229,8 @@ export class LinkExecutor {
 			verifyBlockCompletion,
 			this.context.extendedConfig,
 			this.context.freeRecorder,
+			this.context.mismatchRecorder,
+			expectedBlockCount,
 			logger,
 		);
 

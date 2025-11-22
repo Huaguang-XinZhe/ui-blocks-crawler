@@ -1,6 +1,6 @@
 import path from "node:path";
 import fse from "fs-extra";
-import { atomicWriteJson } from "../utils/atomic-write";
+import { atomicWriteJson, atomicWriteJsonSync } from "../utils/atomic-write";
 import { createI18n, type Locale } from "../utils/i18n";
 
 /**
@@ -85,6 +85,26 @@ export class FilenameMappingManager {
 
 		try {
 			await atomicWriteJson(this.mappingFile, this.mapping);
+			this.isDirty = false;
+		} catch (error) {
+			console.error(
+				this.i18n.t("filename.saveFailed", { path: this.mappingFile }),
+				error,
+			);
+			throw error;
+		}
+	}
+
+	/**
+	 * 同步保存映射到文件（用于进程退出时）
+	 */
+	saveSync(): void {
+		if (!this.isDirty) {
+			return;
+		}
+
+		try {
+			atomicWriteJsonSync(this.mappingFile, this.mapping);
 			this.isDirty = false;
 		} catch (error) {
 			console.error(

@@ -3,6 +3,7 @@ import type { InternalConfig } from "../config/ConfigManager";
 import type { ExtendedExecutionConfig } from "../executors/ExecutionContext";
 import type { FilenameMappingManager } from "../state/FilenameMapping";
 import type { FreeRecorder } from "../state/FreeRecorder";
+import type { MismatchRecorder } from "../state/MismatchRecorder";
 import type { TaskProgress } from "../state/TaskProgress";
 import type { BeforeContext, BlockContext, BlockHandler } from "../types";
 import { createClickAndVerify, createClickCode } from "../utils/click-actions";
@@ -38,6 +39,8 @@ export class BlockProcessor {
 		private verifyBlockCompletion: boolean = true,
 		private extendedConfig: ExtendedExecutionConfig = {},
 		private freeRecorder?: FreeRecorder,
+		private mismatchRecorder?: MismatchRecorder,
+		private expectedBlockCount?: number, // 新增：预期的组件数
 		logger?: IContextLogger,
 	) {
 		this.i18n = createI18n(config.locale);
@@ -66,10 +69,29 @@ export class BlockProcessor {
 			await this.beforeProcessBlocks(beforeContext);
 		}
 
-		// 获取所有 block 节点（作为预期数量）
+		// 获取所有 block 节点（作为实际定位到的数量）
 		const blocks = await this.getAllBlocks(page);
-		const expectedCount = blocks.length;
-		this.logger.log(this.i18n.t("block.found", { count: expectedCount }));
+		const actualCount = blocks.length;
+		this.logger.log(this.i18n.t("block.found", { count: actualCount }));
+
+		// 验证组件数量是否与预期一致
+		if (this.expectedBlockCount !== undefined && this.mismatchRecorder) {
+			if (actualCount !== this.expectedBlockCount) {
+				this.logger.warn(
+					`⚠️  组件数不一致: 预期 ${this.expectedBlockCount}, 实际定位到 ${actualCount}`,
+				);
+				this.mismatchRecorder.addMismatch(
+					pagePath,
+					this.expectedBlockCount,
+					actualCount,
+				);
+				// 跳过此页面，不处理
+				return {
+					totalCount: 0,
+					freeBlocks: [],
+				};
+			}
+		}
 
 		let completedCount = 0;
 		let processedCount = 0; // 实际处理的 block 数量（包括 free 和跳过的）

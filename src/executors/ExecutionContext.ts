@@ -5,6 +5,7 @@ import { BlockNameExtractor } from "../processors/BlockNameExtractor";
 import { ScriptInjector } from "../processors/ScriptInjector";
 import { FilenameMappingManager } from "../state/FilenameMapping";
 import { FreeRecorder } from "../state/FreeRecorder";
+import { MismatchRecorder } from "../state/MismatchRecorder";
 import type { TaskProgress } from "../state/TaskProgress";
 import type { I18n } from "../utils/i18n";
 
@@ -45,6 +46,7 @@ export interface ExtendedExecutionConfig {
  */
 export class ExecutionContext {
 	public readonly freeRecorder: FreeRecorder;
+	public readonly mismatchRecorder: MismatchRecorder;
 	public readonly scriptInjector: ScriptInjector;
 	public readonly blockNameExtractor: BlockNameExtractor;
 	public readonly filenameMappingManager: FilenameMappingManager;
@@ -57,6 +59,7 @@ export class ExecutionContext {
 		public readonly baseUrl: string,
 		public readonly outputDir: string,
 		stateDir: string,
+		domain: string,
 		freeFile: string,
 		public readonly taskProgress: TaskProgress | undefined,
 		public readonly i18n: I18n,
@@ -64,6 +67,7 @@ export class ExecutionContext {
 	) {
 		this.extendedConfig = extendedConfig;
 		this.freeRecorder = new FreeRecorder(freeFile);
+		this.mismatchRecorder = new MismatchRecorder(stateDir, domain);
 		this.scriptInjector = new ScriptInjector(
 			config,
 			stateDir,
@@ -129,6 +133,9 @@ export class ExecutionContext {
 		// 保存 Free 记录
 		await this.freeRecorder.save();
 
+		// 保存组件数不一致记录
+		await this.mismatchRecorder.save();
+
 		// 保存文件名映射
 		await this.filenameMappingManager.save();
 	}
@@ -159,6 +166,10 @@ export class ExecutionContext {
 		// 同步保存 Free 记录
 		this.freeRecorder.saveSync();
 
-		// 文件名映射暂时不同步保存（不太重要）
+		// 同步保存组件数不一致记录
+		this.mismatchRecorder.saveSync();
+
+		// 同步保存文件名映射
+		this.filenameMappingManager.saveSync();
 	}
 }

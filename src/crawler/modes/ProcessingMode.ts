@@ -113,6 +113,7 @@ export class ProcessingMode {
 			startUrl,
 			paths.outputDir,
 			paths.stateDir,
+			paths.domain,
 			paths.freeFile,
 			this.taskProgress,
 			extendedConfig,
