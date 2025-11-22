@@ -1,5 +1,22 @@
 # block-crawler
 
+## 0.25.7
+
+### Patch Changes
+
+- b0b30c6: fix: 修复保存日志和状态保存相关问题
+
+  - 修改信号处理器日志为"正在保存状态..."（不仅保存进度）
+  - 修复进度保存日志重复输出 3 次的问题（避免重复调用 saveProgress）
+  - 优化 cleanup() 方法，支持静默模式，避免重复日志输出
+  - 优化 free.json 保存，对 blocks 和 pages 进行排序
+
+- 17f567a: fix: 即时添加 Free Block 到记录中
+
+  - 在检测到 Free Block 时立即调用 freeRecorder.addFreeBlock()，而不是等到页面处理完成后再添加
+  - 确保在按 Ctrl+C 中断时，所有已检测到的 Free Block 都能被正确记录
+  - 在停止或完成时统一保存 free.json 文件
+
 ## 0.25.6
 
 ### Patch Changes
