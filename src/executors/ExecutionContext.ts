@@ -104,17 +104,20 @@ export class ExecutionContext {
 
 	/**
 	 * 清理资源（保存进度和 Free 记录）
+	 * @param silent 是否静默执行（不输出日志）
 	 */
-	async cleanup(): Promise<void> {
+	async cleanup(silent: boolean = false): Promise<void> {
 		// 保存进度
 		if (this.taskProgress) {
 			await this.taskProgress.saveProgress();
-			console.log(
-				`\n${this.i18n.t("progress.saved", {
-					blocks: this.taskProgress.getCompletedBlockCount(),
-					pages: this.taskProgress.getCompletedPageCount(),
-				})}`,
-			);
+			if (!silent) {
+				console.log(
+					`\n${this.i18n.t("progress.saved", {
+						blocks: this.taskProgress.getCompletedBlockCount(),
+						pages: this.taskProgress.getCompletedPageCount(),
+					})}`,
+				);
+			}
 		}
 
 		// 保存 Free 记录

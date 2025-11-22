@@ -54,9 +54,10 @@ export class ExecutionOrchestrator {
 
 	/**
 	 * 清理资源（保存进度和 Free 记录）
+	 * @param silent 是否静默执行（不输出日志）
 	 */
-	async cleanup(): Promise<void> {
-		await this.context.cleanup();
+	async cleanup(silent: boolean = false): Promise<void> {
+		await this.context.cleanup(silent);
 	}
 
 	/**

@@ -99,8 +99,8 @@ export class FreeRecorder {
 			lastUpdate: new Date().toLocaleString("zh-CN", {
 				timeZone: "Asia/Shanghai",
 			}),
-			pages: Array.from(this.pages),
-			blocks: Array.from(this.blocks),
+			pages: Array.from(this.pages).sort(),
+			blocks: Array.from(this.blocks).sort(),
 		};
 
 		const outputDir = path.dirname(this.freeFile);

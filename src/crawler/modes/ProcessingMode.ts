@@ -129,18 +129,7 @@ export class ProcessingMode {
 			console.log(`\n${this.i18n.t("common.signalReceived", { signal })}\n`);
 
 			try {
-				await this.taskProgress?.saveProgress();
-				// 输出保存成功日志
-				if (this.taskProgress) {
-					console.log(
-						this.i18n.t("progress.saved", {
-							blocks: this.taskProgress.getCompletedBlockCount(),
-							pages: this.taskProgress.getCompletedPageCount(),
-						}),
-					);
-				}
-
-				// 保存 Free 记录
+				// 保存所有状态（进度、Free 记录、文件名映射）
 				if (this.orchestrator) {
 					await this.orchestrator.cleanup();
 				}

@@ -13,7 +13,7 @@ const messages = {
 		// 通用
 		"common.start": "🚀 开始爬取: {url}",
 		"common.error": "❌ 处理过程中发生错误",
-		"common.signalReceived": "📡 收到信号 {signal}，正在保存进度...",
+		"common.signalReceived": "📡 收到信号 {signal}，正在保存状态...",
 		"common.complete": "✅ 爬取完成！",
 
 		// 爬虫任务
@@ -219,7 +219,7 @@ const messages = {
 		// Common
 		"common.start": "🚀 Starting crawl: {url}",
 		"common.error": "❌ An error occurred during processing",
-		"common.signalReceived": "📡 Received signal {signal}, saving progress...",
+		"common.signalReceived": "📡 Received signal {signal}, saving state...",
 		"common.complete": "✅ Crawl completed!",
 
 		// Crawler tasks
