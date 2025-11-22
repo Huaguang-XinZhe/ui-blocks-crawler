@@ -161,20 +161,26 @@ export class TaskProgress {
 	private async loadPageLinksFromCollect(): Promise<string[]> {
 		try {
 			if (!(await fse.pathExists(this.collectFile))) {
+				console.log(`⚠️  collect.json 不存在: ${this.collectFile}`);
 				return [];
 			}
 
 			const data = await fse.readJson(this.collectFile);
 			if (!data.collections || !Array.isArray(data.collections)) {
+				console.log("⚠️  collect.json 格式不正确");
 				return [];
 			}
 
 			// 提取所有链接并标准化（去掉开头的 /）
-			return data.collections.map((item: { link: string }) => {
+			const links = data.collections.map((item: { link: string }) => {
 				const link = item.link;
 				return link.startsWith("/") ? link.slice(1) : link;
 			});
-		} catch {
+
+			console.log(`✅ 从 collect.json 加载了 ${links.length} 个页面链接`);
+			return links;
+		} catch (error) {
+			console.log(`❌ 读取 collect.json 失败: ${error}`);
 			return [];
 		}
 	}
@@ -188,6 +194,9 @@ export class TaskProgress {
 		completedBlocks: string[],
 	): Promise<void> {
 		const blockType = this.progressConfig.rebuild.blockType;
+		console.log(
+			`🔍 开始扫描 ${pageLinks.length} 个页面，blockType: ${blockType}`,
+		);
 
 		for (const pagePath of pageLinks) {
 			const fullPagePath = path.join(this.outputDir, pagePath);
@@ -236,6 +245,10 @@ export class TaskProgress {
 				}
 			}
 		}
+
+		console.log(
+			`✅ 扫描完成: ${pageBlocksMap.size} 个页面, ${completedBlocks.length} 个已完成 block`,
+		);
 	}
 
 	/**

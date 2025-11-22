@@ -1,5 +1,15 @@
 # block-crawler
 
+## 0.25.16
+
+### Patch Changes
+
+- debug: 添加重建进度的调试日志
+
+  - 在 loadPageLinksFromCollect 中添加日志，显示加载状态
+  - 在 scanPagesFromCollect 中添加日志，显示扫描进度
+  - 帮助诊断为什么重建进度为 0 的问题
+
 ## 0.25.15
 
 ### Patch Changes
