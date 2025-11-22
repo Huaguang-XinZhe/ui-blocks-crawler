@@ -1,5 +1,50 @@
 # block-crawler
 
+## 0.25.0
+
+### Minor Changes
+
+- **新功能：safeOutput 支持可选的 tabName 参数**
+
+  **功能描述：**
+
+  - `safeOutput` 方法现在接受一个可选的 `tabName` 参数（第二个参数）
+  - 如果未传入 `tabName`，默认使用 `.tsx` 扩展名
+  - `tabName` 可以是完整文件名（如 `App.tsx`、`calendar.ts`）或编程语言名（如 `HTML`、`JS`）
+  - `filePath` 参数移至第三个参数（不常用）
+
+  **参数签名：**
+
+  ```typescript
+  safeOutput(data: string, tabName?: string, filePath?: string): Promise<void>
+  ```
+
+  **实现细节：**
+
+  - 文件名模式：如果 `tabName` 包含点号（`.`），视为完整文件名，直接使用且不需要 sanitize，输出到 `blockPath/tabName`
+  - 语言名模式：如果 `tabName` 不包含点号，作为编程语言名映射为对应扩展名，输出到 `blockPath.extension`
+  - 简化的语言映射表：只保留前端相关的语言（TS/TSX、JS/JSX、HTML、CSS、SCSS、SASS、LESS、JSON、Vue、Svelte、MD）
+
+  **使用示例：**
+
+  ```typescript
+  // 使用文件名
+  await safeOutput(code, "App.tsx");
+  // 输出到: blockPath/App.tsx
+
+  // 使用语言名
+  await safeOutput(code, "HTML");
+  // 输出到: blockPath.html
+
+  // 不传 tabName（使用默认）
+  await safeOutput(code);
+  // 输出到: blockPath.tsx
+
+  // 使用自定义文件路径（不常用）
+  await safeOutput(code, undefined, "custom/path.tsx");
+  // 输出到: outputDir/custom/path.tsx
+  ```
+
 ## 0.24.0
 
 ### Minor Changes

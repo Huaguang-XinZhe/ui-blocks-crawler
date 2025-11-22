@@ -9,7 +9,60 @@ import {
 /**
  * SafeOutput 函数类型
  */
-export type SafeOutput = (data: string, filePath?: string) => Promise<void>;
+export type SafeOutput = (
+	data: string,
+	tabName?: string,
+	filePath?: string,
+) => Promise<void>;
+
+/**
+ * 根据 tabName 解析文件名或扩展名
+ *
+ * @param tabName 文件名或语言名（可选）
+ * @returns 如果是文件名返回 { isFilename: true, filename: string }，否则返回 { isFilename: false, extension: string }
+ */
+function resolveTabName(tabName?: string): {
+	isFilename: boolean;
+	filename?: string;
+	extension?: string;
+} {
+	// 如果未提供 tabName，默认使用 .tsx
+	if (!tabName) {
+		return { isFilename: false, extension: ".tsx" };
+	}
+
+	// 如果包含点号，说明是文件名，直接使用（不需要 sanitize）
+	if (tabName.includes(".")) {
+		return { isFilename: true, filename: tabName };
+	}
+
+	// 如果是编程语言名，映射到对应的扩展名（只保留前端相关的）
+	const languageMap: Record<string, string> = {
+		tsx: ".tsx",
+		ts: ".ts",
+		typescript: ".ts",
+		jsx: ".jsx",
+		js: ".js",
+		javascript: ".js",
+		html: ".html",
+		css: ".css",
+		scss: ".scss",
+		sass: ".sass",
+		less: ".less",
+		json: ".json",
+		vue: ".vue",
+		svelte: ".svelte",
+		md: ".md",
+		markdown: ".md",
+	};
+
+	// 将 tabName 转为小写进行匹配
+	const lowerTabName = tabName.toLowerCase();
+	return {
+		isFilename: false,
+		extension: languageMap[lowerTabName] || ".tsx",
+	};
+}
 
 /**
  * 创建 safeOutput 函数
@@ -28,7 +81,11 @@ export function createSafeOutput(
 	blockPath?: string,
 	blockName?: string,
 ): SafeOutput {
-	return async (data: string, filePath?: string): Promise<void> => {
+	return async (
+		data: string,
+		tabName?: string,
+		filePath?: string,
+	): Promise<void> => {
 		let finalPath: string;
 		let originalFilename: string | undefined;
 		let sanitizedFilename: string | undefined;
@@ -50,16 +107,30 @@ export function createSafeOutput(
 						);
 					}
 					// blockPath 可能包含路径分隔符，需要 sanitize 整个路径
-					// sanitizePathWithMapping 会自动记录映射
 					{
-						const originalBlockPath = `${blockPath}.tsx`;
-						const result = sanitizePathWithMapping(
-							originalBlockPath,
-							mappingManager,
-						);
-						finalPath = path.join(outputDir, result.sanitizedPath);
-						originalFilename = result.originalFilename;
-						sanitizedFilename = result.sanitizedFilename;
+						const tabResult = resolveTabName(tabName);
+						if (tabResult.isFilename) {
+							// 如果是文件名，直接使用 blockPath/tabName（文件名不需要 sanitize）
+							const originalBlockPath = `${blockPath}/${tabResult.filename}`;
+							const result = sanitizePathWithMapping(
+								originalBlockPath,
+								mappingManager,
+								true, // skipFilenameSanitize
+							);
+							finalPath = path.join(outputDir, result.sanitizedPath);
+							originalFilename = result.originalFilename;
+							sanitizedFilename = result.sanitizedFilename;
+						} else {
+							// 如果是语言名，需要拼接扩展名
+							const originalBlockPath = `${blockPath}${tabResult.extension}`;
+							const result = sanitizePathWithMapping(
+								originalBlockPath,
+								mappingManager,
+							);
+							finalPath = path.join(outputDir, result.sanitizedPath);
+							originalFilename = result.originalFilename;
+							sanitizedFilename = result.sanitizedFilename;
+						}
 					}
 					break;
 				case "test":
@@ -70,15 +141,30 @@ export function createSafeOutput(
 					}
 					// blockName 需要 sanitize
 					{
-						const originalTestFilename = `test-${blockName}.tsx`;
-						const testResult =
-							sanitizeFilenameWithOriginal(originalTestFilename);
-						sanitizedFilename = testResult.sanitized;
-						originalFilename = testResult.original;
-						if (mappingManager && testResult.changed) {
-							mappingManager.record(originalFilename, sanitizedFilename);
+						const tabResult = resolveTabName(tabName);
+						if (tabResult.isFilename) {
+							// 如果是文件名，使用 test-blockName/tabName
+							const originalTestFilename = `test-${blockName}/${tabResult.filename}`;
+							const result = sanitizePathWithMapping(
+								originalTestFilename,
+								mappingManager,
+								true, // skipFilenameSanitize
+							);
+							finalPath = path.join(outputDir, result.sanitizedPath);
+							originalFilename = result.originalFilename;
+							sanitizedFilename = result.sanitizedFilename;
+						} else {
+							// 如果是语言名，使用 test-blockName.extension
+							const originalTestFilename = `test-${blockName}${tabResult.extension}`;
+							const testResult =
+								sanitizeFilenameWithOriginal(originalTestFilename);
+							sanitizedFilename = testResult.sanitized;
+							originalFilename = testResult.original;
+							if (mappingManager && testResult.changed) {
+								mappingManager.record(originalFilename, sanitizedFilename);
+							}
+							finalPath = path.join(outputDir, sanitizedFilename);
 						}
-						finalPath = path.join(outputDir, sanitizedFilename);
 					}
 					break;
 				case "page":
@@ -98,11 +184,13 @@ export function createSafeOutput(
  *
  * @param filePath 文件路径（可以是相对路径或绝对路径）
  * @param mappingManager 文件名映射管理器（可选）
+ * @param skipFilenameSanitize 是否跳过文件名的 sanitize（可选，默认 false）
  * @returns 清理后的路径和文件名信息
  */
 function sanitizePathWithMapping(
 	filePath: string,
 	mappingManager?: FilenameMappingManager,
+	skipFilenameSanitize = false,
 ): {
 	sanitizedPath: string;
 	originalFilename: string;
@@ -115,13 +203,17 @@ function sanitizePathWithMapping(
 	const dir = path.dirname(normalized);
 	const originalFilename = path.basename(normalized);
 
-	// 清理文件名
-	const filenameResult = sanitizeFilenameWithOriginal(originalFilename);
-	const sanitizedFilename = filenameResult.sanitized;
-
-	// 记录文件名映射（只记录文件名，不记录完整路径）
-	if (mappingManager && filenameResult.changed) {
-		mappingManager.record(originalFilename, sanitizedFilename);
+	// 清理文件名（如果不跳过）
+	let sanitizedFilename: string;
+	if (skipFilenameSanitize) {
+		sanitizedFilename = originalFilename;
+	} else {
+		const filenameResult = sanitizeFilenameWithOriginal(originalFilename);
+		sanitizedFilename = filenameResult.sanitized;
+		// 记录文件名映射（只记录文件名，不记录完整路径）
+		if (mappingManager && filenameResult.changed) {
+			mappingManager.record(originalFilename, sanitizedFilename);
+		}
 	}
 
 	// 如果目录是根目录或当前目录，直接返回清理后的文件名

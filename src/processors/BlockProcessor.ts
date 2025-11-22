@@ -67,9 +67,7 @@ export class BlockProcessor {
 		// 获取所有 block 节点（作为预期数量）
 		const blocks = await this.getAllBlocks(page);
 		const expectedCount = blocks.length;
-		this.logger.log(
-			`${this.i18n.t("block.found", { count: expectedCount })}\n`,
-		);
+		this.logger.log(this.i18n.t("block.found", { count: expectedCount }));
 
 		let completedCount = 0;
 		let processedCount = 0; // 实际处理的 block 数量（包括 free 和跳过的）
