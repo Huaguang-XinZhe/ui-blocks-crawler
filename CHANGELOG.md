@@ -1,5 +1,14 @@
 # block-crawler
 
+## 0.25.9
+
+### Patch Changes
+
+- debug: 添加 TaskProgress 保存调试日志
+
+  - 添加调试日志以定位 progress.json 为什么不保存的问题
+  - 优化 ExecutionContext cleanup 日志输出时机
+
 ## 0.25.8
 
 ### Patch Changes

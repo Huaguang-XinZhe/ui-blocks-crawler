@@ -109,12 +109,18 @@ export class ExecutionContext {
 	async cleanup(silent: boolean = false): Promise<void> {
 		// 保存进度
 		if (this.taskProgress) {
+			const blockCount = this.taskProgress.getCompletedBlockCount();
+			const pageCount = this.taskProgress.getCompletedPageCount();
+			
+			// 尝试保存进度
 			await this.taskProgress.saveProgress();
-			if (!silent) {
+			
+			// 只有在有进度数据时才输出日志
+			if (!silent && (blockCount > 0 || pageCount > 0)) {
 				console.log(
 					`\n${this.i18n.t("progress.saved", {
-						blocks: this.taskProgress.getCompletedBlockCount(),
-						pages: this.taskProgress.getCompletedPageCount(),
+						blocks: blockCount,
+						pages: pageCount,
 					})}`,
 				);
 			}

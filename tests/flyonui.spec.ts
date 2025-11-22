@@ -36,9 +36,11 @@ test("flyonui", async ({ page }) => {
 					await clickFileTab(fileTab, i);
 					// 后提取
 					const code = await extractCodeFromBlock(block);
-					// 获取 tab 名称
-					const tabName = (await fileTab.textContent())?.trim();
-					await safeOutput(code, tabName);
+					if (code) {
+						// 获取 tab 名称
+						const tabName = (await fileTab.textContent())?.trim();
+						await safeOutput(code, tabName);
+					}
 				}
 			},
 		)
