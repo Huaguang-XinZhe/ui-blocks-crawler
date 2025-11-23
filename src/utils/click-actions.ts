@@ -127,14 +127,26 @@ export function createClickCode(
 			if (cachedRole) {
 				// 使用缓存的角色类型
 				if (cachedRole === "tab") {
-					targetLocator = pageOrBlock.getByRole("tab", { name: "Code" });
+					targetLocator = pageOrBlock.getByRole("tab", {
+						name: "Code",
+						exact: true,
+					});
 				} else {
-					targetLocator = pageOrBlock.getByRole("button", { name: "Code" });
+					targetLocator = pageOrBlock.getByRole("button", {
+						name: "Code",
+						exact: true,
+					});
 				}
 			} else {
 				// 首次执行：智能检测 Code 元素类型
-				const tabLocator = pageOrBlock.getByRole("tab", { name: "Code" });
-				const buttonLocator = pageOrBlock.getByRole("button", { name: "Code" });
+				const tabLocator = pageOrBlock.getByRole("tab", {
+					name: "Code",
+					exact: true,
+				});
+				const buttonLocator = pageOrBlock.getByRole("button", {
+					name: "Code",
+					exact: true,
+				});
 
 				// 尝试检测哪个存在
 				const tabExists = await tabLocator.count().then((count) => count > 0);

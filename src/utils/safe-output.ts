@@ -21,7 +21,7 @@ export type SafeOutput = (
  * @param tabName 文件名或语言名（可选）
  * @returns 如果是文件名返回 { isFilename: true, filename: string }，否则返回 { isFilename: false, extension: string }
  */
-function resolveTabName(tabName?: string): {
+export function resolveTabName(tabName?: string): {
 	isFilename: boolean;
 	filename?: string;
 	extension?: string;
