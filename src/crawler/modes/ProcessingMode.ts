@@ -6,6 +6,7 @@ import type { ExtendedExecutionConfig } from "../../executors/ExecutionContext";
 import { ExecutionOrchestrator } from "../../executors/ExecutionOrchestrator";
 import { TaskProgress } from "../../state/TaskProgress";
 import { createI18n, type I18n } from "../../utils/i18n";
+import { SignalHandler } from "../../utils/signal-handler";
 import type { ProcessingConfig } from "../utils/ConfigHelper";
 
 /**
@@ -20,15 +21,13 @@ export class ProcessingMode {
 	private i18n: I18n;
 	private taskProgress?: TaskProgress;
 	private orchestrator?: ExecutionOrchestrator;
-	private signalHandler?: (signal: NodeJS.Signals) => void;
-	private static isTerminating = false;
-	private static handlingSignal = false; // 防止重复处理信号
+	private signalHandler?: SignalHandler;
 
 	/**
 	 * 检查是否正在终止
 	 */
 	static isProcessTerminating(): boolean {
-		return ProcessingMode.isTerminating;
+		return SignalHandler.isProcessTerminating();
 	}
 
 	constructor(
@@ -53,7 +52,13 @@ export class ProcessingMode {
 			startUrl,
 		);
 
-		this.setupSignalHandlers();
+		// 设置信号处理器
+		this.signalHandler = new SignalHandler(this.config.locale, () => {
+			if (this.orchestrator) {
+				this.orchestrator.cleanupSync();
+			}
+		});
+		this.signalHandler.setup();
 
 		try {
 			if (!this.orchestrator) {
@@ -75,7 +80,7 @@ export class ProcessingMode {
 				},
 			);
 		} finally {
-			this.removeSignalHandlers();
+			this.signalHandler?.cleanup();
 		}
 	}
 
@@ -127,64 +132,5 @@ export class ProcessingMode {
 			this.taskProgress,
 			extendedConfig,
 		);
-	}
-
-	/**
-	 * 设置信号处理器
-	 */
-	private setupSignalHandlers(): void {
-		const handler = (signal: NodeJS.Signals) => {
-			// 防止重复处理
-			if (ProcessingMode.handlingSignal) {
-				return;
-			}
-			ProcessingMode.handlingSignal = true;
-			ProcessingMode.isTerminating = true;
-
-			console.log(`\n${this.i18n.t("common.signalReceived", { signal })}\n`);
-
-			// 立即移除信号处理器，防止再次触发
-			this.removeSignalHandlers();
-
-			// 同步执行清理并退出
-			this.performCleanupAndExit();
-		};
-
-		process.once("SIGINT", handler);
-		process.once("SIGTERM", handler);
-		this.signalHandler = handler;
-	}
-
-	/**
-	 * 执行清理并退出
-	 */
-	private performCleanupAndExit(): void {
-		try {
-			if (this.orchestrator) {
-				// 使用同步方法确保保存完成
-				this.orchestrator.cleanupSync();
-			}
-			console.log(`\n${this.i18n.t("common.stateSaved")}\n`);
-		} catch (error) {
-			console.error(
-				this.i18n.t("progress.saveFailed", {
-					error: error instanceof Error ? error.message : String(error),
-				}),
-			);
-		} finally {
-			// 确保退出
-			process.exit(0);
-		}
-	}
-
-	/**
-	 * 移除信号处理器
-	 */
-	private removeSignalHandlers(): void {
-		if (this.signalHandler) {
-			process.off("SIGINT", this.signalHandler);
-			process.off("SIGTERM", this.signalHandler);
-			this.signalHandler = undefined;
-		}
 	}
 }

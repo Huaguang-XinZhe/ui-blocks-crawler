@@ -5,6 +5,7 @@ import { BlockProcessor } from "../../processors/BlockProcessor";
 import { PageProcessor } from "../../processors/PageProcessor";
 import { FilenameMappingManager } from "../../state/FilenameMapping";
 import { createI18n, type I18n } from "../../utils/i18n";
+import { SignalHandler } from "../../utils/signal-handler";
 import type { ProcessingConfig } from "../utils/ConfigHelper";
 
 /**
@@ -18,15 +19,13 @@ import type { ProcessingConfig } from "../utils/ConfigHelper";
 export class TestMode {
 	private i18n: I18n;
 	private mappingManager?: FilenameMappingManager;
-	private signalHandler?: (signal: NodeJS.Signals) => void;
-	private static isTerminating = false;
-	private static handlingSignal = false; // 防止重复处理信号
+	private signalHandler?: SignalHandler;
 
 	/**
 	 * 检查是否正在终止
 	 */
 	static isProcessTerminating(): boolean {
-		return TestMode.isTerminating;
+		return SignalHandler.isProcessTerminating();
 	}
 
 	constructor(
@@ -44,8 +43,21 @@ export class TestMode {
 			throw new Error("测试模式需要提供 testUrl");
 		}
 
+		// 初始化 filename mapping（用于 safe output）
+		const outputDir = this.config.outputBaseDir + "/test";
+		this.mappingManager = new FilenameMappingManager(
+			this.config.stateBaseDir,
+			this.config.locale,
+		);
+		await this.mappingManager.initialize();
+
 		// 设置信号处理器
-		this.setupSignalHandlers();
+		this.signalHandler = new SignalHandler(this.config.locale, () => {
+			if (this.mappingManager) {
+				this.mappingManager.saveSync();
+			}
+		});
+		this.signalHandler.setup();
 
 		try {
 			// 导航到测试页面
@@ -66,14 +78,6 @@ export class TestMode {
 			if (processingConfig.autoScroll) {
 				await this.performAutoScroll(processingConfig.autoScroll);
 			}
-
-			// 初始化 filename mapping（用于 safe output）
-			const outputDir = this.config.outputBaseDir + "/test";
-			this.mappingManager = new FilenameMappingManager(
-				this.config.stateBaseDir,
-				this.config.locale,
-			);
-			await this.mappingManager.initialize();
 
 			// 执行 page handler（如果配置了）
 			if (processingConfig.pageHandler) {
@@ -156,7 +160,7 @@ export class TestMode {
 			await this.mappingManager.save();
 		} finally {
 			// 移除信号处理器
-			this.removeSignalHandlers();
+			this.signalHandler?.cleanup();
 		}
 	}
 
@@ -191,65 +195,6 @@ export class TestMode {
 				this.i18n.t("page.autoScrollError") +
 					` (${result.duration}s)${result.error ? `: ${result.error}` : ""}\n`,
 			);
-		}
-	}
-
-	/**
-	 * 设置信号处理器
-	 */
-	private setupSignalHandlers(): void {
-		const handler = (signal: NodeJS.Signals) => {
-			// 防止重复处理
-			if (TestMode.handlingSignal) {
-				return;
-			}
-			TestMode.handlingSignal = true;
-			TestMode.isTerminating = true;
-
-			console.log(`\n${this.i18n.t("common.signalReceived", { signal })}\n`);
-
-			// 立即移除信号处理器，防止再次触发
-			this.removeSignalHandlers();
-
-			// 同步执行清理并退出
-			this.performCleanupAndExit();
-		};
-
-		process.once("SIGINT", handler);
-		process.once("SIGTERM", handler);
-		this.signalHandler = handler;
-	}
-
-	/**
-	 * 执行清理并退出
-	 */
-	private performCleanupAndExit(): void {
-		try {
-			if (this.mappingManager) {
-				// 同步保存 filename mapping
-				this.mappingManager.saveSync();
-			}
-			console.log(`\n${this.i18n.t("common.stateSaved")}\n`);
-		} catch (error) {
-			console.error(
-				this.i18n.t("progress.saveFailed", {
-					error: error instanceof Error ? error.message : String(error),
-				}),
-			);
-		} finally {
-			// 确保退出
-			process.exit(0);
-		}
-	}
-
-	/**
-	 * 移除信号处理器
-	 */
-	private removeSignalHandlers(): void {
-		if (this.signalHandler) {
-			process.off("SIGINT", this.signalHandler);
-			process.off("SIGTERM", this.signalHandler);
-			this.signalHandler = undefined;
 		}
 	}
 }
