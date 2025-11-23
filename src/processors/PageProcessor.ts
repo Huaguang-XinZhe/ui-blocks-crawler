@@ -7,6 +7,7 @@ import { isDebugMode } from "../utils/debug";
 import { checkPageFree as checkPageFreeUtil } from "../utils/free-checker";
 import { createI18n, type I18n } from "../utils/i18n";
 import { createSafeOutput } from "../utils/safe-output";
+import { ProcessingContext } from "./ProcessingContext";
 
 /**
  * Page 处理器
@@ -14,6 +15,7 @@ import { createSafeOutput } from "../utils/safe-output";
  */
 export class PageProcessor {
 	private i18n: I18n;
+	private context: ProcessingContext;
 
 	constructor(
 		private config: InternalConfig,
@@ -22,6 +24,7 @@ export class PageProcessor {
 		private filenameMappingManager?: FilenameMappingManager,
 	) {
 		this.i18n = createI18n(config.locale);
+		this.context = new ProcessingContext();
 	}
 
 	/**
@@ -57,7 +60,7 @@ export class PageProcessor {
 				this.filenameMappingManager,
 			),
 			clickAndVerify,
-			clickCode: createClickCode(page, clickAndVerify),
+			clickCode: createClickCode(page, clickAndVerify, this.context),
 		};
 
 		try {

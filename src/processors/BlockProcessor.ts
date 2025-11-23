@@ -239,22 +239,22 @@ export class BlockProcessor {
 			return { success: true, isFree: true, blockName };
 		}
 
-		const clickAndVerify = createClickAndVerify(this.config.locale);
-		const context: BlockContext = {
-			currentPage: page,
-			block,
+	const clickAndVerify = createClickAndVerify(this.config.locale);
+	const context: BlockContext = {
+		currentPage: page,
+		block,
+		blockPath,
+		blockName,
+		outputDir: this.outputDir,
+		safeOutput: createSafeOutput(
+			"block",
+			this.outputDir,
+			this.filenameMappingManager,
 			blockPath,
-			blockName,
-			outputDir: this.outputDir,
-			safeOutput: createSafeOutput(
-				"block",
-				this.outputDir,
-				this.filenameMappingManager,
-				blockPath,
-			),
-			clickAndVerify,
-			clickCode: createClickCode(block, clickAndVerify),
-		};
+		),
+		clickAndVerify,
+		clickCode: createClickCode(block, clickAndVerify, this.context),
+	};
 
 		try {
 			// 如果配置了自动处理，使用 AutoFileProcessor

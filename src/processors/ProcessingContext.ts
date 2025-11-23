@@ -9,6 +9,9 @@ export class ProcessingContext {
 	/** Free block 检查策略缓存 */
 	private freeCheckStrategy: "heading" | "container" | null = null;
 
+	/** Code 元素的角色类型缓存（首次检测后缓存） */
+	private codeRole: "tab" | "button" | null = null;
+
 	/**
 	 * 获取缓存的变种名称列表
 	 * @param cacheKey 缓存键（通常是配置的哈希或索引）
@@ -42,10 +45,26 @@ export class ProcessingContext {
 	}
 
 	/**
+	 * 获取 Code 元素的角色类型
+	 */
+	getCodeRole(): "tab" | "button" | null {
+		return this.codeRole;
+	}
+
+	/**
+	 * 设置 Code 元素的角色类型
+	 * @param role 角色类型（"tab" 或 "button"）
+	 */
+	setCodeRole(role: "tab" | "button"): void {
+		this.codeRole = role;
+	}
+
+	/**
 	 * 清空所有缓存
 	 */
 	clear(): void {
 		this.variantNamesCache.clear();
 		this.freeCheckStrategy = null;
+		this.codeRole = null;
 	}
 }

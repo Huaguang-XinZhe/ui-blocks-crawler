@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import type { ProcessingContext } from "../processors/ProcessingContext";
 import type { ClickAndVerify, ClickCode } from "../types";
 import { isDebugMode } from "./debug";
 import type { Locale } from "./i18n";
@@ -98,22 +99,61 @@ export function createClickAndVerify(locale: Locale = "zh"): ClickAndVerify {
 
 /**
  * 创建 clickCode 函数
- * 内部使用 clickAndVerify 实现，默认会自动验证 tab 的 aria-selected 属性
+ * 内部使用 clickAndVerify 实现，会智能检测 Code 元素是 tab 还是 button
+ * 第一次检测后会缓存到 ProcessingContext 中，后续自动应用
  *
  * @param pageOrBlock Page 或 Locator（Block）对象，用于获取默认的 Code 按钮定位器
  * @param clickAndVerify clickAndVerify 函数实例
+ * @param processingContext 处理上下文，用于缓存 Code 元素类型
  */
 export function createClickCode(
 	pageOrBlock: Page | Locator,
 	clickAndVerify: ClickAndVerify,
+	processingContext?: ProcessingContext,
 ): ClickCode {
 	return async (
 		locator?: Locator,
 		options?: { timeout?: number; retries?: number },
 	): Promise<void> => {
-		// 如果没有提供 locator，使用默认的 Code 按钮定位器
-		const targetLocator =
-			locator || pageOrBlock.getByRole("tab", { name: "Code" });
+		let targetLocator: Locator;
+
+		// 如果提供了自定义 locator，直接使用
+		if (locator) {
+			targetLocator = locator;
+		} else {
+			// 检查缓存的 Code 元素类型
+			const cachedRole = processingContext?.getCodeRole();
+
+			if (cachedRole) {
+				// 使用缓存的角色类型
+				if (cachedRole === "tab") {
+					targetLocator = pageOrBlock.getByRole("tab", { name: "Code" });
+				} else {
+					targetLocator = pageOrBlock.getByRole("button", { name: /code/i });
+				}
+			} else {
+				// 首次执行：智能检测 Code 元素类型
+				const tabLocator = pageOrBlock.getByRole("tab", { name: "Code" });
+				const buttonLocator = pageOrBlock.getByRole("button", { name: /code/i });
+
+				// 尝试检测哪个存在
+				const tabExists = await tabLocator.count().then((count) => count > 0);
+				const buttonExists = await buttonLocator
+					.count()
+					.then((count) => count > 0);
+
+				if (tabExists) {
+					targetLocator = tabLocator;
+					processingContext?.setCodeRole("tab");
+				} else if (buttonExists) {
+					targetLocator = buttonLocator;
+					processingContext?.setCodeRole("button");
+				} else {
+					// 都不存在，默认使用 tab（会抛出更明确的错误）
+					targetLocator = tabLocator;
+				}
+			}
+		}
 
 		// 使用 clickAndVerify 进行点击并验证（使用自动验证）
 		await clickAndVerify(targetLocator, undefined, options);
