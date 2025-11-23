@@ -1,6 +1,6 @@
 import { type BlockAutoConfig, BlockCrawler } from "@huaguang/block-crawler";
 import { test } from "@playwright/test";
-import { extractCodeFromBlock } from "./utils/extract-code";
+import { extractCodeFromPre } from "./utils/extract-code";
 
 test("heroui-pro crawler", async ({ page }) => {
 	// 设置超时
@@ -24,7 +24,7 @@ test("heroui-pro crawler", async ({ page }) => {
 					})
 					.getByRole("tab")
 					.all(),
-			extractCode: extractCodeFromBlock,
+			extractCode: extractCodeFromPre,
 			variants: [
 				{
 					buttonLocator: (block) =>

@@ -14,8 +14,8 @@ test("flyonui", async ({ page }) => {
 		// .tabSections("//main/section")
 		// .name("h3")
 		// .count("p")
-		// .open("https://flyonui.com/blocks/marketing-ui/portfolio") // 测试这个页面
-		.open() // 并发处理
+		.open("https://flyonui.com/blocks/marketing-ui/portfolio") // 测试这个页面
+		// .open() // 并发处理
 		.page({
 			autoScroll: true,
 		})

@@ -1,17 +1,14 @@
 import type { Locator } from "@playwright/test";
 
 /**
- * 从 block 元素中提取代码内容
- * @param block - Playwright Locator 元素
+ * 从 pre 元素中提取代码内容
+ * @param pre - pre 元素的 Locator
  * @returns 提取的代码字符串
  */
-export async function extractCodeFromBlock(block: Locator): Promise<string> {
-	return await block.evaluate((element) => {
-		const pre = element.querySelector("pre");
-		if (!pre) return "";
-
+export async function extractCodeFromPre(pre: Locator): Promise<string> {
+	return await pre.evaluate((element) => {
 		// 克隆元素以避免影响页面
-		const clone = pre.cloneNode(true) as HTMLElement;
+		const clone = element.cloneNode(true) as HTMLElement;
 
 		// 移除所有导致重复的元素
 		clone.querySelectorAll(".copy-token").forEach((el) => {

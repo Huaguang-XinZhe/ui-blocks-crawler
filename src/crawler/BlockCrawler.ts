@@ -422,6 +422,48 @@ export class BlockCrawler {
 			if (!this.isOpenCalled) {
 				throw new Error("测试模式必须调用 open() 方法");
 			}
+			
+			// 步骤 0: 处理认证（如果配置了 authConfig）
+			if (this.authConfig) {
+				const { generatePathsForUrl } = await import("../config/ConfigManager");
+				const paths = generatePathsForUrl(
+					this.config,
+					this.processingConfig.testUrl,
+				);
+
+				// 根据 authConfig 创建最终的 authHandler
+				let finalAuthHandler: ((page: Page) => Promise<void>) | undefined;
+
+				if (typeof this.authConfig === "function") {
+					// 用法 3: 自定义处理函数
+					finalAuthHandler = this.authConfig;
+				} else {
+					// 用法 1 & 2: 自动登录
+					const { createAutoAuthHandler } = await import(
+						"../auth/AutoAuthHandler"
+					);
+					const options =
+						typeof this.authConfig === "string"
+							? { loginUrl: this.authConfig }
+							: this.authConfig;
+
+					finalAuthHandler = createAutoAuthHandler(
+						options,
+						paths.stateDir,
+						this.config.locale,
+					);
+				}
+
+				const { AuthManager } = await import("../auth/AuthManager");
+				const authManager = new AuthManager(
+					this._page,
+					paths.stateDir,
+					finalAuthHandler,
+					this.config.locale,
+				);
+				await authManager.ensureAuth();
+			}
+			
 			await this.getTestMode().execute(this.processingConfig);
 			return;
 		}
