@@ -129,12 +129,12 @@ export function createClickCode(
 				if (cachedRole === "tab") {
 					targetLocator = pageOrBlock.getByRole("tab", { name: "Code" });
 				} else {
-					targetLocator = pageOrBlock.getByRole("button", { name: /code/i });
+					targetLocator = pageOrBlock.getByRole("button", { name: "Code" });
 				}
 			} else {
 				// 首次执行：智能检测 Code 元素类型
 				const tabLocator = pageOrBlock.getByRole("tab", { name: "Code" });
-				const buttonLocator = pageOrBlock.getByRole("button", { name: /code/i });
+				const buttonLocator = pageOrBlock.getByRole("button", { name: "Code" });
 
 				// 尝试检测哪个存在
 				const tabExists = await tabLocator.count().then((count) => count > 0);
