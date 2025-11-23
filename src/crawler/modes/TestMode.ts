@@ -148,6 +148,7 @@ export class TestMode {
 					undefined, // expectedBlockCount
 					undefined, // logger
 					processingConfig.blockAutoConfig, // blockAutoConfig
+					processingConfig.progressiveLocate, // progressiveLocate
 				);
 
 				await blockProcessor.processBlocksInPage(

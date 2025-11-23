@@ -362,6 +362,10 @@ export class BlockCrawler {
 	 * 1. 传统方式：传入 handler 函数
 	 * 2. 自动处理：传入配置对象，自动处理文件 Tab 遍历、代码提取和变种切换
 	 *
+	 * @param sectionLocator Block 定位符
+	 * @param progressiveLocateOrHandlerOrConfig 渐进式定位（可选）或 handler 或配置对象
+	 * @param handlerOrConfig handler 或配置对象（可选）
+	 *
 	 * @example
 	 * ```typescript
 	 * // 传统方式
@@ -387,23 +391,64 @@ export class BlockCrawler {
 	 *     }
 	 *   ]
 	 * })
+	 *
+	 * // 启用渐进式定位（适用于渐进式加载的页面）
+	 * .block('selector', true, {
+	 *   fileTabs: '//div[2]/div[2]/div[1]/div',
+	 * })
+	 *
+	 * // 渐进式定位 + 自定义处理
+	 * .block('selector', true, async ({ block, safeOutput }) => {
+	 *   // 自定义处理逻辑
+	 * })
 	 * ```
 	 */
+	block(
+		sectionLocator: string,
+		progressiveLocate: boolean,
+		handler: BlockHandler,
+	): this;
+	block(
+		sectionLocator: string,
+		progressiveLocate: boolean,
+		config: BlockAutoConfig,
+	): this;
 	block(sectionLocator: string, handler: BlockHandler): this;
 	block(sectionLocator: string, config: BlockAutoConfig): this;
 	block(
 		sectionLocator: string,
-		handlerOrConfig: BlockHandler | BlockAutoConfig,
+		progressiveLocateOrHandlerOrConfig:
+			| boolean
+			| BlockHandler
+			| BlockAutoConfig,
+		handlerOrConfig?: BlockHandler | BlockAutoConfig,
 	): this {
 		this.processingConfig.blockLocator = sectionLocator;
 
-		// 判断是 handler 还是配置对象
-		if (typeof handlerOrConfig === "function") {
-			// 传统方式
-			this.processingConfig.blockHandler = handlerOrConfig;
+		// 判断第二个参数的类型
+		if (typeof progressiveLocateOrHandlerOrConfig === "boolean") {
+			// 第二个参数是 progressiveLocate
+			this.processingConfig.progressiveLocate =
+				progressiveLocateOrHandlerOrConfig;
+
+			// 第三个参数是 handler 或 config
+			if (handlerOrConfig) {
+				if (typeof handlerOrConfig === "function") {
+					this.processingConfig.blockHandler = handlerOrConfig;
+				} else {
+					this.processingConfig.blockAutoConfig = handlerOrConfig;
+				}
+			}
 		} else {
-			// 自动处理方式
-			this.processingConfig.blockAutoConfig = handlerOrConfig;
+			// 第二个参数是 handler 或 config
+			this.processingConfig.progressiveLocate = false;
+
+			if (typeof progressiveLocateOrHandlerOrConfig === "function") {
+				this.processingConfig.blockHandler = progressiveLocateOrHandlerOrConfig;
+			} else {
+				this.processingConfig.blockAutoConfig =
+					progressiveLocateOrHandlerOrConfig;
+			}
 		}
 
 		this.processingConfig.skipFreeMode = "block";
@@ -422,7 +467,7 @@ export class BlockCrawler {
 			if (!this.isOpenCalled) {
 				throw new Error("测试模式必须调用 open() 方法");
 			}
-			
+
 			// 步骤 0: 处理认证（如果配置了 authConfig）
 			if (this.authConfig) {
 				const { generatePathsForUrl } = await import("../config/ConfigManager");
@@ -463,7 +508,7 @@ export class BlockCrawler {
 				);
 				await authManager.ensureAuth();
 			}
-			
+
 			await this.getTestMode().execute(this.processingConfig);
 			return;
 		}

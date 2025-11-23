@@ -51,6 +51,7 @@ export class BlockProcessor {
 		private expectedBlockCount?: number, // 新增：预期的组件数
 		logger?: IContextLogger,
 		private blockAutoConfig?: BlockAutoConfig, // 新增：自动处理配置
+		private progressiveLocate?: boolean, // 新增：渐进式定位
 	) {
 		this.i18n = createI18n(config.locale);
 		this.blockNameExtractor = new BlockNameExtractor(config, extendedConfig);
@@ -79,6 +80,28 @@ export class BlockProcessor {
 			await this.beforeProcessBlocks(beforeContext);
 		}
 
+		// 检查是否启用渐进式定位
+		const isProgressiveMode = !!this.progressiveLocate;
+
+		if (isProgressiveMode) {
+			// 使用渐进式定位模式
+			return await this.processBlocksProgressively(page, pagePath);
+		} else {
+			// 使用传统的一次性定位模式
+			return await this.processBlocksTraditional(page, pagePath);
+		}
+	}
+
+	/**
+	 * 传统模式：一次性定位所有 block 并处理
+	 */
+	private async processBlocksTraditional(
+		page: Page,
+		pagePath: string,
+	): Promise<{
+		totalCount: number;
+		freeBlocks: string[];
+	}> {
 		// 获取所有 block 节点（作为实际定位到的数量）
 		const blocks = await this.getAllBlocks(page);
 		const actualCount = blocks.length;
@@ -163,6 +186,133 @@ export class BlockProcessor {
 		}
 
 		// 返回实际处理的数量（不包括跳过的）
+		return {
+			totalCount: completedCount,
+			freeBlocks,
+		};
+	}
+
+	/**
+	 * 渐进式模式：分批定位并处理 block
+	 * 适用于渐进式加载的页面
+	 */
+	private async processBlocksProgressively(
+		page: Page,
+		pagePath: string,
+	): Promise<{
+		totalCount: number;
+		freeBlocks: string[];
+	}> {
+		this.logger.log(
+			this.i18n.t("block.progressiveMode", { batchSize: "动态" }),
+		);
+
+		let completedCount = 0;
+		let processedCount = 0;
+		const freeBlocks: string[] = [];
+		const processedBlockNames: string[] = [];
+		const processedBlockNamesSet = new Set<string>(); // 使用 blockName 去重
+
+		let batchNumber = 0;
+		let hasMoreBlocks = true;
+
+		while (hasMoreBlocks) {
+			batchNumber++;
+
+			// 获取当前可见的所有 block
+			const allBlocks = await this.getAllBlocks(page);
+
+			// 过滤出未处理的 block
+			// 注意：这里不能提前获取 blockName 判断，因为有些 block 可能还在加载中（如 loading spinner）
+			// 我们需要先处理（滚动到视口），让它加载出来后再获取 blockName
+			const unprocessedBlocks: Locator[] = [];
+			for (let i = 0; i < allBlocks.length; i++) {
+				const block = allBlocks[i];
+				// 尝试快速获取 blockName（不等待加载）
+				let blockName: string | null = null;
+				try {
+					// 先尝试获取 heading，如果存在且可见，则获取 blockName
+					const heading = block.getByRole("heading").first();
+					const headingCount = await heading.count();
+					if (headingCount > 0) {
+						blockName = await this.blockNameExtractor.extract(block);
+					}
+				} catch {
+					// 如果获取失败，说明可能还在加载，先加入待处理列表
+				}
+
+				// 如果有 blockName 且已处理，跳过；否则加入待处理列表
+				if (!blockName || !processedBlockNamesSet.has(blockName)) {
+					unprocessedBlocks.push(block);
+				}
+			}
+
+			// 如果没有未处理的 block，退出循环
+			if (unprocessedBlocks.length === 0) {
+				this.logger.log(this.i18n.t("block.progressiveComplete"));
+				hasMoreBlocks = false;
+				break;
+			}
+
+			// 当前批次就是所有未处理的 block（动态批次大小）
+			const currentBatch = unprocessedBlocks;
+			const batchSize = currentBatch.length;
+
+			// 滚动到当前批次最后一个 block 的底部
+			const lastBlockInBatch = currentBatch[currentBatch.length - 1];
+			await lastBlockInBatch.evaluate((el) => {
+				el.scrollIntoView({ behavior: "smooth", block: "end" });
+			});
+
+			this.logger.log(
+				this.i18n.t("block.progressiveBatch", {
+					batch: batchNumber,
+					count: currentBatch.length,
+					remaining: 0,
+				}),
+			);
+
+			// 处理当前批次的 block
+			for (let i = 0; i < currentBatch.length; i++) {
+				const block = currentBatch[i];
+				const result = await this.processSingleBlock(page, block, pagePath);
+
+				if (result.blockName) {
+					processedBlockNames.push(result.blockName);
+					processedBlockNamesSet.add(result.blockName);
+				}
+
+				processedCount++;
+
+				if (result.success) {
+					completedCount++;
+				}
+
+				if (result.isFree && result.blockName) {
+					freeBlocks.push(result.blockName);
+				}
+			}
+		}
+
+		this.logger.log(
+			this.i18n.t("block.progressiveTotal", { count: processedCount }),
+		);
+
+		// 如果所有 block 都已完成，标记页面为完成
+		if (completedCount > 0) {
+			const normalizedPath = this.normalizePagePath(pagePath);
+			this.taskProgress?.markPageComplete(normalizedPath);
+		}
+
+		// 验证 Block 采集完整性（如果启用）
+		// 在渐进式模式下，我们不验证预期数量，因为渐进式加载的 block 数量可能会动态变化
+		if (this.verifyBlockCompletion && !this.expectedBlockCount) {
+			this.logger.log(
+				this.i18n.t("block.verifyComplete", { count: processedCount }),
+			);
+		}
+
+		// 返回实际处理的数量
 		return {
 			totalCount: completedCount,
 			freeBlocks,

@@ -16,14 +16,14 @@ test("flyonui", async ({ page }) => {
 		// .count("p")
 		.open("https://flyonui.com/blocks/marketing-ui/portfolio") // 测试这个页面
 		// .open() // 并发处理
-		.page({
-			autoScroll: true,
-		})
-		.block('//main/div/div[3]/div/div/div[contains(@class, "flex")]', {
+		// .page({
+		// 	autoScroll: true,
+		// })
+		.block('//main/div/div[3]/div/div/div[contains(@class, "flex")]', true, {
 			fileTabs: (block) =>
 				block.locator("//div[2]/div[2]/div[1]/div").getByRole("button").all(),
 			// extractCode 使用默认（从 pre 获取 textContent）
-		} as BlockAutoConfig)
+		})
 		// 测试默认匹配（忽略大小写的 "free"）
 		.skipFree()
 		.run();

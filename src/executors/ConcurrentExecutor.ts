@@ -47,6 +47,7 @@ export class ConcurrentExecutor {
 			afterOpenScripts?: string[];
 			verifyBlockCompletion?: boolean;
 			autoScroll?: boolean | AutoScrollConfig;
+			progressiveLocate?: boolean;
 		},
 	): Promise<void> {
 		const allLinks = collectResult.collections;

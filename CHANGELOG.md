@@ -1,5 +1,34 @@
 # block-crawler
 
+## 0.29.0
+
+### Minor Changes
+
+- 新增渐进式 Block 加载模式，优化懒加载页面的爬取性能
+
+  **主要改进：**
+
+  - ✨ 新增 `progressiveLocate` 参数（`block()` 方法的第二个可选参数），启用渐进式定位模式
+  - 🚀 动态批次处理：根据每次定位到的未处理 block 数量自动调整批次大小，无需手动配置
+  - 🎯 智能去重：使用 blockName 进行去重判断，避免重复处理同一组件
+  - ⚡ 性能优化：取消不必要的滚动和等待操作，快速获取 blockName 进行过滤
+  - 📊 清晰日志：展示每批次的处理进度和统计信息
+
+  **使用方式：**
+
+  ```typescript
+  await crawler
+    .block("selector", true, {
+      // 第二个参数设为 true 启用渐进式模式
+      fileTabs: (block) => block.locator("...").all(),
+    })
+    .run();
+  ```
+
+  **适用场景：**
+
+  渐进式加载页面（如无限滚动、懒加载组件等），传统的 `autoScroll` 方式需要先完全滚动再处理，耗时较长。渐进式模式可以边定位边处理，显著提升效率。
+
 ## 0.28.6
 
 ### Patch Changes

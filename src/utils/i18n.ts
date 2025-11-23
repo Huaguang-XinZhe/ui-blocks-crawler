@@ -186,6 +186,10 @@ const messages = {
 		"block.verifyIncomplete": "⚠️ Block 采集不完整",
 		"block.verifyComplete": "✅ Block 采集验证通过 (共 {count} 个)",
 		"block.processedList": "已处理的 Block:",
+		"block.progressiveMode": "🔄 启用渐进式定位模式 (批次大小: {batchSize})",
+		"block.progressiveBatch": "📦 批次 {batch}: 处理 {count} 个 block (剩余 {remaining} 个)",
+		"block.progressiveComplete": "✅ 渐进式定位完成：未发现新的 block",
+		"block.progressiveTotal": "✅ 渐进式处理完成，共处理 {count} 个 block",
 
 		// Mismatch 记录
 		"mismatch.noRecords": "✅ 无组件数不一致记录",
@@ -424,6 +428,10 @@ const messages = {
 			"\n⚠️  Block collection incomplete!\n   Page: {pagePath}\n   Expected: {expectedCount}\n   Processed: {processedCount}\n   Difference: {diff}\n\n   Processed Blocks:\n{blockList}\n\n   💡 Tip: Run with --debug flag to automatically pause the page for inspection\n",
 		"block.verifyComplete":
 			"\n✅ Block collection verification passed\n   Page: {pagePath}\n   Expected: {expectedCount}\n   Processed: {processedCount}\n",
+		"block.progressiveMode": "🔄 Progressive locate mode enabled (batch size: {batchSize})",
+		"block.progressiveBatch": "📦 Batch {batch}: Processing {count} block(s) ({remaining} remaining)",
+		"block.progressiveComplete": "✅ Progressive locating complete: No new blocks found",
+		"block.progressiveTotal": "✅ Progressive processing complete, processed {count} block(s) in total",
 
 		// Mismatch records
 		"mismatch.noRecords": "✅ No block count mismatch records",

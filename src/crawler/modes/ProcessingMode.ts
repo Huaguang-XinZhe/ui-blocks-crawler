@@ -77,6 +77,7 @@ export class ProcessingMode {
 					beforeOpenScripts: processingConfig.beforeOpenScripts,
 					afterOpenScripts: processingConfig.afterOpenScripts,
 					autoScroll: processingConfig.autoScroll,
+					progressiveLocate: processingConfig.progressiveLocate,
 				},
 			);
 		} finally {

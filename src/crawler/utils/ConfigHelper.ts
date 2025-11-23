@@ -42,6 +42,8 @@ export interface ProcessingConfig {
 	blockHandler?: any;
 	// Block 自动处理配置
 	blockAutoConfig?: BlockAutoConfig;
+	// 渐进式定位（批次大小固定为 3）
+	progressiveLocate?: boolean;
 	// skipFreeText: undefined = 未设置, "default" = 使用默认匹配(/free/i), string = 精确匹配
 	skipFreeText?: string;
 	skipFreeMode?: "page" | "block";

@@ -44,6 +44,7 @@ export class LinkExecutor {
 			verifyBlockCompletion?: boolean;
 			autoScroll?: boolean | AutoScrollConfig;
 			expectedBlockCount?: number; // 新增：预期的组件数
+			progressiveLocate?: boolean; // 新增：渐进式定位
 		},
 	): Promise<void> {
 		const domain = new URL(this.context.baseUrl).hostname;
@@ -133,6 +134,7 @@ export class LinkExecutor {
 					options.beforeProcessBlocks,
 					options.verifyBlockCompletion ?? true,
 					options.expectedBlockCount, // 传递预期组件数
+					options.progressiveLocate ?? false, // 传递渐进式定位配置
 					logger,
 				);
 			}
@@ -229,6 +231,7 @@ export class LinkExecutor {
 		beforeProcessBlocks: ((context: BeforeContext) => Promise<void>) | null,
 		verifyBlockCompletion: boolean,
 		expectedBlockCount: number | undefined,
+		progressiveLocate: boolean,
 		logger: ContextLogger,
 	): Promise<void> {
 		const blockProcessor = new BlockProcessor(
@@ -246,6 +249,7 @@ export class LinkExecutor {
 			expectedBlockCount,
 			logger,
 			blockAutoConfig ?? undefined,
+			progressiveLocate,
 		);
 
 		await blockProcessor.processBlocksInPage(page, relativeLink);
