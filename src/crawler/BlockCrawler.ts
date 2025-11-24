@@ -5,6 +5,7 @@ import type {
 	LocatorOrCustom,
 	LocatorsOrCustom,
 	NameExtractFunction,
+	TabSectionLocator,
 } from "../collectors/types";
 import {
 	createInternalConfig,
@@ -211,7 +212,7 @@ export class BlockCrawler {
 	/**
 	 * 设置 tab section 配置（需要点击 tab 的场景）
 	 */
-	tabSection(locatorOrCustom: LocatorOrCustom<Page>): this {
+	tabSection(locatorOrCustom: TabSectionLocator): this {
 		this.collectionConfig.tabSectionConfig = locatorOrCustom;
 		return this;
 	}
