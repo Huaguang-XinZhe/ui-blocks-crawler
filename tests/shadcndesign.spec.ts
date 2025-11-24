@@ -1,4 +1,4 @@
-import { BlockCrawler, type PageContext } from "@huaguang/block-crawler";
+import { BlockCrawler } from "@huaguang/block-crawler";
 import { type Page, test } from "@playwright/test";
 import fse from "fs-extra";
 
@@ -20,7 +20,8 @@ test("shadcndesign", async ({ page }) => {
 		})
 		.name("[data-slot='card-title']")
 		.count("p")
-		.open()
+		// .open()
+		.open("https://www.shadcndesign.com/pro-blocks/description-lists")
 		.page(async ({ currentPage }) => {
 			const blockNames = await getPageBlockNames(currentPage);
 			blockNames.forEach((name) => {

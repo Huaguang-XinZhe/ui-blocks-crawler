@@ -47,6 +47,9 @@ export class SectionExtractor {
 
 	/**
 	 * 处理 tabs 模式：需要点击 tab 并获取对应的 section
+	 * 
+	 * 注意：这个方法只返回 section locators，不应该点击 tab
+	 * tab 的点击应该由 LinkCollector 在提取 links 之前完成
 	 */
 	private async extractFromTabs(): Promise<Locator[]> {
 		if (this.config.mode !== "tabs") {
@@ -70,12 +73,11 @@ export class SectionExtractor {
 		// 获取所有 tabs
 		const tabs = await tabListLocator.getByRole("tab").all();
 
-		// 遍历每个 tab
-		for (const tab of tabs) {
-			await tab.click();
-			await this.page.waitForTimeout(500); // 等待 tab 切换完成
+		// 遍历每个 tab，生成对应的 section
+		for (let i = 0; i < tabs.length; i++) {
+			const tab = tabs[i];
 
-			// 获取 tab text
+			// 获取 tab text（不点击）
 			const tabText = await tab.textContent();
 
 			// 获取对应的 section
@@ -92,5 +94,25 @@ export class SectionExtractor {
 		}
 
 		return sections;
+	}
+
+	/**
+	 * 获取 tab list locator（用于 LinkCollector 手动点击 tab）
+	 */
+	async getTabList(): Promise<Locator | null> {
+		if (this.config.mode !== "tabs") {
+			return null;
+		}
+
+		const { tabList } = this.config;
+
+		if (tabList) {
+			return typeof tabList === "string"
+				? this.page.locator(tabList)
+				: await tabList(this.page);
+		}
+
+		// 默认逻辑：取页面第一个 role 为 tablist 的元素
+		return this.page.getByRole("tablist").first();
 	}
 }
