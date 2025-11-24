@@ -8,6 +8,7 @@ import type {
 } from "../collectors/types";
 import {
 	createInternalConfig,
+	generatePathsForUrl,
 	type InternalConfig,
 } from "../config/ConfigManager";
 import type {
@@ -96,10 +97,17 @@ export class BlockCrawler {
 	private testMode?: TestMode;
 
 	/**
-	 * 获取输出目录路径
+	 * 获取输出目录路径（基于 startUrl 计算）
 	 */
 	get outputDir(): string {
-		return this.config.outputDir;
+		const url = this.collectionConfig.startUrl;
+		if (!url) {
+			throw new Error(
+				"无法获取 outputDir：未配置 startUrl。请在构造函数中配置 startUrl 参数。",
+			);
+		}
+		const { outputDir } = generatePathsForUrl(this.config, url);
+		return outputDir;
 	}
 
 	constructor(
