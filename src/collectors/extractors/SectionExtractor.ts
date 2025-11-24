@@ -84,7 +84,8 @@ export class SectionExtractor {
 				const locatorStr = tabSection.replace("{tabText}", tabText || "");
 				section = this.page.locator(locatorStr);
 			} else {
-				section = await tabSection(this.page);
+				// 传递 page 和 tabText 参数
+				section = await tabSection(this.page, tabText || "");
 			}
 
 			sections.push(section);

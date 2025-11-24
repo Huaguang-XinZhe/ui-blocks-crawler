@@ -95,6 +95,13 @@ export class BlockCrawler {
 	private processingMode?: ProcessingMode;
 	private testMode?: TestMode;
 
+	/**
+	 * 获取输出目录路径
+	 */
+	get outputDir(): string {
+		return this.config.outputDir;
+	}
+
 	constructor(
 		private _page: Page,
 		config?: CrawlerConfig,

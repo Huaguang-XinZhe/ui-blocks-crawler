@@ -31,6 +31,13 @@ export type LocatorsOrCustom<T = Locator> =
 	| ((parent: T) => Locator[] | Promise<Locator[]>);
 
 /**
+ * Tab Section 定位符（支持 tabText 参数）
+ */
+export type TabSectionLocator =
+	| string
+	| ((page: Page, tabText: string) => Locator | Promise<Locator>);
+
+/**
  * 提取函数（用于 count）
  */
 export type CountExtractFunction<T = string | null> = (text: T) => number;
@@ -55,8 +62,8 @@ export type SectionConfig =
 			mode: "tabs";
 			/** Tab list 定位符（可选，未提供时使用页面第一个 role 为 tablist 的元素） */
 			tabList?: LocatorOrCustom<Page>;
-			/** Tab section 定位符 */
-			tabSection: LocatorOrCustom<Page>;
+			/** Tab section 定位符（支持 tabText 参数） */
+			tabSection: TabSectionLocator;
 	  };
 /**
  * 链接信息提取配置

@@ -6,6 +6,7 @@ import type {
 	LocatorsOrCustom,
 	NameExtractFunction,
 	SectionConfig,
+	TabSectionLocator,
 } from "../../collectors/types";
 import type { BlockAutoConfig } from "../../types/handlers";
 import type { Locale } from "../../utils/i18n";
@@ -18,7 +19,7 @@ export interface CollectionConfig {
 	collectWaitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit";
 	collectWaitTimeout?: number;
 	tabListConfig?: LocatorOrCustom<Page>;
-	tabSectionConfig?: LocatorOrCustom<Page>;
+	tabSectionConfig?: TabSectionLocator;
 	tabSectionsConfig?: LocatorsOrCustom<Page>;
 	nameConfig?: {
 		locator: LocatorOrCustom<Locator>;
